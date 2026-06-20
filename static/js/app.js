@@ -380,6 +380,7 @@ document.getElementById('category').addEventListener('change', (e) => {
     const category = e.target.value;
     const activitySelect = document.getElementById('activity');
     const categoryOther = document.getElementById('categoryOther');
+    const pointsInput = document.getElementById('points');
 
     // Show/hide custom category text input
     if (category === 'other') {
@@ -391,7 +392,25 @@ document.getElementById('category').addEventListener('change', (e) => {
         categoryOther.value = '';
     }
 
+    // "Full Day" auto-fills max points for every category — no activity/points needed
+    if (category === 'fullday') {
+        activitySelect.required = false;
+        activitySelect.disabled = true;
+        pointsInput.required = false;
+        pointsInput.disabled = true;
+        pointsInput.value = '';
+    } else {
+        activitySelect.disabled = false;
+        activitySelect.required = true;
+        pointsInput.disabled = false;
+        pointsInput.required = true;
+    }
+
     activitySelect.innerHTML = '<option value="">Select activity</option>';
+
+    if (category === 'fullday') {
+        return;
+    }
 
     if (category && category !== 'other' && activities[category]) {
         activities[category].forEach(activity => {
@@ -440,6 +459,38 @@ document.getElementById('winForm').addEventListener('submit', async (e) => {
     const points = document.getElementById('points').value;
     const date = dateInput.value;
 
+    // "Full Day" — max out every scoring category in one shot
+    if (category === 'fullday') {
+        const FULL_DAY_CATEGORIES = ['physical', 'work', 'health', 'relationships', 'mindset'];
+        const MAX_POINTS_PER_CATEGORY = 200;
+        try {
+            await Promise.all(FULL_DAY_CATEGORIES.map(cat =>
+                fetch('/api/wins', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category: cat,
+                        activity: 'Full Day',
+                        duration: 0,
+                        description: description || 'Full Day — max points',
+                        points: MAX_POINTS_PER_CATEGORY,
+                        date
+                    })
+                })
+            ));
+            document.getElementById('winForm').reset();
+            document.getElementById('category').dispatchEvent(new Event('change'));
+            loadDailySummary();
+            loadWins();
+            loadXP();
+            loadXPLog();
+            checkCompleteDay();
+        } catch (error) {
+            console.error('Error adding Full Day:', error);
+        }
+        return;
+    }
+
     // Resolve "Other" values
     if (category === 'other') {
         category = document.getElementById('categoryOther').value.trim();
@@ -449,7 +500,7 @@ document.getElementById('winForm').addEventListener('submit', async (e) => {
         activity = document.getElementById('activityOther').value.trim();
         if (!activity) return;
     }
-    
+
     try {
         const response = await fetch('/api/wins', {
             method: 'POST',
