@@ -1,0 +1,16 @@
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+
+# Tell GitHub Linguist that JS/CSS/HTML are vendored frontend assets,
+# so Python shows as the primary language of the repo.
+static/js/*.js linguist-vendored
+static/css/*.css linguist-vendored
+templates/*.html linguist-vendored

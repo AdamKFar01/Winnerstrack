@@ -1,0 +1,33 @@
+{
+    "name": "winnerstrackbuilder",
+    "version": "1.0.0",
+    "description": "Personal productivity tracker",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-builder --mac"
+    },
+    "devDependencies": {
+        "electron": "^33.0.0",
+        "electron-builder": "^25.0.0"
+    },
+    "build": {
+        "appId": "com.adam.winnerstrackbuilder",
+        "productName": "WinnersTrack",
+        "mac": {
+            "category": "public.app-category.productivity",
+            "icon": "build/icon.png",
+            "target": [{ "target": "dir", "arch": ["arm64"] }]
+        },
+        "files": [
+            "main.js",
+            "package.json"
+        ],
+        "extraResources": [
+            "app.py",
+            "migrate_database.py",
+            { "from": "templates", "to": "templates" },
+            { "from": "static", "to": "static" }
+        ]
+    }
+}

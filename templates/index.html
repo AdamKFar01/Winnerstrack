@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinnersTrack</title>
+    <link rel="icon" type="image/png" href="/static/img/icon.png?v=2">
+    <link rel="apple-touch-icon" href="/static/img/icon.png?v=2">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>WinnersTrack</h1>
+            <div class="xp-header-block">
+                <div id="xp-display"></div>
+                <div class="xp-progress-wrap">
+                    <div class="xp-progress-track"><div id="xp-progress-fill"></div></div>
+                    <span id="xp-progress-label"></span>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div class="theme-switcher">
+                    <button class="theme-dot active" data-theme="1" style="background:#c084fc" title="Purple / Teal"></button>
+                    <button class="theme-dot" data-theme="2" style="background:#ff4444" title="Red / Orange"></button>
+                    <button class="theme-dot" data-theme="3" style="background:#1a6bff" title="Blue / Cyan"></button>
+                </div>
+                <div class="header-separator"></div>
+                <button id="themeToggle" class="theme-toggle" title="Toggle light/dark mode">☀</button>
+                <div class="date-selector">
+                    <input type="date" id="currentDate" />
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="calendar">Calendar</button>
+            <button class="tab-btn" data-tab="goals">Goals</button>
+            <button class="tab-btn" data-tab="reminders" style="position:relative;">Reminders<img id="reminderBellBadge" src="" alt="" style="display:none;position:absolute;top:-8px;right:-8px;width:22px;height:22px;"></button>
+            <button class="tab-btn" data-tab="finance">Finance</button>
+            <button class="tab-btn" data-tab="health">Health</button>
+            <button class="tab-btn" data-tab="yume">夢</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-content active" id="dashboard">
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Physical</h3>
+                    <div class="points" id="physical-points">0</div>
+                    <div class="goal">/ 200</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Work</h3>
+                    <div class="points" id="work-points">0</div>
+                    <div class="goal">/ 200</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Health</h3>
+                    <div class="points" id="health-points">0</div>
+                    <div class="goal">/ 200</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Relationships</h3>
+                    <div class="points" id="relationships-points">0</div>
+                    <div class="goal">/ 200</div>
+                </div>
+                <div class="summary-card">
+                    <h3>Mindset &amp; Discipline</h3>
+                    <div class="points" id="mindset-points">0</div>
+                    <div class="goal">/ 200</div>
+                </div>
+                <div class="summary-card total">
+                    <h3>Total</h3>
+                    <div class="points" id="total-points">0</div>
+                    <div class="goal">/ 1000</div>
+                </div>
+            </div>
+
+            <!-- Two-column main area: Log/Wins on left, Radar chart on right -->
+            <div class="dashboard-main-row">
+                <div class="dashboard-left">
+                    <div class="add-win-section">
+                        <h2>Log a Win</h2>
+                        <form id="winForm">
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="category" required>
+                                    <option value="">Select category</option>
+                                    <option value="physical">Physical</option>
+                                    <option value="work">Work</option>
+                                    <option value="health">Health</option>
+                                    <option value="relationships">Relationships</option>
+                                    <option value="mindset">Mindset &amp; Discipline</option>
+                                    <option value="other">Other…</option>
+                                </select>
+                                <input type="text" id="categoryOther" class="other-input" placeholder="Enter custom category…">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Activity</label>
+                                <select id="activity" required>
+                                    <option value="">Select activity</option>
+                                </select>
+                                <input type="text" id="activityOther" class="other-input" placeholder="Enter custom activity…">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Duration (minutes)</label>
+                                <input type="number" id="duration" min="0" placeholder="Optional">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Description</label>
+                                <input type="text" id="description" placeholder="Optional notes about this win">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Points</label>
+                                <input type="number" id="points" min="0" required>
+                            </div>
+
+                            <button type="submit" class="btn-primary">Add Win</button>
+                        </form>
+                    </div>
+
+                    <div class="wins-list">
+                        <h2 id="winsListHeader">Today's Wins</h2>
+                        <div id="winsList"></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-right">
+                    <h2>Personal Pillars</h2>
+                    <div class="pillar-chart-container">
+                        <canvas id="pillarsChart"></canvas>
+                    </div>
+                    <div id="overallGrowth">Overall Growth: 0 / 1000</div>
+                    <div class="pillar-scores-form">
+                        <div class="pillar-score-row">
+                            <label>Physical</label>
+                            <input type="number" id="score-physical" min="0" max="10" step="0.1" value="0">
+                            <span class="pillar-score-max">/ 10</span>
+                        </div>
+                        <div class="pillar-score-row">
+                            <label>Work</label>
+                            <input type="number" id="score-work" min="0" max="10" step="0.1" value="0">
+                            <span class="pillar-score-max">/ 10</span>
+                        </div>
+                        <div class="pillar-score-row">
+                            <label>Health</label>
+                            <input type="number" id="score-health" min="0" max="10" step="0.1" value="0">
+                            <span class="pillar-score-max">/ 10</span>
+                        </div>
+                        <div class="pillar-score-row">
+                            <label>Relationships</label>
+                            <input type="number" id="score-relationships" min="0" max="10" step="0.1" value="0">
+                            <span class="pillar-score-max">/ 10</span>
+                        </div>
+                        <div class="pillar-score-row">
+                            <label>Mindset &amp; Discipline</label>
+                            <input type="number" id="score-mindset" min="0" max="10" step="0.1" value="0">
+                            <span class="pillar-score-max">/ 10</span>
+                        </div>
+                        <button class="btn-primary" onclick="savePillarScores()">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="week-chart">
+                <h2>This Week</h2>
+                <canvas id="weekChart"></canvas>
+                <canvas id="pillarWeekChart" style="margin-top:28px;"></canvas>
+            </div>
+
+            <!-- Activity Management Section -->
+            <div class="activity-management">
+                <h2>Manage Activities</h2>
+                <p style="color: #8b92b0; margin-bottom: 20px;">Add, edit, or delete preset activities and their point values for each category.</p>
+
+                <div class="form-group">
+                    <label>Select Category</label>
+                    <select id="manageCategory">
+                        <option value="">Choose a category...</option>
+                        <option value="physical">Physical</option>
+                        <option value="work">Work</option>
+                        <option value="health">Health</option>
+                        <option value="relationships">Relationships</option>
+                        <option value="mindset">Mindset &amp; Discipline</option>
+                    </select>
+                </div>
+
+                <div id="activityManager" style="display: none;">
+                    <!-- Add New Activity Form -->
+                    <div class="add-activity-form">
+                        <h3>Add New Activity</h3>
+                        <form id="addActivityForm">
+                            <div class="form-row">
+                                <input type="text" id="newActivityName" placeholder="Activity name" required>
+                                <input type="number" id="newActivityPoints" placeholder="Points" min="0" required>
+                                <button type="submit" class="btn-primary">Add Activity</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Existing Activities List -->
+                    <div class="activities-list">
+                        <h3>Current Activities</h3>
+                        <div id="activitiesList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XP Log Section -->
+            <div class="collapsible-section xp-log-section">
+                <div class="section-header">
+                    <button class="collapse-btn collapsed" onclick="toggleSection('xp-log-list')">⟩</button>
+                    <h3>XP History</h3>
+                </div>
+                <div class="section-content collapsed" id="xp-log-list"></div>
+            </div>
+        </div>
+
+        <!-- Calendar Tab -->
+        <div class="tab-content" id="calendar">
+            <h2>Calendar</h2>
+            
+            <!-- Calendar Navigation -->
+            <div class="calendar-nav">
+                <button class="btn-calendar-nav" onclick="previousMonth()">⟨ Previous</button>
+                <h3 id="currentMonth"></h3>
+                <button class="btn-calendar-nav" onclick="nextMonth()">Next ⟩</button>
+                <button class="btn-primary" onclick="goToToday()">Today</button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="calendar-grid">
+                <div class="calendar-header">Mon</div>
+                <div class="calendar-header">Tue</div>
+                <div class="calendar-header">Wed</div>
+                <div class="calendar-header">Thu</div>
+                <div class="calendar-header">Fri</div>
+                <div class="calendar-header">Sat</div>
+                <div class="calendar-header">Sun</div>
+                <div id="calendarDays"></div>
+            </div>
+
+            <!-- Add Event Form -->
+            <div class="add-event-section">
+                <h3>Add Calendar Event</h3>
+                <form id="calendarEventForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Event Title *</label>
+                            <input type="text" id="eventTitle" required>
+                        </div>
+                        
+                        <div class="form-group" style="flex: 1;">
+                            <label>Date *</label>
+                            <input type="date" id="eventDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Start Time</label>
+                            <input type="time" id="eventStartTime">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>End Time</label>
+                            <input type="time" id="eventEndTime">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="eventCategory" required>
+                                <option value="uni">University</option>
+                                <option value="work">Work</option>
+                                <option value="hobbies">Hobbies</option>
+                                <option value="personal">Personal</option>
+                                <option value="health">Health</option>
+                                <option value="social">Social</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Importance *</label>
+                            <select id="eventImportance" required>
+                                <option value="normal">Normal</option>
+                                <option value="quite">Quite Important</option>
+                                <option value="very">Very Important</option>
+                                <option value="top">Top Priority</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="eventDescription" rows="3" placeholder="Additional details..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Add Event</button>
+                </form>
+            </div>
+
+            <!-- Events List for Selected Date -->
+            <div class="events-list-section">
+                <h3>Events on <span id="selectedDate">Today</span></h3>
+                <div id="dayEventsList"></div>
+            </div>
+        </div>
+
+        <!-- Reminders Tab (now Goals) -->
+        <!-- Goals Tab -->
+        <div class="tab-content" id="goals">
+            <h2>Goals</h2>
+
+            <!-- Daily Top 3 Goals -->
+            <div class="daily-goals-card" id="dailyGoalsCard">
+                <div class="daily-goals-header">
+                    <h3 id="dailyGoalsTitle">Today's Goals</h3>
+                    <span class="daily-streak" id="dailyStreak" style="display:none">🔥 <span id="dailyStreakCount">0</span> day streak</span>
+                </div>
+                <div class="daily-goal-row">
+                    <span class="goal-check-area" id="goalCheckArea1" onclick="toggleGoalComplete(1)">
+                        <img src="/static/img/icon-g.png" class="goal-done-icon" id="goalDoneIcon1" alt="">
+                    </span>
+                    <input type="text" class="goal-text-input" id="goalText1" placeholder="Goal 1...">
+                </div>
+                <div class="daily-goal-row">
+                    <span class="goal-check-area" id="goalCheckArea2" onclick="toggleGoalComplete(2)">
+                        <img src="/static/img/icon-g.png" class="goal-done-icon" id="goalDoneIcon2" alt="">
+                    </span>
+                    <input type="text" class="goal-text-input" id="goalText2" placeholder="Goal 2...">
+                </div>
+                <div class="daily-goal-row">
+                    <span class="goal-check-area" id="goalCheckArea3" onclick="toggleGoalComplete(3)">
+                        <img src="/static/img/icon-g.png" class="goal-done-icon" id="goalDoneIcon3" alt="">
+                    </span>
+                    <input type="text" class="goal-text-input" id="goalText3" placeholder="Goal 3...">
+                </div>
+                <button class="btn-teal" id="saveDailyGoalsBtn" onclick="saveDailyGoals()">Save Goals</button>
+            </div>
+
+            <!-- Weekly Goals -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('weekly-goals')">⟩</button>
+                    <h3>Weekly Goals</h3>
+                </div>
+                <div class="section-content" id="weekly-goals">
+                    <div class="add-task-section">
+                        <form id="weeklyGoalForm">
+                            <input type="text" class="task-input" placeholder="Add a weekly goal..." required>
+                            <input type="number" class="task-xp-input" placeholder="XP" min="0">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="weeklyGoalsList"></div>
+                </div>
+            </div>
+
+            <!-- Monthly Goals -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('monthly-goals')">⟩</button>
+                    <h3>Monthly Goals</h3>
+                </div>
+                <div class="section-content" id="monthly-goals">
+                    <div class="add-task-section">
+                        <form id="monthlyGoalForm">
+                            <input type="text" class="task-input" placeholder="Add a monthly goal..." required>
+                            <input type="number" class="task-xp-input" placeholder="XP" min="0">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="monthlyGoalsList"></div>
+                </div>
+            </div>
+
+            <!-- Yearly Goals -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('yearly-goals')">⟩</button>
+                    <h3>Yearly Goals</h3>
+                </div>
+                <div class="section-content" id="yearly-goals">
+                    <div class="add-task-section">
+                        <form id="yearlyGoalForm">
+                            <input type="text" class="task-input" placeholder="Add a yearly goal..." required>
+                            <input type="number" class="task-xp-input" placeholder="XP" min="0">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="yearlyGoalsList"></div>
+                </div>
+            </div>
+
+            <!-- Mastered Recipes -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('mastered-recipes')">⟩</button>
+                    <h3>Mastered Recipes</h3>
+                </div>
+                <div class="section-content" id="mastered-recipes">
+                    <form id="recipeForm" class="recipe-form">
+                        <input type="text" id="recipeName" class="task-input" placeholder="Dish name..." required>
+                        <div class="recipe-form-row">
+                            <input type="number" id="recipeProtein" class="task-xp-input" placeholder="Protein (g)" min="0">
+                            <input type="number" id="recipeCalories" class="task-xp-input" placeholder="Calories" min="0">
+                        </div>
+                        <textarea id="recipeDescription" class="recipe-description-input" placeholder="Ingredients &amp; how to make it..."></textarea>
+                        <button type="submit" class="btn-primary">Add Recipe</button>
+                    </form>
+                    <div id="recipesList"></div>
+                </div>
+            </div>
+
+            <!-- Lifelong Goals -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('lifelong-goals')">⟩</button>
+                    <h3>Lifelong Goals</h3>
+                </div>
+                <div class="section-content" id="lifelong-goals">
+                    <div class="add-task-section">
+                        <form id="lifelongGoalForm">
+                            <input type="text" class="task-input" placeholder="Add a lifelong goal..." required>
+                            <input type="number" class="task-xp-input" placeholder="XP" min="0">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="lifelongGoalsList"></div>
+                </div>
+            </div>
+
+            <!-- Goal Conditions -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('goal-conditions')">⟩</button>
+                    <h3>Goal Conditions</h3>
+                </div>
+                <div class="section-content" id="goal-conditions">
+                    <p class="conditions-hint">Select a goal to view and add conditions (sub-steps) for it.</p>
+                    <div class="conditions-select-row">
+                        <select id="conditionsGoalSelect" class="conditions-goal-select" onchange="loadConditions()">
+                            <option value="">— Select a goal —</option>
+                        </select>
+                    </div>
+                    <div id="conditionsPanel" style="display:none;">
+                        <form id="conditionAddForm" class="conditions-add-form">
+                            <input type="text" id="conditionText" class="task-input" placeholder="Add a condition..." required>
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                        <div id="conditionsList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reminders Tab -->
+        <div class="tab-content" id="reminders">
+            <h2 id="remindersHeading">Reminders</h2>
+            
+            <!-- Daily Reminders -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('daily-reminders')">⟩</button>
+                    <h3>Daily Reminders</h3>
+                </div>
+                <div class="section-content" id="daily-reminders">
+                    <div class="add-task-section">
+                        <form id="dailyReminderForm">
+                            <input type="text" class="task-input" placeholder="Add a daily reminder..." required style="flex: 2;">
+                            <input type="time" id="reminderTime" class="task-input" style="flex: 1;">
+                            <div class="urgency-toggle" id="dailyUrgencyToggle">
+                                <button type="button" class="urgency-btn urgency-low active" data-urgency="low">Low</button>
+                                <button type="button" class="urgency-btn urgency-high" data-urgency="high">High</button>
+                            </div>
+                            <input type="number" id="dailyNoticeHours" class="task-input notice-hours-input" placeholder="Hrs notice" min="1" max="720" style="display:none;flex:0 0 90px;">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="dailyRemindersList"></div>
+                </div>
+            </div>
+
+            <!-- One-Time Reminders -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('onetime-reminders')">⟩</button>
+                    <h3>One-Time Reminders</h3>
+                </div>
+                <div class="section-content" id="onetime-reminders">
+                    <div class="add-task-section">
+                        <form id="onetimeReminderForm">
+                            <input type="text" class="task-input" placeholder="Reminder text..." required style="flex: 2;">
+                            <input type="date" id="reminderDate" class="task-input" style="flex: 1;">
+                            <input type="time" id="reminderTimeOnce" class="task-input" style="flex: 1;">
+                            <div class="urgency-toggle" id="onetimeUrgencyToggle">
+                                <button type="button" class="urgency-btn urgency-low active" data-urgency="low">Low</button>
+                                <button type="button" class="urgency-btn urgency-high" data-urgency="high">High</button>
+                            </div>
+                            <input type="number" id="onetimeNoticeHours" class="task-input notice-hours-input" placeholder="Hrs notice" min="1" max="720" style="display:none;flex:0 0 90px;">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="onetimeRemindersList"></div>
+                </div>
+            </div>
+
+            <!-- Custom Recurring Reminders -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('recurring-reminders')">⟩</button>
+                    <h3>Recurring Reminders</h3>
+                </div>
+                <div class="section-content" id="recurring-reminders">
+                    <div class="add-task-section">
+                        <form id="recurringReminderForm">
+                            <input type="text" class="task-input" placeholder="Reminder text..." required style="flex: 2;">
+                            <select class="task-input" id="recurringType" style="flex: 1;">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                            <input type="time" id="reminderTimeRecurring" class="task-input" style="flex: 1;">
+                            <div class="urgency-toggle" id="recurringUrgencyToggle">
+                                <button type="button" class="urgency-btn urgency-low active" data-urgency="low">Low</button>
+                                <button type="button" class="urgency-btn urgency-high" data-urgency="high">High</button>
+                            </div>
+                            <input type="number" id="recurringNoticeHours" class="task-input notice-hours-input" placeholder="Hrs notice" min="1" max="720" style="display:none;flex:0 0 90px;">
+                            <button type="submit" class="btn-primary">Add</button>
+                        </form>
+                    </div>
+                    <div id="recurringRemindersList"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Finance Tab -->
+        <div class="tab-content" id="finance">
+            <h2>Finance Tracker</h2>
+            <div class="finance-total-summary">
+                <div class="finance-total-card">
+                    <h3>Total Balance</h3>
+                    <div class="amount" id="totalBalance">£0.00</div>
+                </div>
+                <div class="finance-mini-cards">
+                    <div class="finance-mini-card balance">
+                        <h3>Savings</h3>
+                        <div class="amount" id="balance">£0.00</div>
+                    </div>
+                    <div class="finance-mini-card crypto">
+                        <h3>Crypto</h3>
+                        <div class="amount" id="cryptoBalance">£0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="finance-columns">
+                <div class="add-finance-section">
+                    <form id="financeForm">
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select id="financeType" required>
+                                <option value="income">Income</option>
+                                <option value="expense">Expense</option>
+                                <option value="crypto_investment">Crypto Investment</option>
+                                <option value="crypto_withdrawal">Crypto Withdrawal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (£)</label>
+                            <input type="number" id="financeAmount" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="financeCategory">
+                                <option value="">— None —</option>
+                                <option value="Salary">Salary</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Investment">Investment</option>
+                                <option value="Food">Food</option>
+                                <option value="Rent">Rent</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Subscriptions">Subscriptions</option>
+                                <option value="Health">Health</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="financeDescription" placeholder="Optional">
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="financeDate" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Add Transaction</button>
+                    </form>
+                </div>
+
+                <div class="finance-col-chart">
+                    <h3>Balance Over Time</h3>
+                    <canvas id="balanceChart"></canvas>
+                    <div id="brokeMessage" class="broke-message" style="display:none">
+                        WORK WORK WORK! YOU'RE BROKE!
+                    </div>
+                </div>
+            </div>
+
+            <div class="finance-list">
+                <h3>Recent Transactions</h3>
+                <div id="financeList"></div>
+            </div>
+
+            <div class="finance-monthly-card">
+                <h3>Monthly Overview</h3>
+                <div style="position:relative;height:220px;">
+                    <canvas id="financeMonthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Tab -->
+        <div class="tab-content" id="health">
+            <h2>Health</h2>
+
+            <!-- Two-column health layout -->
+            <div class="health-main-grid">
+
+                <!-- LEFT: Body Metrics + Today's Log -->
+                <div class="health-left-col">
+                    <!-- Body Metrics & Goals -->
+                    <div class="health-metrics-card">
+                        <div class="health-section-header">
+                            <h3>Body Metrics &amp; Goals</h3>
+                            <button class="btn-teal" id="toggleMetricsFormBtn" onclick="toggleMetricsForm()">Edit</button>
+                        </div>
+                        <div class="health-targets-row" id="healthTargetsRow" style="display:none">
+                            <div class="health-target-box calories-box">
+                                <div class="health-target-label">Calories</div>
+                                <div class="health-target-value" id="targetCalories">—</div>
+                                <div class="health-target-unit">kcal/day</div>
+                            </div>
+                            <div class="health-target-box protein-box">
+                                <div class="health-target-label">Protein</div>
+                                <div class="health-target-value" id="targetProtein">—</div>
+                                <div class="health-target-unit">g/day</div>
+                            </div>
+                        </div>
+                        <form id="healthMetricsForm" class="health-metrics-form">
+                            <div class="calc-mode-row">
+                                <span class="calc-mode-label">Maintenance from</span>
+                                <div class="calc-mode-toggle" id="calorieModeToggle">
+                                    <button type="button" class="calc-mode-btn active" data-mode="average">Average activity</button>
+                                    <button type="button" class="calc-mode-btn" data-mode="activity_log">Activity log</button>
+                                </div>
+                            </div>
+                            <div class="health-form-grid">
+                                <div class="form-group">
+                                    <label>Weight (kg)</label>
+                                    <input type="number" id="hmWeight" step="0.1" min="1" placeholder="70" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Target Weight (kg)</label>
+                                    <input type="number" id="hmWeightTarget" step="0.1" min="1" placeholder="65">
+                                </div>
+                                <div class="form-group">
+                                    <label>Height (cm)</label>
+                                    <input type="number" id="hmHeight" step="0.1" min="1" placeholder="175" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Age</label>
+                                    <input type="number" id="hmAge" min="1" max="120" placeholder="25" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sex</label>
+                                    <select id="hmSex">
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Exercise Intensity</label>
+                                    <select id="hmIntensity">
+                                        <option value="sedentary">Sedentary</option>
+                                        <option value="lightly_active">Lightly Active</option>
+                                        <option value="moderately_active">Moderately Active</option>
+                                        <option value="very_active">Very Active</option>
+                                        <option value="athlete">Athlete</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Calorie Deficit (kcal/day)</label>
+                                    <input type="number" id="hmDeficit" min="0" max="2000" step="50" placeholder="0">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-teal">Calculate &amp; Save</button>
+                        </form>
+                    </div>
+
+                    <!-- Today's Food Log -->
+                    <div class="health-date-bar">
+                        <h3 id="healthDateLabel">Today's Log</h3>
+                        <input type="date" id="healthDate">
+                    </div>
+
+                    <!-- Recent foods quick-add -->
+                    <div class="recent-foods-bar" id="recentFoodsBar" style="display:none">
+                        <span class="recent-foods-label">Recent:</span>
+                        <div class="recent-foods-chips" id="recentFoodsChips"></div>
+                    </div>
+
+                    <div class="meals-pair-row">
+                        <div class="health-meal-section">
+                            <h4 class="health-meal-title">Breakfast</h4>
+                            <div class="health-add-food-form">
+                                <input type="text" class="food-name-input" id="foodNameBreakfast" placeholder="Food name...">
+                                <div class="food-macros-row">
+                                    <input type="number" class="food-macro-input" id="foodCalBreakfast" placeholder="kcal" min="0">
+                                    <input type="number" class="food-macro-input" id="foodProtBreakfast" placeholder="P(g)" min="0" step="0.1">
+                                </div>
+                                <button class="btn-teal btn-sm" onclick="addFoodEntry('breakfast')">Add</button>
+                            </div>
+                            <div class="health-food-list" id="listBreakfast"></div>
+                        </div>
+
+                        <div class="health-meal-section">
+                            <h4 class="health-meal-title">Lunch</h4>
+                            <div class="health-add-food-form">
+                                <input type="text" class="food-name-input" id="foodNameLunch" placeholder="Food name...">
+                                <div class="food-macros-row">
+                                    <input type="number" class="food-macro-input" id="foodCalLunch" placeholder="kcal" min="0">
+                                    <input type="number" class="food-macro-input" id="foodProtLunch" placeholder="P(g)" min="0" step="0.1">
+                                </div>
+                                <button class="btn-teal btn-sm" onclick="addFoodEntry('lunch')">Add</button>
+                            </div>
+                            <div class="health-food-list" id="listLunch"></div>
+                        </div>
+                    </div>
+
+                    <div class="meals-pair-row">
+                        <div class="health-meal-section">
+                            <h4 class="health-meal-title">Dinner</h4>
+                            <div class="health-add-food-form">
+                                <input type="text" class="food-name-input" id="foodNameDinner" placeholder="Food name...">
+                                <div class="food-macros-row">
+                                    <input type="number" class="food-macro-input" id="foodCalDinner" placeholder="kcal" min="0">
+                                    <input type="number" class="food-macro-input" id="foodProtDinner" placeholder="P(g)" min="0" step="0.1">
+                                </div>
+                                <button class="btn-teal btn-sm" onclick="addFoodEntry('dinner')">Add</button>
+                            </div>
+                            <div class="health-food-list" id="listDinner"></div>
+                        </div>
+
+                        <div class="health-meal-section">
+                            <h4 class="health-meal-title">Snacks</h4>
+                            <div class="health-add-food-form">
+                                <input type="text" class="food-name-input" id="foodNameSnacks" placeholder="Food name...">
+                                <div class="food-macros-row">
+                                    <input type="number" class="food-macro-input" id="foodCalSnacks" placeholder="kcal" min="0">
+                                    <input type="number" class="food-macro-input" id="foodProtSnacks" placeholder="P(g)" min="0" step="0.1">
+                                </div>
+                                <button class="btn-teal btn-sm" onclick="addFoodEntry('snacks')">Add</button>
+                            </div>
+                            <div class="health-food-list" id="listSnacks"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Daily Summary + Daily Weight -->
+                <div class="health-right-col">
+                    <div class="health-summary-right">
+                        <h3>Daily Summary</h3>
+                        <div class="health-summary-block">
+                            <div class="health-summary-label">Calories <span id="summaryCalConsumed">0</span> / <span id="summaryCalTarget">—</span> kcal</div>
+                            <div class="calories-bar-wrap">
+                                <div class="calories-bar-fill" id="caloriesBarFill" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="health-summary-block">
+                            <div class="health-summary-label">Macros</div>
+                            <div class="health-macro-chart-wrap">
+                                <canvas id="macroChart"></canvas>
+                            </div>
+                            <div class="health-macro-legend">
+                                <span class="macro-legend-item protein-legend">Protein: <b id="summaryProtein">0</b>g</span>
+                                <span class="macro-legend-item calories-legend">Calories: <b id="summaryCalTotal">0</b> kcal</span>
+                            </div>
+                        </div>
+                        <div class="health-summary-block">
+                            <div class="health-summary-label">Water Intake</div>
+                            <div class="water-tracker" id="waterTracker"></div>
+                            <div class="water-count-label"><span id="waterCount">0</span> / 8 glasses</div>
+                        </div>
+                        <div class="health-summary-block">
+                            <div class="health-summary-label">Today's Weight</div>
+                            <div id="summaryWeight" style="font-size:1.4rem;font-weight:700;color:var(--color-primary)">—</div>
+                        </div>
+                    </div>
+
+                    <div class="weight-checkin-card">
+                        <h3>Daily Weight</h3>
+                        <div class="weight-form-row">
+                            <input type="date" id="weightDate">
+                            <input type="number" id="weightKg" step="0.1" min="1" placeholder="kg">
+                            <button class="btn-teal" onclick="saveWeightEntry()">Log</button>
+                        </div>
+                        <div class="chart-with-avg">
+                            <div class="weight-chart-container">
+                                <canvas id="weightChart"></canvas>
+                            </div>
+                            <div class="avg-block weight-avg-block">
+                                <div class="avg-label">Average weight</div>
+                                <div class="weight-avg-display" id="weightAvgDisplay">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="weight-checkin-card">
+                        <h3>Nutrition This Week</h3>
+                        <div class="chart-with-avg">
+                            <div class="weight-chart-container">
+                                <canvas id="nutritionWeekChart"></canvas>
+                            </div>
+                            <div class="nutrition-avg-group">
+                                <div class="avg-block">
+                                    <div class="avg-label avg-label-cal">Average calories</div>
+                                    <div class="nutrition-avg-cal" id="nutritionAvgCal">—</div>
+                                </div>
+                                <div class="avg-block">
+                                    <div class="avg-label avg-label-prot">Average protein</div>
+                                    <div class="nutrition-avg-prot" id="nutritionAvgProt">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Activity Log -->
+            <div class="health-activity-card">
+                <h3>Activity Log</h3>
+                <form id="activityLogForm" class="health-activity-form">
+                    <div class="health-form-grid">
+                        <div class="form-group">
+                            <label>Activity</label>
+                            <select id="activityType">
+                                <option value="running">Running</option>
+                                <option value="cycling">Cycling</option>
+                                <option value="swimming">Swimming</option>
+                                <option value="walking">Walking</option>
+                                <option value="weightlifting">Weightlifting</option>
+                                <option value="yoga">Yoga</option>
+                                <option value="football">Football</option>
+                                <option value="basketball">Basketball</option>
+                                <option value="tennis">Tennis</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (mins)</label>
+                            <input type="number" id="activityDuration" min="1" placeholder="30" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Intensity</label>
+                            <select id="activityIntensity">
+                                <option value="light">Light</option>
+                                <option value="moderate" selected>Moderate</option>
+                                <option value="intense">Intense</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-teal">Log Activity</button>
+                </form>
+
+                <div class="health-activity-list" id="activityList"></div>
+
+                <div class="net-calories-box" id="activityBurnedBox">
+                    <span class="net-cal-label">Total calories burned from activity</span>
+                    <span class="net-cal-value" id="activityBurnedValue">0 kcal</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yume Tab -->
+        <div class="tab-content" id="yume">
+            <h2>夢 — Dreams &amp; Vision</h2>
+
+            <div class="yume-add-category-row">
+                <form id="yumeCategoryForm" class="yume-category-form">
+                    <input type="text" id="yumeCategoryName" class="task-input" placeholder="New category (e.g. Travel, Career)..." required>
+                    <button type="submit" class="btn-primary">Add Category</button>
+                </form>
+            </div>
+
+            <div id="yumeCategoriesList"></div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
