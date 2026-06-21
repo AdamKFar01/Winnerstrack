@@ -2058,9 +2058,14 @@ async function loadRemindersByType(type, listId, recurring = false) {
             const typeLabel = reminder.recurring ? reminder.reminder_type + ' ' : '';
             const bellSrc = getThemeBell(reminder.urgency || 'low');
 
+            // Daily reminders recur every day, so they don't get a tick box.
+            const checkboxHtml = listId === 'dailyRemindersList'
+                ? ''
+                : `<input type="checkbox" ${!reminder.active ? 'checked' : ''}
+                       onchange="toggleReminder(${reminder.id}, this.checked)">`;
+
             reminderItem.innerHTML = `
-                <input type="checkbox" ${!reminder.active ? 'checked' : ''}
-                       onchange="toggleReminder(${reminder.id}, this.checked)">
+                ${checkboxHtml}
                 <img src="${bellSrc}" class="reminder-bell-icon" data-urgency="${reminder.urgency || 'low'}" alt="">
                 <div class="task-item-text">${typeLabel}${reminder.reminder}${timeStr}${dateStr}</div>
                 <button class="task-item-delete" onclick="deleteReminder(${reminder.id})">Delete</button>
