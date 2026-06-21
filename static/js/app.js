@@ -2828,7 +2828,7 @@ async function loadWeightLog() {
         const ctx = document.getElementById('weightChart').getContext('2d');
         weightChartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: data.map(d => d.date), datasets },
+            data: { labels: data.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}/${y}`; }), datasets },
             options: {
                 responsive: true,
                 layout: { padding: { bottom: 22 } },
