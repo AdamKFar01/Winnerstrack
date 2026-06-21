@@ -2124,6 +2124,16 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
 .net-calories-box.net-over  .net-cal-value { color: #ef4444; }
 .net-calories-box.net-under .net-cal-value { color: var(--color-accent); }
 
+/* "Total calories burned from activity" — match the WinnersTrack title color per theme */
+#activityBurnedValue {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-primary));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: xp-sweep 3s ease infinite;
+}
+
 /* ── Health light-mode ──────────────────────────────────────── */
 html.light-mode .health-metrics-card,
 html.light-mode .health-activity-card {
