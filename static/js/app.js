@@ -2837,8 +2837,17 @@ async function loadWeightLog() {
                     averageRange: { startIndex, endIndex, color: rangeColor }
                 },
                 scales: {
-                    y: { beginAtZero: false, grid: { color: gridColor }, ticks: { color: tickColor } },
-                    x: { grid: { color: gridColor }, ticks: { color: tickColor } }
+                    y: {
+                        beginAtZero: false,
+                        grid: { color: gridColor },
+                        ticks: { color: tickColor },
+                        title: { display: true, text: 'Weight (kg)', color: tickColor }
+                    },
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { color: tickColor },
+                        title: { display: true, text: 'Date', color: tickColor }
+                    }
                 }
             }
         });
