@@ -814,7 +814,7 @@
                         <h3>Daily Weight</h3>
                         <div class="weight-form-row">
                             <input type="date" id="weightDate">
-                            <input type="number" id="weightKg" step="0.1" min="1" placeholder="kg">
+                            <input type="number" id="weightKg" step="0.1" min="1" placeholder="Today's weight (kg)">
                             <button class="btn-teal" onclick="saveWeightEntry()">Log</button>
                         </div>
                         <div class="chart-with-avg">
@@ -829,7 +829,7 @@
                     </div>
 
                     <div class="weight-checkin-card">
-                        <h3>Nutrition This Week</h3>
+                        <h3 class="nutrition-week-title">Nutrition This Week</h3>
                         <div class="chart-with-avg">
                             <div class="weight-chart-container">
                                 <canvas id="nutritionWeekChart"></canvas>
