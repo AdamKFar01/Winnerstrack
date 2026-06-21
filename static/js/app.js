@@ -2768,21 +2768,27 @@ async function loadWeightLog() {
         if (summaryWeight) summaryWeight.textContent = todayEntry ? todayEntry.weight_kg + ' kg' : '—';
 
         const todayDate = new Date(today + 'T00:00:00');
-        const windowStart = new Date(todayDate); windowStart.setDate(windowStart.getDate() - 7);
-        const windowEnd   = new Date(todayDate); windowEnd.setDate(windowEnd.getDate() - 1);
+        // Last week's window: from (yesterday - 7 days) through yesterday (today excluded)
+        const msFor = ds => new Date(ds + 'T00:00:00').getTime();
+        const startBound = new Date(todayDate); startBound.setDate(startBound.getDate() - 8);
+        const endBound   = new Date(todayDate); endBound.setDate(endBound.getDate() - 1);
+
+        // Only the weights actually logged in that window
         const windowEntries = data
             .map((d, i) => ({ d, i }))
             .filter(x => {
-                const dt = new Date(x.d.date + 'T00:00:00');
-                return dt >= windowStart && dt <= windowEnd;
+                const t = msFor(x.d.date);
+                return t >= startBound.getTime() && t <= endBound.getTime();
             });
         const avgWeight = windowEntries.length
             ? windowEntries.reduce((s, x) => s + (x.d.weight_kg || 0), 0) / windowEntries.length
             : 0;
         const avgEl = document.getElementById('weightAvgDisplay');
         if (avgEl) avgEl.textContent = windowEntries.length ? `${avgWeight.toFixed(1)} kg` : '—';
-        const startIndex = windowEntries.length ? windowEntries[0].i                          : null;
-        const endIndex   = windowEntries.length ? windowEntries[windowEntries.length - 1].i   : null;
+
+        // Interval line spans the first and last logged weights within the window
+        const startIndex = windowEntries.length ? windowEntries[0].i                        : null;
+        const endIndex   = windowEntries.length ? windowEntries[windowEntries.length - 1].i : null;
 
         if (weightChartInstance) { weightChartInstance.destroy(); weightChartInstance = null; }
         if (data.length === 0) return;
@@ -2790,10 +2796,11 @@ async function loadWeightLog() {
         const isLight = document.documentElement.classList.contains('light-mode');
         const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)';
         const tickColor = isLight ? '#6b7280' : '#8b92b0';
-        const rangeColor = isLight ? 'rgba(0,0,0,0.35)' : 'rgba(52,211,153,0.55)';
 
         const pRgb = cssVar('--color-primary-rgb');
         const pColor = cssVar('--color-primary');
+        // Interval line matches the weight plot's color
+        const rangeColor = pColor;
 
         const weightTarget = healthMetricsCache.weight_target || 0;
         const datasets = [{
