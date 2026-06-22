@@ -2203,6 +2203,11 @@ const MET_VALUES = {
     other:         { light: 4,   moderate: 6,   intense: 8   }
 };
 
+// Activities with a fixed calorie burn rate (calories per minute), independent of weight/intensity
+const CAL_PER_MIN = {
+    stairmaster: 10   // 10 min → 100 calories
+};
+
 const ACTIVITY_MULTIPLIERS = {
     sedentary:          1.2,
     lightly_active:     1.375,
@@ -2711,16 +2716,43 @@ async function loadActivityLog(dateStr) {
     }
 }
 
+// Show custom name / calories inputs when "Other" is selected
+document.getElementById('activityType').addEventListener('change', (e) => {
+    const isOther = e.target.value === 'other';
+    const nameInput = document.getElementById('activityTypeOther');
+    const calInput  = document.getElementById('activityCaloriesOther');
+    nameInput.classList.toggle('visible', isOther);
+    calInput.classList.toggle('visible', isOther);
+    nameInput.required = isOther;
+    if (!isOther) { nameInput.value = ''; calInput.value = ''; }
+});
+
 document.getElementById('activityLogForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const type      = document.getElementById('activityType').value;
+    let type        = document.getElementById('activityType').value;
     const duration  = parseInt(document.getElementById('activityDuration').value) || 0;
     const intensity = document.getElementById('activityIntensity').value;
     const date      = document.getElementById('healthDate').value;
     const weight    = healthMetricsCache.weight_kg || 70;
 
-    const met            = (MET_VALUES[type] || MET_VALUES.other)[intensity];
-    const calories_burned = Math.round(met * weight * (duration / 60));
+    let customCalories = null;
+    if (type === 'other') {
+        const customName = document.getElementById('activityTypeOther').value.trim();
+        if (!customName) return;
+        type = customName;
+        const calVal = parseInt(document.getElementById('activityCaloriesOther').value);
+        if (!isNaN(calVal)) customCalories = calVal;
+    }
+
+    let calories_burned;
+    if (customCalories != null) {
+        calories_burned = customCalories;
+    } else if (CAL_PER_MIN[type] != null) {
+        calories_burned = Math.round(CAL_PER_MIN[type] * duration);
+    } else {
+        const met = (MET_VALUES[type] || MET_VALUES.other)[intensity];
+        calories_burned = Math.round(met * weight * (duration / 60));
+    }
 
     try {
         await fetch('/api/activity-log', {
@@ -2728,7 +2760,8 @@ document.getElementById('activityLogForm').addEventListener('submit', async (e) 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, activity_type: type, duration_mins: duration, intensity, calories_burned })
         });
-        document.getElementById('activityDuration').value = '';
+        document.getElementById('activityLogForm').reset();
+        document.getElementById('activityType').dispatchEvent(new Event('change'));
         loadActivityLog(date);
     } catch (err) {
         console.error('Error logging activity:', err);
