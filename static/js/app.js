@@ -2208,6 +2208,39 @@ const CAL_PER_MIN = {
     stairmaster: 10   // 10 min → 100 calories
 };
 
+// User-defined custom activities (name -> calories per minute), persisted in localStorage,
+// so a saved activity auto-scales its calories to whatever duration is entered next time.
+function loadCustomActivities() {
+    try { return JSON.parse(localStorage.getItem('customActivities') || '{}'); }
+    catch { return {}; }
+}
+function saveCustomActivity(name, calPerMin) {
+    const all = loadCustomActivities();
+    all[name] = calPerMin;
+    localStorage.setItem('customActivities', JSON.stringify(all));
+}
+// Per-minute rate for an activity, from built-in or saved custom rates (null if none)
+function calPerMinFor(type) {
+    if (CAL_PER_MIN[type] != null) return CAL_PER_MIN[type];
+    const custom = loadCustomActivities();
+    return custom[type] != null ? custom[type] : null;
+}
+// Inject saved custom activities as selectable options before the "Other…" entry
+function renderCustomActivityOptions() {
+    const select = document.getElementById('activityType');
+    if (!select) return;
+    select.querySelectorAll('option[data-custom="1"]').forEach(o => o.remove());
+    const otherOpt = select.querySelector('option[value="other"]');
+    const custom = loadCustomActivities();
+    Object.keys(custom).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name.charAt(0).toUpperCase() + name.slice(1);
+        opt.dataset.custom = '1';
+        select.insertBefore(opt, otherOpt);
+    });
+}
+
 const ACTIVITY_MULTIPLIERS = {
     sedentary:          1.2,
     lightly_active:     1.375,
@@ -2735,20 +2768,22 @@ document.getElementById('activityLogForm').addEventListener('submit', async (e) 
     const date      = document.getElementById('healthDate').value;
     const weight    = healthMetricsCache.weight_kg || 70;
 
-    let customCalories = null;
     if (type === 'other') {
         const customName = document.getElementById('activityTypeOther').value.trim();
         if (!customName) return;
         type = customName;
-        const calVal = parseInt(document.getElementById('activityCaloriesOther').value);
-        if (!isNaN(calVal)) customCalories = calVal;
+        const rateVal = parseFloat(document.getElementById('activityCaloriesOther').value);
+        // A per-minute rate makes the activity reusable: save it so future logs auto-scale.
+        if (!isNaN(rateVal) && rateVal > 0) {
+            saveCustomActivity(customName, rateVal);
+            renderCustomActivityOptions();
+        }
     }
 
     let calories_burned;
-    if (customCalories != null) {
-        calories_burned = customCalories;
-    } else if (CAL_PER_MIN[type] != null) {
-        calories_burned = Math.round(CAL_PER_MIN[type] * duration);
+    const rate = calPerMinFor(type);
+    if (rate != null) {
+        calories_burned = Math.round(rate * duration);
     } else {
         const met = (MET_VALUES[type] || MET_VALUES.other)[intensity];
         calories_burned = Math.round(met * weight * (duration / 60));
@@ -2983,6 +3018,7 @@ async function initializeApp() {
     document.getElementById('healthDate').value = getLocalDateString();
     await loadHealthMetrics();
     loadFoodLog(getLocalDateString());
+    renderCustomActivityOptions();
     loadActivityLog(getLocalDateString());
     loadWater(getLocalDateString());
     loadNutritionWeekChart();
