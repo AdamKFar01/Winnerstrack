@@ -2208,6 +2208,14 @@ const CAL_PER_MIN = {
     stairmaster: 10   // 10 min → 100 calories
 };
 
+// Built-in activities available in the dropdown (value order = display order)
+const BUILTIN_ACTIVITIES = [
+    'running', 'cycling', 'swimming', 'walking', 'weightlifting',
+    'yoga', 'football', 'basketball', 'tennis', 'stairmaster'
+];
+
+const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+
 // User-defined custom activities (name -> calories per minute), persisted in localStorage,
 // so a saved activity auto-scales its calories to whatever duration is entered next time.
 function loadCustomActivities() {
@@ -2219,25 +2227,104 @@ function saveCustomActivity(name, calPerMin) {
     all[name] = calPerMin;
     localStorage.setItem('customActivities', JSON.stringify(all));
 }
+// Built-in activities the user has deleted from the dropdown
+function loadHiddenActivities() {
+    try { return JSON.parse(localStorage.getItem('hiddenActivities') || '[]'); }
+    catch { return []; }
+}
 // Per-minute rate for an activity, from built-in or saved custom rates (null if none)
 function calPerMinFor(type) {
     if (CAL_PER_MIN[type] != null) return CAL_PER_MIN[type];
     const custom = loadCustomActivities();
     return custom[type] != null ? custom[type] : null;
 }
-// Inject saved custom activities as selectable options before the "Other…" entry
-function renderCustomActivityOptions() {
+// The activities currently shown in the dropdown (built-in + custom, minus deleted)
+function listActivities() {
+    const hidden = loadHiddenActivities();
+    const custom = loadCustomActivities();
+    return [
+        ...BUILTIN_ACTIVITIES.filter(a => !hidden.includes(a)),
+        ...Object.keys(custom).filter(a => !hidden.includes(a))
+    ];
+}
+// Rebuild the activity dropdown from the current activity list
+function renderActivityOptions() {
     const select = document.getElementById('activityType');
     if (!select) return;
-    select.querySelectorAll('option[data-custom="1"]').forEach(o => o.remove());
-    const otherOpt = select.querySelector('option[value="other"]');
-    const custom = loadCustomActivities();
-    Object.keys(custom).forEach(name => {
+    const current = select.value;
+    select.innerHTML = '';
+    listActivities().forEach(value => {
         const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name.charAt(0).toUpperCase() + name.slice(1);
-        opt.dataset.custom = '1';
-        select.insertBefore(opt, otherOpt);
+        opt.value = value;
+        opt.textContent = capitalize(value);
+        select.appendChild(opt);
+    });
+    const otherOpt = document.createElement('option');
+    otherOpt.value = 'other';
+    otherOpt.textContent = 'Other…';
+    select.appendChild(otherOpt);
+    if ([...select.options].some(o => o.value === current)) select.value = current;
+}
+// Delete an activity from the dropdown: drop a custom one entirely, or hide a built-in
+function deleteActivityOption(value) {
+    const custom = loadCustomActivities();
+    if (custom[value] != null) {
+        delete custom[value];
+        localStorage.setItem('customActivities', JSON.stringify(custom));
+    } else {
+        const hidden = loadHiddenActivities();
+        if (!hidden.includes(value)) {
+            hidden.push(value);
+            localStorage.setItem('hiddenActivities', JSON.stringify(hidden));
+        }
+    }
+    renderActivityOptions();
+    renderEditActivitiesList();
+}
+// Render the "Edit activities" panel: each current activity with a delete button
+function renderEditActivitiesList() {
+    const listEl = document.getElementById('activityEditList');
+    if (!listEl) return;
+    const items = listActivities();
+    listEl.innerHTML = '';
+    if (items.length === 0) {
+        listEl.innerHTML = '<p class="activity-edit-empty">No activities.</p>';
+        return;
+    }
+    items.forEach(value => {
+        const row = document.createElement('div');
+        row.className = 'activity-edit-item';
+        const name = document.createElement('span');
+        name.textContent = capitalize(value);
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'activity-edit-del';
+        del.textContent = '✕';
+        del.addEventListener('click', () => deleteActivityOption(value));
+        row.appendChild(name);
+        row.appendChild(del);
+        listEl.appendChild(row);
+    });
+}
+// Wire up the three-dots menu and the edit panel
+function setupActivityMenu() {
+    const menuBtn = document.getElementById('activityMenuBtn');
+    const menu    = document.getElementById('activityMenu');
+    const editBtn = document.getElementById('editActivitiesBtn');
+    const panel   = document.getElementById('activityEditPanel');
+    if (!menuBtn || !menu || !editBtn || !panel) return;
+
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('open');
+    });
+    editBtn.addEventListener('click', () => {
+        menu.classList.remove('open');
+        panel.classList.toggle('open');
+        if (panel.classList.contains('open')) renderEditActivitiesList();
+    });
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== menuBtn) menu.classList.remove('open');
     });
 }
 
@@ -2776,7 +2863,7 @@ document.getElementById('activityLogForm').addEventListener('submit', async (e) 
         // A per-minute rate makes the activity reusable: save it so future logs auto-scale.
         if (!isNaN(rateVal) && rateVal > 0) {
             saveCustomActivity(customName, rateVal);
-            renderCustomActivityOptions();
+            renderActivityOptions();
         }
     }
 
@@ -2836,10 +2923,10 @@ async function loadWeightLog() {
         if (summaryWeight) summaryWeight.textContent = todayEntry ? todayEntry.weight_kg + ' kg' : '—';
 
         const todayDate = new Date(today + 'T00:00:00');
-        // Last week's window: from (yesterday - 7 days) through yesterday (today excluded)
+        // Past 7 days, including today: from (today - 7 days) through today
         const msFor = ds => new Date(ds + 'T00:00:00').getTime();
-        const startBound = new Date(todayDate); startBound.setDate(startBound.getDate() - 8);
-        const endBound   = new Date(todayDate); endBound.setDate(endBound.getDate() - 1);
+        const startBound = new Date(todayDate); startBound.setDate(startBound.getDate() - 7);
+        const endBound   = new Date(todayDate);
 
         // Only the weights actually logged in that window
         const windowEntries = data
@@ -3018,7 +3105,8 @@ async function initializeApp() {
     document.getElementById('healthDate').value = getLocalDateString();
     await loadHealthMetrics();
     loadFoodLog(getLocalDateString());
-    renderCustomActivityOptions();
+    renderActivityOptions();
+    setupActivityMenu();
     loadActivityLog(getLocalDateString());
     loadWater(getLocalDateString());
     loadNutritionWeekChart();
