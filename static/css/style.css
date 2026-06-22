@@ -1758,6 +1758,99 @@ html.light-mode .dashboard-right {
     border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.15);
 }
 
+/* Activity Log header with three-dots menu */
+.activity-log-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.15);
+}
+.activity-log-header h3 {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: none;
+}
+.activity-menu-wrap { position: relative; }
+.activity-menu-btn {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-size: 1.3em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.activity-menu-btn:hover { background: rgba(var(--color-primary-rgb), 0.12); }
+.activity-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 4px;
+    background: #0f1724;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    z-index: 20;
+    overflow: hidden;
+}
+.activity-menu.open { display: block; }
+.activity-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: #e5e7eb;
+    padding: 10px 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.activity-menu button:hover { background: rgba(var(--color-primary-rgb), 0.15); }
+
+.activity-edit-panel {
+    display: none;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: 10px;
+    background: rgba(var(--color-primary-rgb), 0.04);
+}
+.activity-edit-panel.open { display: block; }
+.activity-edit-title {
+    font-size: 0.78em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8b92b0;
+    margin-bottom: 10px;
+}
+.activity-edit-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.activity-edit-item:last-child { border-bottom: none; }
+.activity-edit-del {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.95em;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+.activity-edit-del:hover { background: rgba(239, 68, 68, 0.15); }
+.activity-edit-empty { color: #8b92b0; text-align: center; padding: 8px; }
+
+html.light-mode .activity-menu { background: #ffffff; border-color: rgba(0, 0, 0, 0.12); }
+html.light-mode .activity-menu button { color: #1f2937; }
+
 /* Targets row */
 .health-targets-row {
     display: flex;
@@ -2505,6 +2598,11 @@ html.light-mode .xp-entry-reason { color: #374151; }
     letter-spacing: 0.07em;
 }
 
+/* Nutrition This Week title — light green, matching the average protein color */
+.weight-checkin-card h3.nutrition-week-title {
+    color: #34d399;
+}
+
 .chart-with-avg {
     display: flex;
     align-items: center;
@@ -2516,11 +2614,60 @@ html.light-mode .xp-entry-reason { color: #374151; }
     min-width: 0;
 }
 
+.weight-chart-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.weight-chart-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.weight-range-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.weight-range-buttons button {
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    color: #8b92b0;
+    font-size: 0.72em;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+}
+
+.weight-range-buttons button:hover { background: rgba(var(--color-primary-rgb), 0.16); }
+
+.weight-range-buttons button.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+.weight-change {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: #8b92b0;
+    white-space: nowrap;
+}
+
+.weight-change.change-up   { color: #ef4444; }  /* weight gain */
+.weight-change.change-down { color: #34d399; }  /* weight loss */
+
 .weight-avg-display {
     flex: 0 0 auto;
     font-size: 1.4rem;
     font-weight: 700;
-    color: #34d399;
+    /* Match the weight plot's line color */
+    color: var(--color-primary);
     line-height: 1.1;
     white-space: nowrap;
 }

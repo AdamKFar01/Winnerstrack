@@ -2910,11 +2910,15 @@ document.getElementById('healthDate').addEventListener('change', (e) => {
 // ── Weight Log ─────────────────────────────────────────────────
 
 let weightChartInstance = null;
+let weightLogData = [];
+let weightChartRange = '2W';   // default range on load
+const WEIGHT_RANGE_DAYS = { '1W': 7, '2W': 14, '1M': 30, '5M': 150, '1Y': 365 };
 
 async function loadWeightLog() {
     try {
         const res = await fetch('/api/weight-log');
-        const data = await res.json();
+        weightLogData = await res.json();
+        const data = weightLogData;
 
         // Update today's weight in Daily Summary
         const today = getLocalDateString();
@@ -2922,93 +2926,145 @@ async function loadWeightLog() {
         const summaryWeight = document.getElementById('summaryWeight');
         if (summaryWeight) summaryWeight.textContent = todayEntry ? todayEntry.weight_kg + ' kg' : '—';
 
+        // ── Average weight (UNCHANGED): past 7 days including today ──
         const todayDate = new Date(today + 'T00:00:00');
-        // Past 7 days, including today: from (today - 7 days) through today
         const msFor = ds => new Date(ds + 'T00:00:00').getTime();
         const startBound = new Date(todayDate); startBound.setDate(startBound.getDate() - 7);
         const endBound   = new Date(todayDate);
-
-        // Only the weights actually logged in that window
-        const windowEntries = data
-            .map((d, i) => ({ d, i }))
-            .filter(x => {
-                const t = msFor(x.d.date);
-                return t >= startBound.getTime() && t <= endBound.getTime();
-            });
+        const windowEntries = data.filter(d => {
+            const t = msFor(d.date);
+            return t >= startBound.getTime() && t <= endBound.getTime();
+        });
         const avgWeight = windowEntries.length
-            ? windowEntries.reduce((s, x) => s + (x.d.weight_kg || 0), 0) / windowEntries.length
+            ? windowEntries.reduce((s, d) => s + (d.weight_kg || 0), 0) / windowEntries.length
             : 0;
         const avgEl = document.getElementById('weightAvgDisplay');
         if (avgEl) avgEl.textContent = windowEntries.length ? `${avgWeight.toFixed(1)} kg` : '—';
 
-        // Interval line spans the first and last logged weights within the window
-        const startIndex = windowEntries.length ? windowEntries[0].i                        : null;
-        const endIndex   = windowEntries.length ? windowEntries[windowEntries.length - 1].i : null;
-
-        if (weightChartInstance) { weightChartInstance.destroy(); weightChartInstance = null; }
-        if (data.length === 0) return;
-
-        const isLight = document.documentElement.classList.contains('light-mode');
-        const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)';
-        const tickColor = isLight ? '#6b7280' : '#8b92b0';
-
-        const pRgb = cssVar('--color-primary-rgb');
-        const pColor = cssVar('--color-primary');
-        // Interval line matches the weight plot's color
-        const rangeColor = pColor;
-
-        const weightTarget = healthMetricsCache.weight_target || 0;
-        const datasets = [{
-            label: 'Weight (kg)',
-            data: data.map(d => d.weight_kg),
-            borderColor: pColor,
-            backgroundColor: `rgba(${pRgb}, 0.1)`,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: pColor,
-            fill: true
-        }];
-        if (weightTarget > 0) {
-            datasets.push({
-                label: `Target (${weightTarget} kg)`,
-                data: data.map(() => weightTarget),
-                borderColor: '#34d399',
-                borderDash: [6, 4],
-                borderWidth: 1.5,
-                pointRadius: 0,
-                fill: false
-            });
-        }
-
-        const ctx = document.getElementById('weightChart').getContext('2d');
-        weightChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { labels: data.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}/${y}`; }), datasets },
-            options: {
-                responsive: true,
-                layout: { padding: { bottom: 22 } },
-                plugins: {
-                    legend: { display: weightTarget > 0, labels: { color: tickColor, boxWidth: 12 } },
-                    averageRange: { startIndex, endIndex, color: rangeColor }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        grid: { color: gridColor },
-                        ticks: { color: tickColor },
-                        title: { display: true, text: 'Weight (kg)', color: tickColor }
-                    },
-                    x: {
-                        grid: { color: gridColor },
-                        ticks: { color: tickColor },
-                        title: { display: true, text: 'Date', color: tickColor }
-                    }
-                }
-            }
-        });
+        renderWeightChart();
     } catch (e) {
         console.error('Error loading weight log:', e);
     }
+}
+
+// Draw the weight chart filtered to the selected time range, crypto-chart style.
+function renderWeightChart() {
+    const canvas = document.getElementById('weightChart');
+    if (!canvas) return;
+    const data = weightLogData;
+
+    const today = getLocalDateString();
+    const todayDate = new Date(today + 'T00:00:00');
+    const msFor = ds => new Date(ds + 'T00:00:00').getTime();
+
+    // Filter to the selected range, up to today
+    const rangeDays = WEIGHT_RANGE_DAYS[weightChartRange] || 14;
+    const rangeStart = new Date(todayDate); rangeStart.setDate(rangeStart.getDate() - rangeDays);
+    const filtered = data.filter(d => {
+        const t = msFor(d.date);
+        return t >= rangeStart.getTime() && t <= todayDate.getTime();
+    });
+
+    // Percentage change: newest vs oldest actual entry within the range
+    const changeEl = document.getElementById('weightChange');
+    if (changeEl) {
+        if (filtered.length === 0) {
+            changeEl.textContent = 'N/A';
+            changeEl.classList.remove('change-up', 'change-down');
+        } else {
+            const oldest = filtered[0].weight_kg;
+            const newest = filtered[filtered.length - 1].weight_kg;
+            const pct = oldest ? ((newest - oldest) / oldest) * 100 : 0;
+            const sign = pct > 0 ? '+' : '';
+            changeEl.textContent = `${sign}${pct.toFixed(2)}%`;
+            changeEl.classList.toggle('change-up', pct > 0);    // weight gain → red
+            changeEl.classList.toggle('change-down', pct < 0);  // weight loss → green
+        }
+    }
+
+    // Interval line spans the average window (last 7 days) within the filtered data
+    const avgStart = new Date(todayDate); avgStart.setDate(avgStart.getDate() - 7);
+    let startIndex = null, endIndex = null;
+    filtered.forEach((d, i) => {
+        const t = msFor(d.date);
+        if (t >= avgStart.getTime() && t <= todayDate.getTime()) {
+            if (startIndex === null) startIndex = i;
+            endIndex = i;
+        }
+    });
+
+    if (weightChartInstance) { weightChartInstance.destroy(); weightChartInstance = null; }
+    if (filtered.length === 0) return;
+
+    const isLight = document.documentElement.classList.contains('light-mode');
+    const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)';
+    const tickColor = isLight ? '#6b7280' : '#8b92b0';
+
+    const pRgb = cssVar('--color-primary-rgb');
+    const pColor = cssVar('--color-primary');
+    const rangeColor = pColor;
+
+    const weightTarget = healthMetricsCache.weight_target || 0;
+    const datasets = [{
+        label: 'Weight (kg)',
+        data: filtered.map(d => d.weight_kg),
+        borderColor: pColor,
+        backgroundColor: `rgba(${pRgb}, 0.1)`,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: pColor,
+        fill: true
+    }];
+    if (weightTarget > 0) {
+        datasets.push({
+            label: `Target (${weightTarget} kg)`,
+            data: filtered.map(() => weightTarget),
+            borderColor: '#34d399',
+            borderDash: [6, 4],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false
+        });
+    }
+
+    const ctx = canvas.getContext('2d');
+    weightChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels: filtered.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}/${y}`; }), datasets },
+        options: {
+            responsive: true,
+            layout: { padding: { bottom: 22 } },
+            plugins: {
+                legend: { display: weightTarget > 0, labels: { color: tickColor, boxWidth: 12 } },
+                averageRange: { startIndex, endIndex, color: rangeColor }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    grid: { color: gridColor },
+                    ticks: { color: tickColor },
+                    title: { display: true, text: 'Weight (kg)', color: tickColor }
+                },
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: tickColor },
+                    title: { display: true, text: 'Date', color: tickColor }
+                }
+            }
+        }
+    });
+}
+
+// Wire up the time-range buttons (1W | 2W | 1M | 5M | 1Y)
+function setupWeightRangeButtons() {
+    const buttons = document.querySelectorAll('.weight-range-buttons button');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            weightChartRange = btn.dataset.range;
+            buttons.forEach(b => b.classList.toggle('active', b === btn));
+            renderWeightChart();
+        });
+    });
 }
 
 async function saveWeightEntry() {
@@ -3101,6 +3157,7 @@ async function initializeApp() {
     checkReminderAlerts();
     setInterval(checkReminderAlerts, 60000);
     document.getElementById('weightDate').value = getLocalDateString();
+    setupWeightRangeButtons();
     loadWeightLog();
     document.getElementById('healthDate').value = getLocalDateString();
     await loadHealthMetrics();

@@ -818,8 +818,20 @@
                             <button class="btn-teal" onclick="saveWeightEntry()">Log</button>
                         </div>
                         <div class="chart-with-avg">
-                            <div class="weight-chart-container">
-                                <canvas id="weightChart"></canvas>
+                            <div class="weight-chart-col">
+                                <div class="weight-chart-toolbar">
+                                    <div class="weight-change" id="weightChange">—</div>
+                                    <div class="weight-range-buttons">
+                                        <button type="button" data-range="1W">1W</button>
+                                        <button type="button" data-range="2W" class="active">2W</button>
+                                        <button type="button" data-range="1M">1M</button>
+                                        <button type="button" data-range="5M">5M</button>
+                                        <button type="button" data-range="1Y">1Y</button>
+                                    </div>
+                                </div>
+                                <div class="weight-chart-container">
+                                    <canvas id="weightChart"></canvas>
+                                </div>
                             </div>
                             <div class="avg-block weight-avg-block">
                                 <div class="avg-label">Average weight</div>
@@ -851,7 +863,19 @@
 
             <!-- Section 3: Activity Log -->
             <div class="health-activity-card">
-                <h3>Activity Log</h3>
+                <div class="activity-log-header">
+                    <h3>Activity Log</h3>
+                    <div class="activity-menu-wrap">
+                        <button type="button" class="activity-menu-btn" id="activityMenuBtn" aria-label="Activity options">⋮</button>
+                        <div class="activity-menu" id="activityMenu">
+                            <button type="button" id="editActivitiesBtn">Edit activities</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="activity-edit-panel" id="activityEditPanel">
+                    <div class="activity-edit-title">Delete activities from the list</div>
+                    <div id="activityEditList"></div>
+                </div>
                 <form id="activityLogForm" class="health-activity-form">
                     <div class="health-form-grid">
                         <div class="form-group">
