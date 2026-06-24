@@ -457,6 +457,39 @@ h1 {
 }
 
 
+.create-category-form {
+    margin-bottom: 20px;
+}
+
+.manage-category-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.manage-category-row select {
+    flex: 1;
+}
+
+.btn-delete-category {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    background: transparent;
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.6);
+}
+
+.btn-delete-category:hover {
+    background: rgba(255, 107, 107, 0.12);
+    transform: translateY(-2px);
+}
+
 .add-activity-form {
     background: transparent;
     padding: 20px;
@@ -2108,6 +2141,20 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
     color: #8b92b0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Bottom summary row: Today's Weight (left) + Calories/Protein left (right) */
+.summary-bottom-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+.summary-left-stats { text-align: right; }
+.summary-left-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-primary);
 }
 
 /* Calories progress bar */

@@ -110,6 +110,46 @@ let activities = {
     mindset: []
 };
 
+// Built-in pillar categories (always present); custom ones are loaded from the DB
+const BUILTIN_CATEGORIES = ['physical', 'work', 'health', 'relationships', 'mindset'];
+let customCategories = [];
+
+// Fetch user-created categories from the database
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        customCategories = await response.json();
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        customCategories = [];
+    }
+    populateCategoryDropdowns();
+}
+
+// Inject custom category options into the "Log a Win" and "Manage Activities" dropdowns
+function populateCategoryDropdowns() {
+    // Remove any previously injected custom options
+    document.querySelectorAll('option.custom-cat-option').forEach(o => o.remove());
+
+    const winSelect = document.getElementById('category');
+    const manageSelect = document.getElementById('manageCategory');
+    const fulldayOpt = winSelect.querySelector('option[value="fullday"]');
+
+    customCategories.forEach(name => {
+        const winOpt = document.createElement('option');
+        winOpt.value = name;
+        winOpt.textContent = name;
+        winOpt.className = 'custom-cat-option';
+        winSelect.insertBefore(winOpt, fulldayOpt);
+
+        const manageOpt = document.createElement('option');
+        manageOpt.value = name;
+        manageOpt.textContent = name;
+        manageOpt.className = 'custom-cat-option';
+        manageSelect.appendChild(manageOpt);
+    });
+}
+
 // Default activities (will be added to DB if empty)
 const defaultActivities = {
     physical: [
@@ -168,14 +208,10 @@ async function loadActivitiesFromDatabase() {
             return;
         }
         
-        // Clear current activities
-        activities = {
-            physical: [],
-            work: [],
-            health: [],
-            relationships: [],
-            mindset: []
-        };
+        // Clear current activities — one bucket per built-in and custom category
+        activities = {};
+        BUILTIN_CATEGORIES.forEach(cat => { activities[cat] = []; });
+        customCategories.forEach(cat => { activities[cat] = []; });
         
         // Organize by category
         dbActivities.forEach(activity => {
@@ -213,12 +249,68 @@ async function populateDefaultActivities() {
 document.getElementById('manageCategory').addEventListener('change', (e) => {
     const category = e.target.value;
     const manager = document.getElementById('activityManager');
-    
+    const deleteBtn = document.getElementById('deleteCategoryBtn');
+
     if (category) {
         manager.style.display = 'block';
         displayActivitiesForCategory(category);
+        // Only custom categories can be deleted
+        deleteBtn.style.display = customCategories.includes(category) ? 'inline-block' : 'none';
     } else {
         manager.style.display = 'none';
+        deleteBtn.style.display = 'none';
+    }
+});
+
+// Create a new custom category
+document.getElementById('createCategoryForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('newCategoryName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    try {
+        const response = await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+            alert(data.error || 'Could not create category');
+            return;
+        }
+
+        input.value = '';
+        await loadCategories();
+        await loadActivitiesFromDatabase();
+
+        // Select the new category so its activities can be managed right away
+        const manageSelect = document.getElementById('manageCategory');
+        manageSelect.value = name;
+        manageSelect.dispatchEvent(new Event('change'));
+    } catch (error) {
+        console.error('Error creating category:', error);
+    }
+});
+
+// Delete the selected custom category (and its preset activities)
+document.getElementById('deleteCategoryBtn').addEventListener('click', async () => {
+    const category = document.getElementById('manageCategory').value;
+    if (!category || !customCategories.includes(category)) return;
+    if (!confirm(`Delete the "${category}" category and all of its preset activities?`)) return;
+
+    try {
+        const response = await fetch(`/api/categories?name=${encodeURIComponent(category)}`, { method: 'DELETE' });
+        if (response.ok) {
+            await loadCategories();
+            await loadActivitiesFromDatabase();
+            const manageSelect = document.getElementById('manageCategory');
+            manageSelect.value = '';
+            manageSelect.dispatchEvent(new Event('change'));
+        }
+    } catch (error) {
+        console.error('Error deleting category:', error);
     }
 });
 
@@ -2646,6 +2738,13 @@ async function updateFoodSummary(entries) {
     document.getElementById('summaryProtein').textContent     = totalProt.toFixed(1);
     document.getElementById('summaryCalTotal').textContent    = Math.round(totalCal);
 
+    // Calories / protein remaining for the day = target − already eaten
+    const protTarget = healthMetricsCache.protein_target || 0;
+    const calLeftEl  = document.getElementById('summaryCalLeft');
+    const protLeftEl = document.getElementById('summaryProtLeft');
+    if (calLeftEl)  calLeftEl.textContent  = target > 0      ? `${Math.round(target - totalCal)} kcal` : '—';
+    if (protLeftEl) protLeftEl.textContent = protTarget > 0  ? `${(protTarget - totalProt).toFixed(1)} g` : '—';
+
     const bar = document.getElementById('caloriesBarFill');
     bar.style.width = pct + '%';
     bar.style.background = over ? '#ef4444' : '#00c9a7';
@@ -3137,6 +3236,7 @@ async function checkCompleteDay() {
 }
 
 async function initializeApp() {
+    await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
     await renderCalendar();

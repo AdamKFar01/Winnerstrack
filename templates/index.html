@@ -183,16 +183,28 @@
                 <h2>Manage Activities</h2>
                 <p style="color: #8b92b0; margin-bottom: 20px;">Add, edit, or delete preset activities and their point values for each category.</p>
 
+                <div class="create-category-form">
+                    <form id="createCategoryForm">
+                        <div class="form-row">
+                            <input type="text" id="newCategoryName" placeholder="New category name" required>
+                            <button type="submit" class="btn-primary">Create Category</button>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="form-group">
                     <label>Select Category</label>
-                    <select id="manageCategory">
-                        <option value="">Choose a category...</option>
-                        <option value="physical">Physical</option>
-                        <option value="work">Work</option>
-                        <option value="health">Health</option>
-                        <option value="relationships">Relationships</option>
-                        <option value="mindset">Mindset &amp; Discipline</option>
-                    </select>
+                    <div class="manage-category-row">
+                        <select id="manageCategory">
+                            <option value="">Choose a category...</option>
+                            <option value="physical">Physical</option>
+                            <option value="work">Work</option>
+                            <option value="health">Health</option>
+                            <option value="relationships">Relationships</option>
+                            <option value="mindset">Mindset &amp; Discipline</option>
+                        </select>
+                        <button type="button" id="deleteCategoryBtn" class="btn-delete-category" style="display: none;">Delete Category</button>
+                    </div>
                 </div>
 
                 <div id="activityManager" style="display: none;">
@@ -805,8 +817,18 @@
                             <div class="water-count-label"><span id="waterCount">0</span> / 8 glasses</div>
                         </div>
                         <div class="health-summary-block">
-                            <div class="health-summary-label">Today's Weight</div>
-                            <div id="summaryWeight" style="font-size:1.4rem;font-weight:700;color:var(--color-primary)">—</div>
+                            <div class="summary-bottom-row">
+                                <div>
+                                    <div class="health-summary-label">Today's Weight</div>
+                                    <div id="summaryWeight" style="font-size:1.4rem;font-weight:700;color:var(--color-primary)">—</div>
+                                </div>
+                                <div class="summary-left-stats">
+                                    <div class="health-summary-label">Calories left</div>
+                                    <div id="summaryCalLeft" class="summary-left-value">—</div>
+                                    <div class="health-summary-label" style="margin-top:8px;">Protein left</div>
+                                    <div id="summaryProtLeft" class="summary-left-value">—</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

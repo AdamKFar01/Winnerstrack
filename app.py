@@ -79,6 +79,12 @@ def init_db():
                   category TEXT NOT NULL,
                   name TEXT NOT NULL,
                   points INTEGER NOT NULL)''')
+
+    # Custom activity categories (built-in pillars live in the frontend)
+    c.execute('''CREATE TABLE IF NOT EXISTS custom_categories
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL UNIQUE,
+                  created_at TEXT NOT NULL)''')
     
     # Calendar events table (separate from activities)
     c.execute('''CREATE TABLE IF NOT EXISTS calendar_events
@@ -683,6 +689,47 @@ def activities_api():
             })
         
         return jsonify(activities_list)
+
+# Built-in pillar categories that cannot be created or deleted as custom ones
+BUILTIN_CATEGORIES = {'physical', 'work', 'health', 'relationships', 'mindset', 'fullday', 'other'}
+
+@app.route('/api/categories', methods=['GET', 'POST', 'DELETE'])
+def categories_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        name = (request.json.get('name') or '').strip()
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category name is required'}), 400
+        if name.lower() in BUILTIN_CATEGORIES:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        try:
+            c.execute('INSERT INTO custom_categories (name, created_at) VALUES (?, ?)',
+                      (name, datetime.now().isoformat()))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        name = request.args.get('name', '')
+        c.execute('DELETE FROM custom_categories WHERE name = ?', (name,))
+        # Remove preset activities that belonged to this category
+        c.execute('DELETE FROM activities WHERE category = ?', (name,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT name FROM custom_categories ORDER BY name')
+        names = [row[0] for row in c.fetchall()]
+        conn.close()
+        return jsonify(names)
 
 @app.route('/api/reminders', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def reminders_api():
