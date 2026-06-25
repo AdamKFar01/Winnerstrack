@@ -2460,9 +2460,11 @@ function computeMaintenance(activityBurnedToday = 0) {
 function applyEffectiveTarget(activityBurnedToday = 0) {
     const maintenance = computeMaintenance(activityBurnedToday);
     const target = Math.max(0, maintenance - (healthMetricsCache.calorie_deficit || 0));
+    healthMetricsCache.calorie_maintenance = maintenance;
     healthMetricsCache.calorie_target = target;
+    // Body Metrics shows full maintenance calories; the deficit is applied only in Daily Summary.
     const tEl = document.getElementById('targetCalories');
-    if (tEl) tEl.textContent = target || '—';
+    if (tEl) tEl.textContent = maintenance || '—';
     console.log('[applyEffectiveTarget]', {
         maintenance,
         deficit: healthMetricsCache.calorie_deficit || 0,
@@ -2534,24 +2536,22 @@ async function loadHealthMetrics() {
 
         // For activity_log mode the displayed target must be recomputed from
         // BMR×1.2 + today's burned (the stored value is just the rest base).
-        let effectiveTarget = data.calorie_target;
+        let burned = 0;
         if (mode === 'activity_log') {
             const dateStr = document.getElementById('healthDate').value || getLocalDateString();
-            let burned = 0;
             try {
                 const actRes = await fetch(`/api/activity-log?date=${dateStr}`);
                 const acts = await actRes.json();
                 burned = acts.reduce((s, a) => s + (a.calories_burned || 0), 0);
                 console.log('[loadHealthMetrics] activities fetched:', acts, 'burned sum:', burned);
             } catch (e) { console.warn('[loadHealthMetrics] activity fetch failed:', e); }
-            effectiveTarget = applyEffectiveTarget(burned);
-            console.log('[loadHealthMetrics] effectiveTarget after apply:', effectiveTarget);
         }
+        // Compute maintenance (shown in Body Metrics) and the deficit-adjusted
+        // target (used by Daily Summary) live from the current metrics.
+        const effectiveTarget = applyEffectiveTarget(burned);
+        console.log('[loadHealthMetrics] effectiveTarget after apply:', effectiveTarget);
 
         if (effectiveTarget > 0) {
-            if (mode !== 'activity_log') {
-                document.getElementById('targetCalories').textContent = effectiveTarget;
-            }
             document.getElementById('targetProtein').textContent  = data.protein_target;
             document.getElementById('healthTargetsRow').style.display = 'flex';
             document.getElementById('healthMetricsForm').style.display = 'none';
@@ -2739,6 +2739,11 @@ async function updateFoodSummary(entries) {
 
     document.getElementById('summaryCalConsumed').textContent = Math.round(totalCal);
     document.getElementById('summaryCalTarget').textContent   = target > 0 ? target : '—';
+
+    // Daily Summary target already has the deficit applied — note how much.
+    const deficit = healthMetricsCache.calorie_deficit || 0;
+    const deficitEl = document.getElementById('summaryCalDeficit');
+    if (deficitEl) deficitEl.textContent = (target > 0 && deficit > 0) ? ` (${deficit} deficit)` : '';
     document.getElementById('summaryProtein').textContent     = totalProt.toFixed(1);
     document.getElementById('summaryCalTotal').textContent    = Math.round(totalCal);
 

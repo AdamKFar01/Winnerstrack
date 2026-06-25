@@ -2143,6 +2143,11 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
     letter-spacing: 0.05em;
 }
 
+.summary-deficit-note {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
 /* Bottom summary row: Today's Weight (left) + Calories/Protein left (right) */
 .summary-bottom-row {
     display: flex;
