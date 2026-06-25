@@ -2511,8 +2511,12 @@ async function loadHealthMetrics() {
         const data = await res.json();
         healthMetricsCache = data;
 
+        // Prefer the Daily Weight rolling average over the stored weight so the
+        // BMR/calorie maths always tracks the user's recent average.
+        if (weightAvgKg != null) healthMetricsCache.weight_kg = weightAvgKg;
+
         // Populate form
-        document.getElementById('hmWeight').value       = data.weight_kg    || '';
+        document.getElementById('hmWeight').value       = healthMetricsCache.weight_kg || '';
         document.getElementById('hmHeight').value       = data.height_cm    || '';
         document.getElementById('hmAge').value          = data.age          || '';
         document.getElementById('hmSex').value          = data.sex          || 'male';
@@ -3011,6 +3015,7 @@ document.getElementById('healthDate').addEventListener('change', (e) => {
 let weightChartInstance = null;
 let weightLogData = [];
 let weightChartRange = '2W';   // default range on load
+let weightAvgKg = null;        // rolling average that auto-fills Body Metrics weight
 const WEIGHT_RANGE_DAYS = { '1W': 7, '2W': 14, '1M': 30, '5M': 150, '1Y': 365 };
 
 async function loadWeightLog() {
@@ -3039,6 +3044,14 @@ async function loadWeightLog() {
             : 0;
         const avgEl = document.getElementById('weightAvgDisplay');
         if (avgEl) avgEl.textContent = windowEntries.length ? `${avgWeight.toFixed(1)} kg` : '—';
+
+        // Auto-fill the Body Metrics weight from this rolling average. Re-render the
+        // health metrics (and calorie targets) only when the average actually changes.
+        const newAvg = windowEntries.length ? parseFloat(avgWeight.toFixed(1)) : null;
+        if (newAvg !== weightAvgKg) {
+            weightAvgKg = newAvg;
+            if (weightAvgKg != null) loadHealthMetrics();
+        }
 
         renderWeightChart();
     } catch (e) {
