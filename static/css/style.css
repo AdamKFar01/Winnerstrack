@@ -2196,28 +2196,45 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
 .calories-legend b  { color: #fb923c; }
 
 /* Water tracker */
-.water-tracker {
+.water-bar-fill {
+    height: 100%;
+    background: #38bdf8;
+    border-radius: 5px;
+    transition: width 0.4s ease, background 0.3s ease;
+}
+
+.water-add-row {
     display: flex;
+    align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
-.water-glass {
-    font-size: 1.4em;
-    cursor: pointer;
-    opacity: 0.25;
-    transition: opacity 0.15s, transform 0.15s;
-    user-select: none;
+.water-input {
+    width: 70px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.06);
+    color: inherit;
+    font-size: 0.9em;
 }
 
-.water-glass.full  { opacity: 1; }
-.water-glass:hover { transform: scale(1.15); }
-
-.water-count-label {
-    font-size: 0.8em;
+.water-input-unit {
+    font-size: 0.85em;
     color: #6b7280;
-    margin-top: 4px;
+}
+
+.water-add-btn {
+    padding: 4px 12px;
+    font-size: 0.85em;
+}
+
+.water-entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
 }
 
 /* Activity log */
@@ -2324,6 +2341,7 @@ html.light-mode .health-summary-right {
 html.light-mode .health-summary-right h3 { border-bottom-color: rgba(var(--color-primary-dark-rgb), 0.14); }
 
 html.light-mode .calories-bar-wrap { background: rgba(0, 0, 0, 0.07); }
+html.light-mode .water-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: var(--color-text); }
 
 html.light-mode .health-activity-item {
     background: rgba(255, 255, 255, 0.7);

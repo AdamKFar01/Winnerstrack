@@ -2875,28 +2875,62 @@ async function loadNutritionWeekChart() {
 }
 
 // Water tracker
+const WATER_BASE_TARGET_L = 2.5;
+
+function getWaterEntries(dateStr) {
+    try { return JSON.parse(localStorage.getItem(`water_entries_${dateStr}`)) || []; }
+    catch { return []; }
+}
+
+function saveWaterEntries(dateStr, entries) {
+    localStorage.setItem(`water_entries_${dateStr}`, JSON.stringify(entries));
+}
+
 function loadWater(dateStr) {
-    const glasses = parseInt(localStorage.getItem(`water_${dateStr}`)) || 0;
-    renderWater(dateStr, glasses);
+    renderWater(dateStr, getWaterEntries(dateStr));
 }
 
-function setWater(dateStr, glasses) {
-    localStorage.setItem(`water_${dateStr}`, glasses);
-    renderWater(dateStr, glasses);
+function addWater(dateStr) {
+    const input = document.getElementById('waterInput');
+    const amount = parseFloat(input.value);
+    if (!amount || amount <= 0) return;
+    const entries = getWaterEntries(dateStr);
+    entries.push({ id: Date.now(), amount: Math.round(amount * 100) / 100 });
+    saveWaterEntries(dateStr, entries);
+    renderWater(dateStr, entries);
+    input.value = '';
 }
 
-function renderWater(dateStr, glasses) {
-    document.getElementById('waterCount').textContent = glasses;
-    const tracker = document.getElementById('waterTracker');
-    tracker.innerHTML = '';
-    for (let i = 1; i <= 8; i++) {
-        const glass = document.createElement('span');
-        glass.className = 'water-glass' + (i <= glasses ? ' full' : '');
-        glass.textContent = '🥛';
-        glass.title = `${i} glass${i > 1 ? 'es' : ''}`;
-        glass.onclick = () => setWater(dateStr, i === glasses ? i - 1 : i);
-        tracker.appendChild(glass);
-    }
+function deleteWaterEntry(dateStr, id) {
+    const entries = getWaterEntries(dateStr).filter(e => e.id !== id);
+    saveWaterEntries(dateStr, entries);
+    renderWater(dateStr, entries);
+}
+
+function renderWater(dateStr, entries) {
+    const total = Math.round(entries.reduce((s, e) => s + e.amount, 0) * 100) / 100;
+    const target = Math.max(WATER_BASE_TARGET_L, total);
+    const pct = target > 0 ? Math.min((total / target) * 100, 100) : 0;
+
+    document.getElementById('waterCount').textContent = total.toFixed(2);
+    document.getElementById('waterTarget').textContent = target.toFixed(1);
+    const bar = document.getElementById('waterBarFill');
+    bar.style.width = pct + '%';
+    bar.style.background = total > WATER_BASE_TARGET_L ? '#3b82f6' : '#38bdf8';
+
+    const list = document.getElementById('waterEntryList');
+    list.innerHTML = '';
+    entries.forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'health-food-item';
+        row.innerHTML = `
+            <div class="health-food-item-info">
+                <span class="health-food-name">${e.amount.toFixed(2)} L</span>
+            </div>
+            <button class="task-item-delete" onclick="deleteWaterEntry('${dateStr}', ${e.id})">Delete</button>
+        `;
+        list.appendChild(row);
+    });
 }
 
 // Activity log
