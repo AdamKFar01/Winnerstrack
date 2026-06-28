@@ -2875,7 +2875,15 @@ async function loadNutritionWeekChart() {
 }
 
 // Water tracker
-const WATER_BASE_TARGET_L = 2.5;
+function getWaterTarget() {
+    const stored = parseFloat(localStorage.getItem('water_target'));
+    return isNaN(stored) || stored <= 0 ? 2.5 : stored;
+}
+
+function saveWaterTarget(val) {
+    const v = parseFloat(val);
+    if (!isNaN(v) && v > 0) localStorage.setItem('water_target', v);
+}
 
 function getWaterEntries(dateStr) {
     try { return JSON.parse(localStorage.getItem(`water_entries_${dateStr}`)) || []; }
@@ -2887,6 +2895,8 @@ function saveWaterEntries(dateStr, entries) {
 }
 
 function loadWater(dateStr) {
+    const targetInput = document.getElementById('waterTarget');
+    if (targetInput) targetInput.value = getWaterTarget();
     renderWater(dateStr, getWaterEntries(dateStr));
 }
 
@@ -2909,14 +2919,13 @@ function deleteWaterEntry(dateStr, id) {
 
 function renderWater(dateStr, entries) {
     const total = Math.round(entries.reduce((s, e) => s + e.amount, 0) * 100) / 100;
-    const target = Math.max(WATER_BASE_TARGET_L, total);
+    const target = getWaterTarget();
     const pct = target > 0 ? Math.min((total / target) * 100, 100) : 0;
 
     document.getElementById('waterCount').textContent = total.toFixed(2);
-    document.getElementById('waterTarget').textContent = target.toFixed(1);
     const bar = document.getElementById('waterBarFill');
     bar.style.width = pct + '%';
-    bar.style.background = total > WATER_BASE_TARGET_L ? '#3b82f6' : '#38bdf8';
+    bar.style.background = total >= target ? '#3b82f6' : '#38bdf8';
 
     const list = document.getElementById('waterEntryList');
     list.innerHTML = '';
