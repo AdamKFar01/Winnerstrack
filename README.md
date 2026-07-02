@@ -6,7 +6,7 @@ A personal productivity tracker I built for daily use. It tracks wins across fiv
 
 ## What it is
 
-Full-stack desktop app: Flask REST API backend, SQLite database, vanilla JS frontend, wrapped in Electron so it runs as a native `.app` or `.exe`. The web app and the desktop app are the same code, Electron just starts Flask as a child process and points a `BrowserWindow` at `localhost:5001`.
+Full-stack desktop app: Flask REST API backend, SQLite database, vanilla JS frontend, wrapped in Electron so it runs as a native macOS `.app`. The web app and the desktop app are the same code, Electron just starts Flask as a child process and points a `BrowserWindow` at `localhost:5001`.
 
 I chose SQLite because there's one user and no concurrency. I chose vanilla JS because the UI is straightforward enough that a framework would add more ceremony than value. I chose Electron because I wanted a real desktop app without rewriting the frontend in React Native or dealing with a separate native layer.
 
@@ -87,7 +87,7 @@ Or just:
 ```bash
 npm install
 npm start          # dev mode
-npm run build      # builds WinnersTrack.app / .exe into dist/
+npm run build      # builds WinnersTrack.app into dist/
 ```
 
 The packaged app bundles the Flask server, all Python source, and the frontend. Python 3 must be installed on the target machine, it is not bundled.
@@ -99,9 +99,7 @@ The packaged app bundles the Flask server, all Python source, and the frontend. 
 
 ## Data location
 
-When running packaged via Electron, the database is stored in the OS user data directory:
-- macOS: `~/Library/Application Support/winnerstrackbuilder/wintracker.db`
-- Windows: `%APPDATA%\winnerstrackbuilder\wintracker.db`
+When running packaged via Electron, the database is stored in the OS user data directory: `~/Library/Application Support/winnerstrackbuilder/wintracker.db`.
 
 When running as a plain web app, it is created next to `app.py`.
 
