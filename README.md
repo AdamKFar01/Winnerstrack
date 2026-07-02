@@ -10,17 +10,19 @@ Full-stack desktop app: Flask REST API backend, SQLite database, vanilla JS fron
 
 I chose SQLite because there's one user and no concurrency. I chose vanilla JS because the UI is straightforward enough that a framework would add more ceremony than value. I chose Electron because I wanted a real desktop app without rewriting the frontend in React Native or dealing with a separate native layer.
 
+![WinnersTrack screenshot](static/img/READMEIM.png)
+
 ---
 
 ## Architecture
 
-**Backend**: Flask REST API (`app.py`). All data lives in 13 SQLite tables. Schema migrations are handled inline in `init_db()` using `ALTER TABLE` with exception suppression, so launching a new version against an existing database upgrades the schema without data loss. No migration files to run manually.
+**Backend** : Flask REST API (`app.py`). All data lives in 13 SQLite tables. Schema migrations are handled inline in `init_db()` using `ALTER TABLE` with exception suppression, so launching a new version against an existing database upgrades the schema without data loss. No migration files to run manually.
 
-**Frontend**: Vanilla JS communicating with the Flask API via `fetch()`. No framework, no build step, no transpiler. Charts are rendered with Chart.js. The entire frontend is one HTML file, one CSS file, and one JS file (~2700 lines).
+**Frontend** : Vanilla JS communicating with the Flask API via `fetch()`. No framework, no build step, no transpiler. Charts are rendered with Chart.js. The entire frontend is one HTML file, one CSS file, and one JS file (~2700 lines).
 
-**Desktop packaging**: Electron spawns the Flask process on startup, waits for it to respond on port 5001, then opens a `BrowserWindow` pointed at it. The Flask server and all static files are bundled into the app via `electron-builder`. No changes to the web code were needed to make this work.
+**Desktop packaging** : Electron spawns the Flask process on startup, waits for it to respond on port 5001, then opens a `BrowserWindow` pointed at it. The Flask server and all static files are bundled into the app via `electron-builder`. No changes to the web code were needed to make this work.
 
-**Database**: Single file `wintracker.db`, excluded from git. All state is local. Back it up manually if you care about the data.
+**Database** : Single file `wintracker.db`, excluded from git. All state is local. Back it up manually if you care about the data.
 
 ---
 
