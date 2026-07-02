@@ -104,3 +104,9 @@ When running packaged via Electron, the database is stored in the OS user data d
 - Windows: `%APPDATA%\winnerstrackbuilder\wintracker.db`
 
 When running as a plain web app, it is created next to `app.py`.
+
+---
+
+## License
+
+Licensed under [GPL-3.0](LICENSE). You're free to use and modify this code, but any public derivative must also be open sourced under GPL-3.0.
