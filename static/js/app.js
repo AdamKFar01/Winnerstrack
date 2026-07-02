@@ -1899,6 +1899,58 @@ document.getElementById('calendarEventForm').addEventListener('submit', async (e
 
 document.getElementById('eventDate').value = getLocalDateString();
 
+// AI quick-add: sends a sentence to the parser and prefills the event form.
+// It never saves — the user still reviews and presses "Add Event".
+document.getElementById('aiParseBtn').addEventListener('click', async () => {
+    const input = document.getElementById('aiEventText');
+    const status = document.getElementById('aiEventStatus');
+    const btn = document.getElementById('aiParseBtn');
+    const text = input.value.trim();
+
+    if (!text) {
+        status.textContent = 'Type what you want to schedule first.';
+        status.className = 'ai-event-status error';
+        return;
+    }
+
+    btn.disabled = true;
+    status.textContent = 'Understanding…';
+    status.className = 'ai-event-status loading';
+
+    try {
+        const response = await fetch('/api/calendar-parse', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            status.textContent = result.error || 'Could not parse that. Try rewording it.';
+            status.className = 'ai-event-status error';
+            return;
+        }
+
+        const ev = result.event;
+        if (ev.title) document.getElementById('eventTitle').value = ev.title;
+        if (ev.date) document.getElementById('eventDate').value = ev.date;
+        document.getElementById('eventStartTime').value = ev.start_time || '';
+        document.getElementById('eventEndTime').value = ev.end_time || '';
+        if (ev.category) document.getElementById('eventCategory').value = ev.category;
+        if (ev.importance) document.getElementById('eventImportance').value = ev.importance;
+        if (ev.description) document.getElementById('eventDescription').value = ev.description;
+
+        status.textContent = 'Filled in below — review it, then press Add Event.';
+        status.className = 'ai-event-status success';
+    } catch (error) {
+        console.error('Error parsing calendar event:', error);
+        status.textContent = 'Something went wrong. The manual form still works.';
+        status.className = 'ai-event-status error';
+    } finally {
+        btn.disabled = false;
+    }
+});
+
 async function loadCalendarEvents() {
     try {
         const response = await fetch('/api/calendar-events');

@@ -3,8 +3,29 @@ from datetime import datetime, timedelta
 import sqlite3
 import json
 import os
+import urllib.request
+import urllib.error
 
 app = Flask(__name__)
+
+# Load key/value pairs from a local .env file into the environment (if present).
+# Keeps secrets like GROQ_API_KEY out of the code and out of git.
+def load_dotenv():
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if not os.path.exists(env_path):
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, _, value = line.partition('=')
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            # Real environment variables take precedence over the file.
+            os.environ.setdefault(key, value)
+
+load_dotenv()
 
 DB_PATH = os.environ.get(
     'WINNERSTRACKBUILDER_DB',
@@ -853,6 +874,97 @@ def calendar_events_api():
             })
         
         return jsonify(events_list)
+
+@app.route('/api/calendar-parse', methods=['POST'])
+def calendar_parse_api():
+    """Parse a free-text sentence into calendar-event fields using Groq (Llama 3.3).
+
+    This route is completely isolated: it never touches the database. It only
+    returns structured fields that the frontend prefills into the normal Add
+    Event form, which the user still submits manually. If the API key is missing
+    or anything fails, it returns an error and the manual form is unaffected.
+    """
+    data = request.json or {}
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({'success': False, 'error': 'No text provided.'}), 400
+
+    api_key = os.environ.get('GROQ_API_KEY')
+    if not api_key:
+        return jsonify({
+            'success': False,
+            'error': 'AI not configured (GROQ_API_KEY is not set).'
+        }), 503
+
+    today = datetime.now()
+    categories = ['uni', 'work', 'hobbies', 'personal', 'health', 'social', 'other']
+    importances = ['normal', 'quite', 'very', 'top']
+
+    system_prompt = (
+        "You extract calendar event details from a short sentence and return "
+        "ONLY a JSON object. Do not add commentary.\n"
+        f"Today's date is {today.strftime('%Y-%m-%d')} ({today.strftime('%A')}). "
+        "Resolve relative dates like 'tomorrow' or 'next Tuesday' against today.\n"
+        "Return these keys:\n"
+        '  "title": short event title (string; include who it is with, e.g. '
+        '"Interview with Sarah").\n'
+        '  "date": the event date as "YYYY-MM-DD".\n'
+        '  "start_time": start time as 24-hour "HH:MM", or "" if none given.\n'
+        '  "end_time": end time as 24-hour "HH:MM", or "" if none given.\n'
+        f'  "category": one of {categories}. Pick the best fit; use "other" if unsure.\n'
+        f'  "importance": one of {importances}. Use "normal" unless the text implies otherwise.\n'
+        '  "description": any extra detail, or "".\n'
+        "If a field is unknown, use an empty string (but always provide a date)."
+    )
+
+    payload = json.dumps({
+        'model': 'llama-3.3-70b-versatile',
+        'temperature': 0.1,
+        'response_format': {'type': 'json_object'},
+        'messages': [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': text},
+        ],
+    }).encode('utf-8')
+
+    req = urllib.request.Request(
+        'https://api.groq.com/openai/v1/chat/completions',
+        data=payload,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body = json.loads(resp.read().decode('utf-8'))
+        content = body['choices'][0]['message']['content']
+        parsed = json.loads(content)
+    except urllib.error.HTTPError as e:
+        return jsonify({'success': False, 'error': f'AI request failed ({e.code}).'}), 502
+    except (urllib.error.URLError, TimeoutError) as e:
+        return jsonify({'success': False, 'error': 'Could not reach the AI service.'}), 502
+    except (KeyError, ValueError, json.JSONDecodeError):
+        return jsonify({'success': False, 'error': 'AI returned an unreadable response.'}), 502
+
+    # Sanitize against our known enums so the frontend never gets junk.
+    category = parsed.get('category') if parsed.get('category') in categories else 'other'
+    importance = parsed.get('importance') if parsed.get('importance') in importances else 'normal'
+
+    return jsonify({
+        'success': True,
+        'event': {
+            'title': (parsed.get('title') or '').strip(),
+            'date': (parsed.get('date') or '').strip(),
+            'start_time': (parsed.get('start_time') or '').strip(),
+            'end_time': (parsed.get('end_time') or '').strip(),
+            'category': category,
+            'importance': importance,
+            'description': (parsed.get('description') or '').strip(),
+        }
+    })
 
 @app.route('/api/month-data')
 def month_data():

@@ -265,6 +265,18 @@
             <!-- Add Event Form -->
             <div class="add-event-section">
                 <h3>Add Calendar Event</h3>
+
+                <!-- AI quick-add: fills the form below; you still review & press Add Event -->
+                <div class="ai-event-box">
+                    <label for="aiEventText">Describe it and let AI fill the form</label>
+                    <div class="ai-event-row">
+                        <input type="text" id="aiEventText"
+                               placeholder='e.g. "Interview next Tuesday from 2 to 3pm with Sarah"'>
+                        <button type="button" id="aiParseBtn" class="btn-primary">Parse with AI</button>
+                    </div>
+                    <div id="aiEventStatus" class="ai-event-status"></div>
+                </div>
+
                 <form id="calendarEventForm">
                     <div class="form-row">
                         <div class="form-group" style="flex: 2;">

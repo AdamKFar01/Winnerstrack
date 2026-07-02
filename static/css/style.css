@@ -726,6 +726,64 @@ h1 {
     margin-bottom: 20px;
 }
 
+/* ── AI quick-add box ──────────────────────────────────────── */
+.ai-event-box {
+    background: rgba(var(--color-accent-rgb), 0.06);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.25);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.ai-event-box label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+.ai-event-row {
+    display: flex;
+    gap: 10px;
+}
+
+.ai-event-row input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: #080d14;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1em;
+}
+
+.ai-event-row input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 10px rgba(var(--color-accent-rgb), 0.3);
+}
+
+.ai-event-row .btn-primary {
+    white-space: nowrap;
+}
+
+.ai-event-row .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.ai-event-status {
+    margin-top: 10px;
+    font-size: 0.9em;
+    min-height: 1.2em;
+    color: #8b92b0;
+}
+
+.ai-event-status.error   { color: #ff6b6b; }
+.ai-event-status.success { color: var(--color-accent); }
+.ai-event-status.loading { color: #8b92b0; }
+
 .add-event-section textarea {
     width: 100%;
     padding: 10px;
@@ -1420,6 +1478,26 @@ html.light-mode .add-activity-form,
 html.light-mode .activities-list {
     background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 70%);
     border-color: rgba(var(--color-primary-dark-rgb), 0.18);
+}
+
+/* AI quick-add box */
+html.light-mode .ai-event-box {
+    background: rgba(var(--color-accent-rgb), 0.10);
+    border-color: rgba(var(--color-accent-dark-rgb), 0.35);
+}
+html.light-mode .ai-event-box label {
+    color: var(--color-accent-dark);
+}
+html.light-mode .ai-event-row input {
+    background: #ffffff;
+    color: #1f2937;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+html.light-mode .ai-event-row input::placeholder {
+    color: #9ca3af;
+}
+html.light-mode .ai-event-status.success {
+    color: var(--color-accent-dark);
 }
 
 /* Summary cards */
