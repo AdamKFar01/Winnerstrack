@@ -446,15 +446,28 @@ function updateActivityDropdown(category) {
 }
 
 // Tab switching
+function activateTab(tabId) {
+    const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+    const content = document.getElementById(tabId);
+    if (!btn || !content) return;
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    btn.classList.add('active');
+    content.classList.add('active');
+}
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab!)!.classList.add('active');
+        activateTab(btn.dataset.tab!);
+        localStorage.setItem('activeTab', btn.dataset.tab!);
     });
 });
+
+// Restore the last active tab after a refresh
+const savedTab = localStorage.getItem('activeTab');
+if (savedTab) activateTab(savedTab);
 
 // Set current date
 const dateInput = document.getElementById('currentDate')!;
