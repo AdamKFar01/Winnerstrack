@@ -102,7 +102,7 @@ function dateToLocalString(d) {
 }
 
 // Activity presets with suggested points - now stored in database
-let activities = {
+let activities: Record<string, any[]> = {
     physical: [],
     work: [],
     health: [],
@@ -1243,7 +1243,7 @@ async function loadRecipes() {
 async function populateConditionsGoalSelect() {
     const select = document.getElementById('conditionsGoalSelect');
     const current = select.value;
-    while (select.options.length > 1) select.remove(1);
+    while (select.options.length > 1) (select as any).remove(1);
 
     const res = await fetch('/api/tasks?type=goal&period=all');
     const tasks = await res.json();
@@ -2042,7 +2042,7 @@ async function checkReminderAlerts() {
                 eventDt = new Date(`${todayStr}T${r.time}`);
             }
             if (!eventDt) continue;
-            const msUntil = eventDt - now;
+            const msUntil = eventDt - (now as any);
             const noticeMs = (r.notice_hours || 0) * 3600 * 1000;
             // Show alert if we're within the notice window and event hasn't passed
             if (msUntil > 0 && msUntil <= noticeMs) {
@@ -2468,7 +2468,7 @@ function setupActivityMenu() {
         if (panel.classList.contains('open')) renderEditActivitiesList();
     });
     document.addEventListener('click', (e) => {
-        if (!menu.contains(e.target) && e.target !== menuBtn) menu.classList.remove('open');
+        if (!menu.contains(e.target as Node) && e.target !== menuBtn) menu.classList.remove('open');
     });
 }
 
@@ -2482,7 +2482,7 @@ const ACTIVITY_MULTIPLIERS = {
 
 let macroChartInstance = null;
 let nutritionWeekChartInstance = null;
-let healthMetricsCache = { weight_kg: 70, calorie_target: 0, protein_target: 0, calorie_mode: 'average', calorie_deficit: 0 };
+let healthMetricsCache: any = { weight_kg: 70, calorie_target: 0, protein_target: 0, calorie_mode: 'average', calorie_deficit: 0 };
 
 // `activity_log` mode treats maintenance as BMR×1.2 (sedentary base) plus
 // whatever the user actually burned today — so the target shifts as new
@@ -2770,7 +2770,7 @@ async function deleteFoodEntry(id) {
     }
 }
 
-async function updateFoodSummary(entries) {
+async function updateFoodSummary(entries?) {
     if (!entries) {
         const date = document.getElementById('healthDate').value;
         try {
@@ -2789,15 +2789,15 @@ async function updateFoodSummary(entries) {
     const pct    = target > 0 ? Math.min((totalCal / target) * 100, 100) : 0;
     const over   = target > 0 && totalCal > target;
 
-    document.getElementById('summaryCalConsumed').textContent = Math.round(totalCal);
-    document.getElementById('summaryCalTarget').textContent   = target > 0 ? target : '—';
+    document.getElementById('summaryCalConsumed').textContent = Math.round(totalCal) as any;
+    document.getElementById('summaryCalTarget').textContent   = (target > 0 ? target : '—') as any;
 
     // Daily Summary target already has the deficit applied — note how much.
     const deficit = healthMetricsCache.calorie_deficit || 0;
     const deficitEl = document.getElementById('summaryCalDeficit');
     if (deficitEl) deficitEl.textContent = (target > 0 && deficit > 0) ? ` (${deficit} deficit)` : '';
     document.getElementById('summaryProtein').textContent     = totalProt.toFixed(1);
-    document.getElementById('summaryCalTotal').textContent    = Math.round(totalCal);
+    document.getElementById('summaryCalTotal').textContent    = Math.round(totalCal) as any;
 
     // Calories / protein remaining for the day = target − already eaten
     const protTarget = healthMetricsCache.protein_target || 0;
@@ -2934,7 +2934,7 @@ function getWaterTarget() {
 
 function saveWaterTarget(val) {
     const v = parseFloat(val);
-    if (!isNaN(v) && v > 0) localStorage.setItem('water_target', v);
+    if (!isNaN(v) && v > 0) localStorage.setItem('water_target', v as any);
 }
 
 function getWaterEntries(dateStr) {
@@ -3217,7 +3217,7 @@ function renderWeightChart() {
     const rangeColor = pColor;
 
     const weightTarget = healthMetricsCache.weight_target || 0;
-    const datasets = [{
+    const datasets: any[] = [{
         label: 'Weight (kg)',
         data: filtered.map(d => d.weight_kg),
         borderColor: pColor,

@@ -30,6 +30,9 @@ node_modules/
 dist/
 out/
 
+# Compiled TypeScript output (source lives in static/ts/)
+static/js/app.js
+
 # IDE
 .vscode/
 .idea/
