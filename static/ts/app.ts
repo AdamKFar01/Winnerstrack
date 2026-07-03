@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     updateThemeIcons();
 
-    const themeToggle = document.getElementById('themeToggle');
+    const themeToggle = document.getElementById('themeToggle')!;
     if (localStorage.getItem('theme') === 'light') {
         document.documentElement.classList.add('light-mode');
         themeToggle.textContent = '☽';
@@ -112,7 +112,7 @@ let activities: Record<string, any[]> = {
 
 // Built-in pillar categories (always present); custom ones are loaded from the DB
 const BUILTIN_CATEGORIES = ['physical', 'work', 'health', 'relationships', 'mindset'];
-let customCategories = [];
+let customCategories: any[] = [];
 
 // Fetch user-created categories from the database
 async function loadCategories() {
@@ -131,8 +131,8 @@ function populateCategoryDropdowns() {
     // Remove any previously injected custom options
     document.querySelectorAll('option.custom-cat-option').forEach(o => o.remove());
 
-    const winSelect = document.getElementById('category');
-    const manageSelect = document.getElementById('manageCategory');
+    const winSelect = document.getElementById('category')!;
+    const manageSelect = document.getElementById('manageCategory')!;
     const fulldayOpt = winSelect.querySelector('option[value="fullday"]');
 
     customCategories.forEach(name => {
@@ -246,10 +246,10 @@ async function populateDefaultActivities() {
 }
 
 // Activity Management
-document.getElementById('manageCategory').addEventListener('change', (e) => {
-    const category = e.target.value;
-    const manager = document.getElementById('activityManager');
-    const deleteBtn = document.getElementById('deleteCategoryBtn');
+document.getElementById('manageCategory')!.addEventListener('change', (e) => {
+    const category = e.target!.value;
+    const manager = document.getElementById('activityManager')!;
+    const deleteBtn = document.getElementById('deleteCategoryBtn')!;
 
     if (category) {
         manager.style.display = 'block';
@@ -263,9 +263,9 @@ document.getElementById('manageCategory').addEventListener('change', (e) => {
 });
 
 // Create a new custom category
-document.getElementById('createCategoryForm').addEventListener('submit', async (e) => {
+document.getElementById('createCategoryForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const input = document.getElementById('newCategoryName');
+    const input = document.getElementById('newCategoryName')!;
     const name = input.value.trim();
     if (!name) return;
 
@@ -286,7 +286,7 @@ document.getElementById('createCategoryForm').addEventListener('submit', async (
         await loadActivitiesFromDatabase();
 
         // Select the new category so its activities can be managed right away
-        const manageSelect = document.getElementById('manageCategory');
+        const manageSelect = document.getElementById('manageCategory')!;
         manageSelect.value = name;
         manageSelect.dispatchEvent(new Event('change'));
     } catch (error) {
@@ -295,8 +295,8 @@ document.getElementById('createCategoryForm').addEventListener('submit', async (
 });
 
 // Delete the selected custom category (and its preset activities)
-document.getElementById('deleteCategoryBtn').addEventListener('click', async () => {
-    const category = document.getElementById('manageCategory').value;
+document.getElementById('deleteCategoryBtn')!.addEventListener('click', async () => {
+    const category = document.getElementById('manageCategory')!.value;
     if (!category || !customCategories.includes(category)) return;
     if (!confirm(`Delete the "${category}" category and all of its preset activities?`)) return;
 
@@ -305,7 +305,7 @@ document.getElementById('deleteCategoryBtn').addEventListener('click', async () 
         if (response.ok) {
             await loadCategories();
             await loadActivitiesFromDatabase();
-            const manageSelect = document.getElementById('manageCategory');
+            const manageSelect = document.getElementById('manageCategory')!;
             manageSelect.value = '';
             manageSelect.dispatchEvent(new Event('change'));
         }
@@ -315,7 +315,7 @@ document.getElementById('deleteCategoryBtn').addEventListener('click', async () 
 });
 
 function displayActivitiesForCategory(category) {
-    const activitiesList = document.getElementById('activitiesList');
+    const activitiesList = document.getElementById('activitiesList')!;
     activitiesList.innerHTML = '';
     
     if (!activities[category] || activities[category].length === 0) {
@@ -344,12 +344,12 @@ function displayActivitiesForCategory(category) {
 }
 
 // Add new activity
-document.getElementById('addActivityForm').addEventListener('submit', async (e) => {
+document.getElementById('addActivityForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const category = document.getElementById('manageCategory').value;
-    const name = document.getElementById('newActivityName').value;
-    const points = parseInt(document.getElementById('newActivityPoints').value);
+    const category = document.getElementById('manageCategory')!.value;
+    const name = document.getElementById('newActivityName')!.value;
+    const points = parseInt(document.getElementById('newActivityPoints')!.value);
     
     try {
         const response = await fetch('/api/activities', {
@@ -364,8 +364,8 @@ document.getElementById('addActivityForm').addEventListener('submit', async (e) 
             updateActivityDropdown(category);
             
             // Reset form
-            document.getElementById('newActivityName').value = '';
-            document.getElementById('newActivityPoints').value = '';
+            document.getElementById('newActivityName')!.value = '';
+            document.getElementById('newActivityPoints')!.value = '';
         }
     } catch (error) {
         console.error('Error adding activity:', error);
@@ -422,8 +422,8 @@ async function deleteActivity(activityId, category) {
 }
 
 function updateActivityDropdown(category) {
-    const activitySelect = document.getElementById('activity');
-    const currentCategory = document.getElementById('category').value;
+    const activitySelect = document.getElementById('activity')!;
+    const currentCategory = document.getElementById('category')!.value;
 
     // Only update if we're viewing the same category
     if (currentCategory === category) {
@@ -452,12 +452,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         
         btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.add('active');
+        document.getElementById(btn.dataset.tab!)!.classList.add('active');
     });
 });
 
 // Set current date
-const dateInput = document.getElementById('currentDate');
+const dateInput = document.getElementById('currentDate')!;
 dateInput.value = getLocalDateString();
 
 // Date change listener
@@ -468,11 +468,11 @@ dateInput.addEventListener('change', () => {
 });
 
 // Category change listener - populate activities
-document.getElementById('category').addEventListener('change', (e) => {
-    const category = e.target.value;
-    const activitySelect = document.getElementById('activity');
-    const categoryOther = document.getElementById('categoryOther');
-    const pointsInput = document.getElementById('points');
+document.getElementById('category')!.addEventListener('change', (e) => {
+    const category = e.target!.value;
+    const activitySelect = document.getElementById('activity')!;
+    const categoryOther = document.getElementById('categoryOther')!;
+    const pointsInput = document.getElementById('points')!;
 
     // Show/hide custom category text input
     if (category === 'other') {
@@ -521,34 +521,34 @@ document.getElementById('category').addEventListener('change', (e) => {
 });
 
 // Activity change listener - suggest points / show custom input
-document.getElementById('activity').addEventListener('change', (e) => {
-    const selectedOption = e.target.options[e.target.selectedIndex];
-    const activityOther = document.getElementById('activityOther');
+document.getElementById('activity')!.addEventListener('change', (e) => {
+    const selectedOption = e.target!.options[e.target!.selectedIndex];
+    const activityOther = document.getElementById('activityOther')!;
 
-    if (e.target.value === 'other') {
+    if (e.target!.value === 'other') {
         activityOther.classList.add('visible');
         activityOther.required = true;
-        document.getElementById('points').value = '';
+        document.getElementById('points')!.value = '';
     } else {
         activityOther.classList.remove('visible');
         activityOther.required = false;
         activityOther.value = '';
         const suggestedPoints = selectedOption.dataset.points;
         if (suggestedPoints) {
-            document.getElementById('points').value = suggestedPoints;
+            document.getElementById('points')!.value = suggestedPoints;
         }
     }
 });
 
 // Win form submission
-document.getElementById('winForm').addEventListener('submit', async (e) => {
+document.getElementById('winForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    let category = document.getElementById('category').value;
-    let activity = document.getElementById('activity').value;
-    const duration = document.getElementById('duration').value;
-    const description = document.getElementById('description').value;
-    const points = document.getElementById('points').value;
+    let category = document.getElementById('category')!.value;
+    let activity = document.getElementById('activity')!.value;
+    const duration = document.getElementById('duration')!.value;
+    const description = document.getElementById('description')!.value;
+    const points = document.getElementById('points')!.value;
     const date = dateInput.value;
 
     // "Full Day" — max out every scoring category in one shot
@@ -570,8 +570,8 @@ document.getElementById('winForm').addEventListener('submit', async (e) => {
                     })
                 })
             ));
-            document.getElementById('winForm').reset();
-            document.getElementById('category').dispatchEvent(new Event('change'));
+            document.getElementById('winForm')!.reset();
+            document.getElementById('category')!.dispatchEvent(new Event('change'));
             loadDailySummary();
             loadWins();
             loadXP();
@@ -585,11 +585,11 @@ document.getElementById('winForm').addEventListener('submit', async (e) => {
 
     // Resolve "Other" values
     if (category === 'other') {
-        category = document.getElementById('categoryOther').value.trim();
+        category = document.getElementById('categoryOther')!.value.trim();
         if (!category) return;
     }
     if (activity === 'other') {
-        activity = document.getElementById('activityOther').value.trim();
+        activity = document.getElementById('activityOther')!.value.trim();
         if (!activity) return;
     }
 
@@ -608,7 +608,7 @@ document.getElementById('winForm').addEventListener('submit', async (e) => {
         });
         
         if (response.ok) {
-            document.getElementById('winForm').reset();
+            document.getElementById('winForm')!.reset();
             loadDailySummary();
             loadWins();
             loadXP();
@@ -628,12 +628,12 @@ async function loadDailySummary() {
         const response = await fetch(`/api/daily-summary?date=${date}`);
         const summary = await response.json();
 
-        document.getElementById('physical-points').textContent = summary.physical;
-        document.getElementById('work-points').textContent = summary.work;
-        document.getElementById('health-points').textContent = summary.health;
-        document.getElementById('relationships-points').textContent = summary.relationships;
-        document.getElementById('mindset-points').textContent = summary.mindset;
-        document.getElementById('total-points').textContent = summary.total;
+        document.getElementById('physical-points')!.textContent = summary.physical;
+        document.getElementById('work-points')!.textContent = summary.work;
+        document.getElementById('health-points')!.textContent = summary.health;
+        document.getElementById('relationships-points')!.textContent = summary.relationships;
+        document.getElementById('mindset-points')!.textContent = summary.mindset;
+        document.getElementById('total-points')!.textContent = summary.total;
 
     } catch (error) {
         console.error('Error loading summary:', error);
@@ -644,11 +644,11 @@ async function loadPillarScores() {
     try {
         const response = await fetch('/api/pillar-scores');
         const scores = await response.json();
-        document.getElementById('score-physical').value      = scores.physical;
-        document.getElementById('score-work').value          = scores.work;
-        document.getElementById('score-health').value        = scores.health;
-        document.getElementById('score-relationships').value = scores.relationships;
-        document.getElementById('score-mindset').value       = scores.mindset;
+        document.getElementById('score-physical')!.value      = scores.physical;
+        document.getElementById('score-work')!.value          = scores.work;
+        document.getElementById('score-health')!.value        = scores.health;
+        document.getElementById('score-relationships')!.value = scores.relationships;
+        document.getElementById('score-mindset')!.value       = scores.mindset;
         loadPillarsChart(scores);
     } catch (error) {
         console.error('Error loading pillar scores:', error);
@@ -657,11 +657,11 @@ async function loadPillarScores() {
 
 async function savePillarScores() {
     const scores = {
-        physical:      parseFloat(document.getElementById('score-physical').value)      || 0,
-        work:          parseFloat(document.getElementById('score-work').value)          || 0,
-        health:        parseFloat(document.getElementById('score-health').value)        || 0,
-        relationships: parseFloat(document.getElementById('score-relationships').value) || 0,
-        mindset:       parseFloat(document.getElementById('score-mindset').value)       || 0
+        physical:      parseFloat(document.getElementById('score-physical')!.value)      || 0,
+        work:          parseFloat(document.getElementById('score-work')!.value)          || 0,
+        health:        parseFloat(document.getElementById('score-health')!.value)        || 0,
+        relationships: parseFloat(document.getElementById('score-relationships')!.value) || 0,
+        mindset:       parseFloat(document.getElementById('score-mindset')!.value)       || 0
     };
     try {
         await fetch('/api/pillar-scores', {
@@ -676,13 +676,13 @@ async function savePillarScores() {
 }
 
 // Personal Pillars radar chart
-let pillarsChartInstance = null;
+let pillarsChartInstance: any = null;
 const pillarsLogoImg = new Image();
 
 function loadPillarsChart(scores) {
     pillarsLogoImg.onload = () => { if (pillarsChartInstance) pillarsChartInstance.update(); };
     pillarsLogoImg.src = getThemeIcon();
-    const ctx = document.getElementById('pillarsChart').getContext('2d');
+    const ctx = document.getElementById('pillarsChart')!.getContext('2d');
     const data = [
         scores.physical    || 0,
         scores.work        || 0,
@@ -691,7 +691,7 @@ function loadPillarsChart(scores) {
         scores.mindset     || 0
     ];
     const overall = data.reduce((a, b) => a + b, 0);
-    document.getElementById('overallGrowth').textContent = `Overall Growth: ${overall.toFixed(1)} / 50`;
+    document.getElementById('overallGrowth')!.textContent = `Overall Growth: ${overall.toFixed(1)} / 50`;
 
     const logoPlugin = {
         id: 'pillarsLogo',
@@ -763,7 +763,7 @@ async function loadWins() {
     const date = dateInput.value;
 
     // Update header to reflect selected date
-    const header = document.getElementById('winsListHeader');
+    const header = document.getElementById('winsListHeader')!;
     if (date === getLocalDateString()) {
         header.textContent = "Today's Wins";
     } else {
@@ -775,7 +775,7 @@ async function loadWins() {
         const response = await fetch(`/api/wins?date=${date}`);
         const wins = await response.json();
 
-        const winsList = document.getElementById('winsList');
+        const winsList = document.getElementById('winsList')!;
         winsList.innerHTML = '';
 
         if (wins.length === 0) {
@@ -830,9 +830,9 @@ async function loadWins() {
 }
 
 // Week chart
-let weekChartInstance = null;
-let pillarWeekChartInstance = null;
-let weekGoalsAllDone = [];
+let weekChartInstance: any = null;
+let pillarWeekChartInstance: any = null;
+let weekGoalsAllDone: any[] = [];
 const barLogoImg = new Image();
 barLogoImg.src = '/static/img/icon.png';
 
@@ -866,7 +866,7 @@ async function loadWeekChart() {
         const points = data.map(d => d.points);
         weekGoalsAllDone = data.map(d => d.goals_all_done);
 
-        const ctx = document.getElementById('weekChart').getContext('2d');
+        const ctx = document.getElementById('weekChart')!.getContext('2d');
 
         if (weekChartInstance) {
             weekChartInstance.destroy();
@@ -936,7 +936,7 @@ async function loadWeekChart() {
             fill: false,
         }));
 
-        const pillarCtx = document.getElementById('pillarWeekChart').getContext('2d');
+        const pillarCtx = document.getElementById('pillarWeekChart')!.getContext('2d');
         if (pillarWeekChartInstance) pillarWeekChartInstance.destroy();
         pillarWeekChartInstance = new Chart(pillarCtx, {
             type: 'line',
@@ -983,8 +983,8 @@ async function deleteWin(id) {
 
 // Toggle collapsible sections
 function toggleSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    const btn = section.previousElementSibling.querySelector('.collapse-btn');
+    const section = document.getElementById(sectionId)!;
+    const btn = section.previousElementSibling!.querySelector('.collapse-btn')!;
     
     if (section.classList.contains('collapsed')) {
         section.classList.remove('collapsed');
@@ -1010,13 +1010,13 @@ function priorityFromXP(xp, period) {
 // Setup all task forms (goal types only — Tasks tab removed)
 function setupTaskForms() {
     function bindGoalForm(formId, period) {
-        document.getElementById(formId).addEventListener('submit', async (e) => {
+        document.getElementById(formId)!.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const xpInput  = e.target.querySelector('.task-xp-input');
+            const xpInput  = e.target!.querySelector('.task-xp-input');
             const xpReward = xpInput ? (parseInt(xpInput.value) || 0) : 0;
             const priority = priorityFromXP(xpReward, period);
-            await addTask(e.target.querySelector('.task-input').value, 'goal', period, xpReward, priority);
-            e.target.reset();
+            await addTask(e.target!.querySelector('.task-input')!.value, 'goal', period, xpReward, priority);
+            e.target!.reset();
         });
     }
     bindGoalForm('weeklyGoalForm', 'weekly');
@@ -1054,7 +1054,7 @@ async function loadTasksByPeriod(period, listId, taskType) {
         const response = await fetch(`/api/tasks?type=${taskType}&period=${period}`);
         const tasks = await response.json();
 
-        const tasksList = document.getElementById(listId);
+        const tasksList = document.getElementById(listId)!;
         tasksList.innerHTML = '';
 
         if (tasks.length === 0) {
@@ -1156,21 +1156,21 @@ async function deleteTask(id) {
 }
 
 // Mastered Recipes
-document.getElementById('recipeForm').addEventListener('submit', async (e) => {
+document.getElementById('recipeForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('recipeName').value.trim();
+    const name = document.getElementById('recipeName')!.value.trim();
     if (!name) return;
     await fetch('/api/recipes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             name,
-            protein_g: parseInt(document.getElementById('recipeProtein').value) || 0,
-            calories: parseInt(document.getElementById('recipeCalories').value) || 0,
-            description: document.getElementById('recipeDescription').value.trim()
+            protein_g: parseInt(document.getElementById('recipeProtein')!.value) || 0,
+            calories: parseInt(document.getElementById('recipeCalories')!.value) || 0,
+            description: document.getElementById('recipeDescription')!.value.trim()
         })
     });
-    e.target.reset();
+    e.target!.reset();
     loadRecipes();
 });
 
@@ -1178,7 +1178,7 @@ async function loadRecipes() {
     try {
         const res = await fetch('/api/recipes');
         const recipes = await res.json();
-        const list = document.getElementById('recipesList');
+        const list = document.getElementById('recipesList')!;
         list.innerHTML = '';
         if (recipes.length === 0) {
             list.innerHTML = '<p style="color:#8b92b0;text-align:center;padding:20px;">No recipes yet.</p>';
@@ -1241,7 +1241,7 @@ async function loadRecipes() {
 // ── Goal Conditions ───────────────────────────────────────────
 
 async function populateConditionsGoalSelect() {
-    const select = document.getElementById('conditionsGoalSelect');
+    const select = document.getElementById('conditionsGoalSelect')!;
     const current = select.value;
     while (select.options.length > 1) (select as any).remove(1);
 
@@ -1260,15 +1260,15 @@ async function populateConditionsGoalSelect() {
 }
 
 async function loadConditions() {
-    const select = document.getElementById('conditionsGoalSelect');
+    const select = document.getElementById('conditionsGoalSelect')!;
     const taskId = select.value;
-    const panel = document.getElementById('conditionsPanel');
+    const panel = document.getElementById('conditionsPanel')!;
     if (!taskId) { panel.style.display = 'none'; return; }
     panel.style.display = 'block';
 
     const res = await fetch(`/api/goal-conditions?task_id=${taskId}`);
     const conditions = await res.json();
-    const list = document.getElementById('conditionsList');
+    const list = document.getElementById('conditionsList')!;
     list.innerHTML = '';
     if (conditions.length === 0) {
         list.innerHTML = '<p class="conditions-empty">No conditions yet.</p>';
@@ -1300,17 +1300,17 @@ async function deleteCondition(id) {
     loadConditions();
 }
 
-document.getElementById('conditionAddForm').addEventListener('submit', async (e) => {
+document.getElementById('conditionAddForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const taskId = document.getElementById('conditionsGoalSelect').value;
-    const text   = document.getElementById('conditionText').value.trim();
+    const taskId = document.getElementById('conditionsGoalSelect')!.value;
+    const text   = document.getElementById('conditionText')!.value.trim();
     if (!taskId || !text) return;
     await fetch('/api/goal-conditions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ task_id: taskId, condition_text: text })
     });
-    document.getElementById('conditionText').value = '';
+    document.getElementById('conditionText')!.value = '';
     loadConditions();
 });
 
@@ -1319,7 +1319,7 @@ document.getElementById('conditionAddForm').addEventListener('submit', async (e)
 async function loadYume() {
     const res = await fetch('/api/yume/categories');
     const cats = await res.json();
-    const container = document.getElementById('yumeCategoriesList');
+    const container = document.getElementById('yumeCategoriesList')!;
     container.innerHTML = '';
     if (cats.length === 0) {
         container.innerHTML = '<p style="color:#8b92b0;text-align:center;padding:40px 0;">No categories yet. Add one above to start your vision board.</p>';
@@ -1359,8 +1359,8 @@ async function loadYume() {
         `;
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const input  = form.querySelector('input');
-            const select = form.querySelector('select');
+            const input  = form.querySelector('input')!;
+            const select = form.querySelector('select')!;
             const text = input.value.trim();
             if (!text) return;
             await fetch('/api/yume/items', {
@@ -1389,11 +1389,11 @@ const yumeExpandedCats = new Set();
 async function loadYumeItems(catId) {
     const res = await fetch(`/api/yume/items?category_id=${catId}`);
     const items = await res.json();
-    const div = document.getElementById(`yume-items-${catId}`);
+    const div = document.getElementById(`yume-items-${catId}`)!;
     if (!div) return;
     div.innerHTML = '';
     // Update progress bar
-    const progressWrap = document.getElementById(`yume-progress-${catId}`);
+    const progressWrap = document.getElementById(`yume-progress-${catId}`)!;
     if (progressWrap) {
         if (items.length === 0) {
             progressWrap.innerHTML = '';
@@ -1457,28 +1457,28 @@ async function deleteYumeCategory(id) {
     loadYume();
 }
 
-document.getElementById('yumeCategoryForm').addEventListener('submit', async (e) => {
+document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('yumeCategoryName').value.trim();
+    const name = document.getElementById('yumeCategoryName')!.value.trim();
     if (!name) return;
     await fetch('/api/yume/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
     });
-    document.getElementById('yumeCategoryName').value = '';
+    document.getElementById('yumeCategoryName')!.value = '';
     loadYume();
 });
 
 // Finance functionality
-document.getElementById('financeForm').addEventListener('submit', async (e) => {
+document.getElementById('financeForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const type = document.getElementById('financeType').value;
-    const amount = parseFloat(document.getElementById('financeAmount').value);
-    const category = document.getElementById('financeCategory').value;
-    const description = document.getElementById('financeDescription').value;
-    const date = document.getElementById('financeDate').value;
+    const type = document.getElementById('financeType')!.value;
+    const amount = parseFloat(document.getElementById('financeAmount')!.value);
+    const category = document.getElementById('financeCategory')!.value;
+    const description = document.getElementById('financeDescription')!.value;
+    const date = document.getElementById('financeDate')!.value;
     
     try {
         const response = await fetch('/api/finance', {
@@ -1488,8 +1488,8 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
         });
         
         if (response.ok) {
-            document.getElementById('financeForm').reset();
-            document.getElementById('financeDate').value = getLocalDateString();
+            document.getElementById('financeForm')!.reset();
+            document.getElementById('financeDate')!.value = getLocalDateString();
             loadFinance();
             loadXP();
             loadXPLog();
@@ -1499,8 +1499,8 @@ document.getElementById('financeForm').addEventListener('submit', async (e) => {
     }
 });
 
-let balanceChartInstance = null;
-let financeMonthlyChartInstance = null;
+let balanceChartInstance: any = null;
+let financeMonthlyChartInstance: any = null;
 
 async function loadFinanceMonthlyChart() {
     try {
@@ -1512,7 +1512,7 @@ async function loadFinanceMonthlyChart() {
         const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.07)';
         const textColor = isLight ? '#555' : '#a0aec0';
 
-        const ctx = document.getElementById('financeMonthlyChart').getContext('2d');
+        const ctx = document.getElementById('financeMonthlyChart')!.getContext('2d');
         if (financeMonthlyChartInstance) financeMonthlyChartInstance.destroy();
         financeMonthlyChartInstance = new Chart(ctx, {
             type: 'bar',
@@ -1557,19 +1557,19 @@ async function loadFinance() {
         const currentBalance = totalIncome - totalExpense;
         const currentCrypto  = totalCryptoIn - totalCryptoOut;
 
-        document.getElementById('balance').textContent      = `£${currentBalance.toFixed(2)}`;
-        document.getElementById('cryptoBalance').textContent = `£${currentCrypto.toFixed(2)}`;
-        document.getElementById('totalBalance').textContent  = `£${(currentBalance + currentCrypto).toFixed(2)}`;
-        document.getElementById('brokeMessage').style.display =
+        document.getElementById('balance')!.textContent      = `£${currentBalance.toFixed(2)}`;
+        document.getElementById('cryptoBalance')!.textContent = `£${currentCrypto.toFixed(2)}`;
+        document.getElementById('totalBalance')!.textContent  = `£${(currentBalance + currentCrypto).toFixed(2)}`;
+        document.getElementById('brokeMessage')!.style.display =
             (currentBalance < 100000 || currentCrypto < 100000) ? 'block' : 'none';
 
         // Dual-line balance chart — one point per transaction, shared x-axis
         const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
         let runningSavings = 0;
         let runningCrypto  = 0;
-        const chartLabels  = [];
-        const savingsData  = [];
-        const cryptoData   = [];
+        const chartLabels: any[]  = [];
+        const savingsData: any[]  = [];
+        const cryptoData: any[]   = [];
 
         sorted.forEach(record => {
             if (record.type === 'income')                 runningSavings += record.amount;
@@ -1592,7 +1592,7 @@ async function loadFinance() {
         const pColor = cssVar('--color-primary');
         const aColor = cssVar('--color-accent');
 
-        const ctx = document.getElementById('balanceChart').getContext('2d');
+        const ctx = document.getElementById('balanceChart')!.getContext('2d');
         if (balanceChartInstance) balanceChartInstance.destroy();
         balanceChartInstance = new Chart(ctx, {
             type: 'line',
@@ -1643,7 +1643,7 @@ async function loadFinance() {
             }
         });
 
-        const financeList = document.getElementById('financeList');
+        const financeList = document.getElementById('financeList')!;
         financeList.innerHTML = '';
 
         if (records.length === 0) {
@@ -1699,12 +1699,12 @@ async function loadFinance() {
 }
 
 // Initialize finance date
-document.getElementById('financeDate').value = getLocalDateString();
+document.getElementById('financeDate')!.value = getLocalDateString();
 
 // Calendar functionality
 let currentCalendarDate = new Date();
 let selectedDate = new Date();
-let calendarEvents = [];
+let calendarEvents: any[] = [];
 let monthPointsData = {};
 
 async function loadMonthData(year, month) {
@@ -1725,7 +1725,7 @@ async function renderCalendar() {
     // Update header
     const monthNames = ["January", "February", "March", "April", "May", "June",
                         "July", "August", "September", "October", "November", "December"];
-    document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+    document.getElementById('currentMonth')!.textContent = `${monthNames[month]} ${year}`;
     
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1);
@@ -1739,7 +1739,7 @@ async function renderCalendar() {
     // Get previous month days
     const prevMonthLastDay = new Date(year, month, 0).getDate();
     
-    const calendarDays = document.getElementById('calendarDays');
+    const calendarDays = document.getElementById('calendarDays')!;
     calendarDays.innerHTML = '';
     
     // Previous month days
@@ -1842,7 +1842,7 @@ async function selectDate(date) {
         month: 'long', 
         day: 'numeric' 
     });
-    document.getElementById('selectedDate').textContent = dateStr;
+    document.getElementById('selectedDate')!.textContent = dateStr;
 }
 
 async function previousMonth() {
@@ -1863,16 +1863,16 @@ async function goToToday() {
 }
 
 // Calendar event form
-document.getElementById('calendarEventForm').addEventListener('submit', async (e) => {
+document.getElementById('calendarEventForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const title = document.getElementById('eventTitle').value;
-    const date = document.getElementById('eventDate').value;
-    const startTime = document.getElementById('eventStartTime').value;
-    const endTime = document.getElementById('eventEndTime').value;
-    const category = document.getElementById('eventCategory').value;
-    const importance = document.getElementById('eventImportance').value;
-    const description = document.getElementById('eventDescription').value;
+    const title = document.getElementById('eventTitle')!.value;
+    const date = document.getElementById('eventDate')!.value;
+    const startTime = document.getElementById('eventStartTime')!.value;
+    const endTime = document.getElementById('eventEndTime')!.value;
+    const category = document.getElementById('eventCategory')!.value;
+    const importance = document.getElementById('eventImportance')!.value;
+    const description = document.getElementById('eventDescription')!.value;
     
     try {
         const response = await fetch('/api/calendar-events', {
@@ -1885,9 +1885,9 @@ document.getElementById('calendarEventForm').addEventListener('submit', async (e
         });
         
         if (response.ok) {
-            e.target.reset();
+            e.target!.reset();
             // Set default date to today
-            document.getElementById('eventDate').value = getLocalDateString();
+            document.getElementById('eventDate')!.value = getLocalDateString();
             await loadCalendarEvents();
             await renderCalendar();
             loadEventsForSelectedDate();
@@ -1897,14 +1897,14 @@ document.getElementById('calendarEventForm').addEventListener('submit', async (e
     }
 });
 
-document.getElementById('eventDate').value = getLocalDateString();
+document.getElementById('eventDate')!.value = getLocalDateString();
 
 // AI quick-add: sends a sentence to the parser and prefills the event form.
 // It never saves — the user still reviews and presses "Add Event".
-document.getElementById('aiParseBtn').addEventListener('click', async () => {
-    const input = document.getElementById('aiEventText');
-    const status = document.getElementById('aiEventStatus');
-    const btn = document.getElementById('aiParseBtn');
+document.getElementById('aiParseBtn')!.addEventListener('click', async () => {
+    const input = document.getElementById('aiEventText')!;
+    const status = document.getElementById('aiEventStatus')!;
+    const btn = document.getElementById('aiParseBtn')!;
     const text = input.value.trim();
 
     if (!text) {
@@ -1932,13 +1932,13 @@ document.getElementById('aiParseBtn').addEventListener('click', async () => {
         }
 
         const ev = result.event;
-        if (ev.title) document.getElementById('eventTitle').value = ev.title;
-        if (ev.date) document.getElementById('eventDate').value = ev.date;
-        document.getElementById('eventStartTime').value = ev.start_time || '';
-        document.getElementById('eventEndTime').value = ev.end_time || '';
-        if (ev.category) document.getElementById('eventCategory').value = ev.category;
-        if (ev.importance) document.getElementById('eventImportance').value = ev.importance;
-        if (ev.description) document.getElementById('eventDescription').value = ev.description;
+        if (ev.title) document.getElementById('eventTitle')!.value = ev.title;
+        if (ev.date) document.getElementById('eventDate')!.value = ev.date;
+        document.getElementById('eventStartTime')!.value = ev.start_time || '';
+        document.getElementById('eventEndTime')!.value = ev.end_time || '';
+        if (ev.category) document.getElementById('eventCategory')!.value = ev.category;
+        if (ev.importance) document.getElementById('eventImportance')!.value = ev.importance;
+        if (ev.description) document.getElementById('eventDescription')!.value = ev.description;
 
         status.textContent = 'Filled in below — review it, then press Add Event.';
         status.className = 'ai-event-status success';
@@ -1964,7 +1964,7 @@ function loadEventsForSelectedDate() {
     const dateStr = dateToLocalString(selectedDate);
     const dayEvents = calendarEvents.filter(e => e.date === dateStr);
     
-    const eventsList = document.getElementById('dayEventsList');
+    const eventsList = document.getElementById('dayEventsList')!;
     eventsList.innerHTML = '';
     
     if (dayEvents.length === 0) {
@@ -2032,7 +2032,7 @@ async function checkReminderAlerts() {
         for (const r of reminders) {
             if (r.urgency !== 'high' || !r.active) continue;
             // Build the event datetime
-            let eventDt = null;
+            let eventDt: any = null;
             if (r.date) {
                 const timeStr = r.time || '00:00';
                 eventDt = new Date(`${r.date}T${timeStr}`);
@@ -2051,8 +2051,8 @@ async function checkReminderAlerts() {
             }
         }
 
-        const badge = document.getElementById('reminderBellBadge');
-        const heading = document.getElementById('remindersHeading');
+        const badge = document.getElementById('reminderBellBadge')!;
+        const heading = document.getElementById('remindersHeading')!;
         if (badge) {
             badge.src = hasHighAlert ? '/static/img/Red_Bell.png' : getThemeBell('low');
             badge.style.display = 'block';
@@ -2066,24 +2066,24 @@ async function checkReminderAlerts() {
 }
 
 function getUrgencyFromToggle(toggleId) {
-    const toggle = document.getElementById(toggleId);
+    const toggle = document.getElementById(toggleId)!;
     const active = toggle ? toggle.querySelector('.urgency-btn.active') : null;
     return active ? active.dataset.urgency : 'low';
 }
 
 function getNoticeHoursFromInput(inputId) {
-    const inp = document.getElementById(inputId);
+    const inp = document.getElementById(inputId)!;
     return inp ? (parseInt(inp.value) || 0) : 0;
 }
 
 function setupUrgencyToggle(toggleId, noticeInputId) {
-    const toggle = document.getElementById(toggleId);
+    const toggle = document.getElementById(toggleId)!;
     if (!toggle) return;
     toggle.querySelectorAll('.urgency-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             toggle.querySelectorAll('.urgency-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            const inp = document.getElementById(noticeInputId);
+            const inp = document.getElementById(noticeInputId)!;
             if (inp) inp.style.display = btn.dataset.urgency === 'high' ? 'block' : 'none';
         });
     });
@@ -2095,48 +2095,48 @@ function setupReminderForms() {
     setupUrgencyToggle('recurringUrgencyToggle', 'recurringNoticeHours');
 
     // Daily reminders
-    document.getElementById('dailyReminderForm').addEventListener('submit', async (e) => {
+    document.getElementById('dailyReminderForm')!.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const reminder = e.target.querySelector('.task-input').value;
-        const time = document.getElementById('reminderTime').value;
+        const reminder = e.target!.querySelector('.task-input')!.value;
+        const time = document.getElementById('reminderTime')!.value;
         const urgency = getUrgencyFromToggle('dailyUrgencyToggle');
         const notice_hours = getNoticeHoursFromInput('dailyNoticeHours');
         await addReminder(reminder, 'daily', time, null, 0, urgency, notice_hours);
-        e.target.reset();
+        e.target!.reset();
         // Reset urgency toggle visual
         document.querySelectorAll('#dailyUrgencyToggle .urgency-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('#dailyUrgencyToggle .urgency-low').classList.add('active');
-        document.getElementById('dailyNoticeHours').style.display = 'none';
+        document.querySelector('#dailyUrgencyToggle .urgency-low')!.classList.add('active');
+        document.getElementById('dailyNoticeHours')!.style.display = 'none';
     });
 
     // One-time reminders
-    document.getElementById('onetimeReminderForm').addEventListener('submit', async (e) => {
+    document.getElementById('onetimeReminderForm')!.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const reminder = e.target.querySelector('.task-input').value;
-        const date = document.getElementById('reminderDate').value;
-        const time = document.getElementById('reminderTimeOnce').value;
+        const reminder = e.target!.querySelector('.task-input')!.value;
+        const date = document.getElementById('reminderDate')!.value;
+        const time = document.getElementById('reminderTimeOnce')!.value;
         const urgency = getUrgencyFromToggle('onetimeUrgencyToggle');
         const notice_hours = getNoticeHoursFromInput('onetimeNoticeHours');
         await addReminder(reminder, 'onetime', time, date, 0, urgency, notice_hours);
-        e.target.reset();
+        e.target!.reset();
         document.querySelectorAll('#onetimeUrgencyToggle .urgency-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('#onetimeUrgencyToggle .urgency-low').classList.add('active');
-        document.getElementById('onetimeNoticeHours').style.display = 'none';
+        document.querySelector('#onetimeUrgencyToggle .urgency-low')!.classList.add('active');
+        document.getElementById('onetimeNoticeHours')!.style.display = 'none';
     });
 
     // Recurring reminders
-    document.getElementById('recurringReminderForm').addEventListener('submit', async (e) => {
+    document.getElementById('recurringReminderForm')!.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const reminder = e.target.querySelector('.task-input').value;
-        const type = document.getElementById('recurringType').value;
-        const time = document.getElementById('reminderTimeRecurring').value;
+        const reminder = e.target!.querySelector('.task-input')!.value;
+        const type = document.getElementById('recurringType')!.value;
+        const time = document.getElementById('reminderTimeRecurring')!.value;
         const urgency = getUrgencyFromToggle('recurringUrgencyToggle');
         const notice_hours = getNoticeHoursFromInput('recurringNoticeHours');
         await addReminder(reminder, type, time, null, 1, urgency, notice_hours);
-        e.target.reset();
+        e.target!.reset();
         document.querySelectorAll('#recurringUrgencyToggle .urgency-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('#recurringUrgencyToggle .urgency-low').classList.add('active');
-        document.getElementById('recurringNoticeHours').style.display = 'none';
+        document.querySelector('#recurringUrgencyToggle .urgency-low')!.classList.add('active');
+        document.getElementById('recurringNoticeHours')!.style.display = 'none';
     });
 }
 
@@ -2161,12 +2161,12 @@ async function loadAllReminders() {
     await loadRemindersByType('daily', 'dailyRemindersList');
     await loadRemindersByType('onetime', 'onetimeRemindersList');
     // Clear recurring list once before the multiple type calls
-    document.getElementById('recurringRemindersList').innerHTML = '';
+    document.getElementById('recurringRemindersList')!.innerHTML = '';
     await loadRemindersByType('daily', 'recurringRemindersList', true);
     await loadRemindersByType('weekly', 'recurringRemindersList', true);
     await loadRemindersByType('monthly', 'recurringRemindersList', true);
     // Show empty message if nothing was added
-    const recurringList = document.getElementById('recurringRemindersList');
+    const recurringList = document.getElementById('recurringRemindersList')!;
     if (recurringList.children.length === 0) {
         recurringList.innerHTML = '<p style="color: #8b92b0; text-align: center; padding: 20px;">No reminders yet.</p>';
     }
@@ -2177,7 +2177,7 @@ async function loadRemindersByType(type, listId, recurring = false) {
         const response = await fetch(`/api/reminders?type=${type}`);
         const reminders = await response.json();
         
-        const remindersList = document.getElementById(listId);
+        const remindersList = document.getElementById(listId)!;
         
         // For recurring, we append; for others, we replace
         if (!recurring) {
@@ -2253,9 +2253,9 @@ const dailyGoalComplete = [false, false, false];
 async function loadDailyGoals(dateStr) {
     const today = getLocalDateString();
     const isPast = dateStr < today;
-    const card = document.getElementById('dailyGoalsCard');
-    const title = document.getElementById('dailyGoalsTitle');
-    const saveBtn = document.getElementById('saveDailyGoalsBtn');
+    const card = document.getElementById('dailyGoalsCard')!;
+    const title = document.getElementById('dailyGoalsTitle')!;
+    const saveBtn = document.getElementById('saveDailyGoalsBtn')!;
 
     title.textContent = dateStr === today ? "Today's Goals" : `Goals for ${dateStr}`;
 
@@ -2272,9 +2272,9 @@ async function loadDailyGoals(dateStr) {
         const data = await response.json();
 
         for (let i = 1; i <= 3; i++) {
-            const textEl = document.getElementById(`goalText${i}`);
-            const iconEl = document.getElementById(`goalDoneIcon${i}`);
-            const areaEl = document.getElementById(`goalCheckArea${i}`);
+            const textEl = document.getElementById(`goalText${i}`)!;
+            const iconEl = document.getElementById(`goalDoneIcon${i}`)!;
+            const areaEl = document.getElementById(`goalCheckArea${i}`)!;
             const complete = data[`goal_${i}_complete`];
 
             textEl.value = data[`goal_${i}_text`] || '';
@@ -2285,8 +2285,8 @@ async function loadDailyGoals(dateStr) {
             areaEl.style.opacity = isPast ? '0.6' : '';
         }
 
-        const streakEl  = document.getElementById('dailyStreak');
-        const streakNum = document.getElementById('dailyStreakCount');
+        const streakEl  = document.getElementById('dailyStreak')!;
+        const streakNum = document.getElementById('dailyStreakCount')!;
         const streak    = data.streak || 0;
         if (streak > 0) {
             streakNum.textContent = streak;
@@ -2300,25 +2300,25 @@ async function loadDailyGoals(dateStr) {
 }
 
 function toggleGoalComplete(n) {
-    if (document.getElementById('dailyGoalsCard').classList.contains('readonly')) return;
+    if (document.getElementById('dailyGoalsCard')!.classList.contains('readonly')) return;
     dailyGoalComplete[n - 1] = !dailyGoalComplete[n - 1];
-    document.getElementById(`goalDoneIcon${n}`).style.display = dailyGoalComplete[n - 1] ? 'block' : 'none';
+    document.getElementById(`goalDoneIcon${n}`)!.style.display = dailyGoalComplete[n - 1] ? 'block' : 'none';
     saveDailyGoals();
 }
 
 async function saveDailyGoals() {
-    const dateStr = document.getElementById('currentDate').value;
+    const dateStr = document.getElementById('currentDate')!.value;
     try {
         await fetch('/api/daily-goals', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: dateStr,
-                goal_1_text: document.getElementById('goalText1').value,
+                goal_1_text: document.getElementById('goalText1')!.value,
                 goal_1_complete: dailyGoalComplete[0] ? 1 : 0,
-                goal_2_text: document.getElementById('goalText2').value,
+                goal_2_text: document.getElementById('goalText2')!.value,
                 goal_2_complete: dailyGoalComplete[1] ? 1 : 0,
-                goal_3_text: document.getElementById('goalText3').value,
+                goal_3_text: document.getElementById('goalText3')!.value,
                 goal_3_complete: dailyGoalComplete[2] ? 1 : 0
             })
         });
@@ -2393,7 +2393,7 @@ function listActivities() {
 }
 // Rebuild the activity dropdown from the current activity list
 function renderActivityOptions() {
-    const select = document.getElementById('activityType');
+    const select = document.getElementById('activityType')!;
     if (!select) return;
     const current = select.value;
     select.innerHTML = '';
@@ -2427,7 +2427,7 @@ function deleteActivityOption(value) {
 }
 // Render the "Edit activities" panel: each current activity with a delete button
 function renderEditActivitiesList() {
-    const listEl = document.getElementById('activityEditList');
+    const listEl = document.getElementById('activityEditList')!;
     if (!listEl) return;
     const items = listActivities();
     listEl.innerHTML = '';
@@ -2452,10 +2452,10 @@ function renderEditActivitiesList() {
 }
 // Wire up the three-dots menu and the edit panel
 function setupActivityMenu() {
-    const menuBtn = document.getElementById('activityMenuBtn');
-    const menu    = document.getElementById('activityMenu');
-    const editBtn = document.getElementById('editActivitiesBtn');
-    const panel   = document.getElementById('activityEditPanel');
+    const menuBtn = document.getElementById('activityMenuBtn')!;
+    const menu    = document.getElementById('activityMenu')!;
+    const editBtn = document.getElementById('editActivitiesBtn')!;
+    const panel   = document.getElementById('activityEditPanel')!;
     if (!menuBtn || !menu || !editBtn || !panel) return;
 
     menuBtn.addEventListener('click', (e) => {
@@ -2480,8 +2480,8 @@ const ACTIVITY_MULTIPLIERS = {
     athlete:            1.9
 };
 
-let macroChartInstance = null;
-let nutritionWeekChartInstance = null;
+let macroChartInstance: any = null;
+let nutritionWeekChartInstance: any = null;
 let healthMetricsCache: any = { weight_kg: 70, calorie_target: 0, protein_target: 0, calorie_mode: 'average', calorie_deficit: 0 };
 
 // `activity_log` mode treats maintenance as BMR×1.2 (sedentary base) plus
@@ -2515,7 +2515,7 @@ function applyEffectiveTarget(activityBurnedToday = 0) {
     healthMetricsCache.calorie_maintenance = maintenance;
     healthMetricsCache.calorie_target = target;
     // Body Metrics shows full maintenance calories; the deficit is applied only in Daily Summary.
-    const tEl = document.getElementById('targetCalories');
+    const tEl = document.getElementById('targetCalories')!;
     if (tEl) tEl.textContent = maintenance || '—';
     console.log('[applyEffectiveTarget]', {
         maintenance,
@@ -2555,7 +2555,7 @@ const averageRangePlugin = {
 if (typeof Chart !== 'undefined') Chart.register(averageRangePlugin);
 
 function toggleMetricsForm() {
-    const form = document.getElementById('healthMetricsForm');
+    const form = document.getElementById('healthMetricsForm')!;
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
 
@@ -2570,13 +2570,13 @@ async function loadHealthMetrics() {
         if (weightAvgKg != null) healthMetricsCache.weight_kg = weightAvgKg;
 
         // Populate form
-        document.getElementById('hmWeight').value       = healthMetricsCache.weight_kg || '';
-        document.getElementById('hmHeight').value       = data.height_cm    || '';
-        document.getElementById('hmAge').value          = data.age          || '';
-        document.getElementById('hmSex').value          = data.sex          || 'male';
-        document.getElementById('hmIntensity').value    = data.exercise_intensity || 'sedentary';
-        document.getElementById('hmWeightTarget').value = data.weight_target || '';
-        document.getElementById('hmDeficit').value      = data.calorie_deficit || '';
+        document.getElementById('hmWeight')!.value       = healthMetricsCache.weight_kg || '';
+        document.getElementById('hmHeight')!.value       = data.height_cm    || '';
+        document.getElementById('hmAge')!.value          = data.age          || '';
+        document.getElementById('hmSex')!.value          = data.sex          || 'male';
+        document.getElementById('hmIntensity')!.value    = data.exercise_intensity || 'sedentary';
+        document.getElementById('hmWeightTarget')!.value = data.weight_target || '';
+        document.getElementById('hmDeficit')!.value      = data.calorie_deficit || '';
 
         const mode = data.calorie_mode || 'average';
         console.log('[loadHealthMetrics] raw data:', data);
@@ -2584,13 +2584,13 @@ async function loadHealthMetrics() {
         document.querySelectorAll('#calorieModeToggle .calc-mode-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.mode === mode);
         });
-        document.getElementById('hmIntensity').disabled = (mode === 'activity_log');
+        document.getElementById('hmIntensity')!.disabled = (mode === 'activity_log');
 
         // For activity_log mode the displayed target must be recomputed from
         // BMR×1.2 + today's burned (the stored value is just the rest base).
         let burned = 0;
         if (mode === 'activity_log') {
-            const dateStr = document.getElementById('healthDate').value || getLocalDateString();
+            const dateStr = document.getElementById('healthDate')!.value || getLocalDateString();
             try {
                 const actRes = await fetch(`/api/activity-log?date=${dateStr}`);
                 const acts = await actRes.json();
@@ -2604,11 +2604,11 @@ async function loadHealthMetrics() {
         console.log('[loadHealthMetrics] effectiveTarget after apply:', effectiveTarget);
 
         if (effectiveTarget > 0) {
-            document.getElementById('targetProtein').textContent  = data.protein_target;
-            document.getElementById('healthTargetsRow').style.display = 'flex';
-            document.getElementById('healthMetricsForm').style.display = 'none';
+            document.getElementById('targetProtein')!.textContent  = data.protein_target;
+            document.getElementById('healthTargetsRow')!.style.display = 'flex';
+            document.getElementById('healthMetricsForm')!.style.display = 'none';
         } else {
-            document.getElementById('healthMetricsForm').style.display = 'block';
+            document.getElementById('healthMetricsForm')!.style.display = 'block';
         }
         updateFoodSummary();
     } catch (err) {
@@ -2616,30 +2616,30 @@ async function loadHealthMetrics() {
     }
 }
 
-document.getElementById('calorieModeToggle').addEventListener('click', (e) => {
-    const btn = e.target.closest('.calc-mode-btn');
+document.getElementById('calorieModeToggle')!.addEventListener('click', (e) => {
+    const btn = e.target!.closest('.calc-mode-btn');
     if (!btn) return;
     document.querySelectorAll('#calorieModeToggle .calc-mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    document.getElementById('hmIntensity').disabled = (btn.dataset.mode === 'activity_log');
+    document.getElementById('hmIntensity')!.disabled = (btn.dataset.mode === 'activity_log');
 });
 
-document.getElementById('healthMetricsForm').addEventListener('submit', async (e) => {
+document.getElementById('healthMetricsForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const weight   = parseFloat(document.getElementById('hmWeight').value);
-    const height   = parseFloat(document.getElementById('hmHeight').value);
-    const age      = parseInt(document.getElementById('hmAge').value);
-    const sex      = document.getElementById('hmSex').value;
-    const intensity = document.getElementById('hmIntensity').value;
+    const weight   = parseFloat(document.getElementById('hmWeight')!.value);
+    const height   = parseFloat(document.getElementById('hmHeight')!.value);
+    const age      = parseInt(document.getElementById('hmAge')!.value);
+    const sex      = document.getElementById('hmSex')!.value;
+    const intensity = document.getElementById('hmIntensity')!.value;
 
     // Mifflin-St Jeor BMR
     const bmr = sex === 'male'
         ? (10 * weight) + (6.25 * height) - (5 * age) + 5
         : (10 * weight) + (6.25 * height) - (5 * age) - 161;
 
-    const activeMode = document.querySelector('#calorieModeToggle .calc-mode-btn.active');
+    const activeMode = document.querySelector('#calorieModeToggle .calc-mode-btn.active')!;
     const mode = activeMode ? activeMode.dataset.mode : 'average';
-    const deficit  = Math.max(0, parseInt(document.getElementById('hmDeficit').value) || 0);
+    const deficit  = Math.max(0, parseInt(document.getElementById('hmDeficit')!.value) || 0);
     const baseMaint = mode === 'activity_log'
         ? Math.round(bmr * 1.2)
         : Math.round(bmr * ACTIVITY_MULTIPLIERS[intensity]);
@@ -2653,7 +2653,7 @@ document.getElementById('healthMetricsForm').addEventListener('submit', async (e
                 weight_kg: weight, height_cm: height, age, sex,
                 exercise_intensity: intensity,
                 calorie_target, protein_target,
-                weight_target: parseFloat(document.getElementById('hmWeightTarget').value) || 0,
+                weight_target: parseFloat(document.getElementById('hmWeightTarget')!.value) || 0,
                 calorie_deficit: deficit,
                 calorie_mode: mode
             })
@@ -2671,11 +2671,11 @@ async function loadFoodLog(dateStr) {
         const entries = await res.json();
 
         const today = getLocalDateString();
-        document.getElementById('healthDateLabel').textContent =
+        document.getElementById('healthDateLabel')!.textContent =
             dateStr === today ? "Today's Log" : `Log for ${dateStr}`;
 
         ['breakfast', 'lunch', 'dinner', 'snacks'].forEach(meal => {
-            const list = document.getElementById(`list${meal.charAt(0).toUpperCase() + meal.slice(1)}`);
+            const list = document.getElementById(`list${meal.charAt(0).toUpperCase() + meal.slice(1)}`)!;
             list.innerHTML = '';
             const mealEntries = entries.filter(e => e.meal === meal);
             if (mealEntries.length === 0) {
@@ -2707,8 +2707,8 @@ async function loadRecentFoods() {
     try {
         const res = await fetch('/api/food-log/recent');
         const foods = await res.json();
-        const bar   = document.getElementById('recentFoodsBar');
-        const chips = document.getElementById('recentFoodsChips');
+        const bar   = document.getElementById('recentFoodsBar')!;
+        const chips = document.getElementById('recentFoodsChips')!;
         if (!foods.length) { bar.style.display = 'none'; return; }
         bar.style.display = 'flex';
         chips.innerHTML = '';
@@ -2719,9 +2719,9 @@ async function loadRecentFoods() {
             chip.title = `${f.calories} kcal · P: ${f.protein_g}g`;
             chip.onclick = () => {
                 const cap = activeMeal.charAt(0).toUpperCase() + activeMeal.slice(1);
-                document.getElementById(`foodName${cap}`).value = f.food_name;
-                document.getElementById(`foodCal${cap}`).value  = f.calories;
-                document.getElementById(`foodProt${cap}`).value = f.protein_g;
+                document.getElementById(`foodName${cap}`)!.value = f.food_name;
+                document.getElementById(`foodCal${cap}`)!.value  = f.calories;
+                document.getElementById(`foodProt${cap}`)!.value = f.protein_g;
             };
             chips.appendChild(chip);
         });
@@ -2731,11 +2731,11 @@ async function loadRecentFoods() {
 async function addFoodEntry(meal) {
     activeMeal = meal;
     const cap   = meal.charAt(0).toUpperCase() + meal.slice(1);
-    const name  = document.getElementById(`foodName${cap}`).value.trim();
+    const name  = document.getElementById(`foodName${cap}`)!.value.trim();
     if (!name) return;
-    const cal   = parseFloat(document.getElementById(`foodCal${cap}`).value)  || 0;
-    const prot  = parseFloat(document.getElementById(`foodProt${cap}`).value) || 0;
-    const date  = document.getElementById('healthDate').value;
+    const cal   = parseFloat(document.getElementById(`foodCal${cap}`)!.value)  || 0;
+    const prot  = parseFloat(document.getElementById(`foodProt${cap}`)!.value) || 0;
+    const date  = document.getElementById('healthDate')!.value;
 
     try {
         await fetch('/api/food-log', {
@@ -2745,7 +2745,7 @@ async function addFoodEntry(meal) {
         });
         // Clear inputs
         ['foodName', 'foodCal', 'foodProt'].forEach(prefix => {
-            document.getElementById(`${prefix}${cap}`).value = '';
+            document.getElementById(`${prefix}${cap}`)!.value = '';
         });
         loadFoodLog(date);
         loadActivityLog(date);
@@ -2759,7 +2759,7 @@ async function addFoodEntry(meal) {
 }
 
 async function deleteFoodEntry(id) {
-    const date = document.getElementById('healthDate').value;
+    const date = document.getElementById('healthDate')!.value;
     try {
         await fetch(`/api/food-log?id=${id}`, { method: 'DELETE' });
         loadFoodLog(date);
@@ -2772,7 +2772,7 @@ async function deleteFoodEntry(id) {
 
 async function updateFoodSummary(entries?) {
     if (!entries) {
-        const date = document.getElementById('healthDate').value;
+        const date = document.getElementById('healthDate')!.value;
         try {
             const res = await fetch(`/api/food-log?date=${date}`);
             entries = await res.json();
@@ -2789,29 +2789,29 @@ async function updateFoodSummary(entries?) {
     const pct    = target > 0 ? Math.min((totalCal / target) * 100, 100) : 0;
     const over   = target > 0 && totalCal > target;
 
-    document.getElementById('summaryCalConsumed').textContent = Math.round(totalCal) as any;
-    document.getElementById('summaryCalTarget').textContent   = (target > 0 ? target : '—') as any;
+    document.getElementById('summaryCalConsumed')!.textContent = Math.round(totalCal) as any;
+    document.getElementById('summaryCalTarget')!.textContent   = (target > 0 ? target : '—') as any;
 
     // Daily Summary target already has the deficit applied — note how much.
     const deficit = healthMetricsCache.calorie_deficit || 0;
-    const deficitEl = document.getElementById('summaryCalDeficit');
+    const deficitEl = document.getElementById('summaryCalDeficit')!;
     if (deficitEl) deficitEl.textContent = (target > 0 && deficit > 0) ? ` (${deficit} deficit)` : '';
-    document.getElementById('summaryProtein').textContent     = totalProt.toFixed(1);
-    document.getElementById('summaryCalTotal').textContent    = Math.round(totalCal) as any;
+    document.getElementById('summaryProtein')!.textContent     = totalProt.toFixed(1);
+    document.getElementById('summaryCalTotal')!.textContent    = Math.round(totalCal) as any;
 
     // Calories / protein remaining for the day = target − already eaten
     const protTarget = healthMetricsCache.protein_target || 0;
-    const calLeftEl  = document.getElementById('summaryCalLeft');
-    const protLeftEl = document.getElementById('summaryProtLeft');
+    const calLeftEl  = document.getElementById('summaryCalLeft')!;
+    const protLeftEl = document.getElementById('summaryProtLeft')!;
     if (calLeftEl)  calLeftEl.textContent  = target > 0      ? `${Math.round(target - totalCal)} kcal` : '—';
     if (protLeftEl) protLeftEl.textContent = protTarget > 0  ? `${(protTarget - totalProt).toFixed(1)} g` : '—';
 
-    const bar = document.getElementById('caloriesBarFill');
+    const bar = document.getElementById('caloriesBarFill')!;
     bar.style.width = pct + '%';
     bar.style.background = over ? '#ef4444' : '#00c9a7';
 
     // Macro doughnut
-    const ctx = document.getElementById('macroChart').getContext('2d');
+    const ctx = document.getElementById('macroChart')!.getContext('2d');
     if (macroChartInstance) macroChartInstance.destroy();
     const hasData = totalProt > 0 || totalCal > 0;
     const protCal = totalProt * 4;
@@ -2857,15 +2857,15 @@ async function loadNutritionWeekChart() {
         const avgProt = priorIdx.length
             ? priorIdx.reduce((s, x) => s + (x.d.protein  || 0), 0) / priorIdx.length
             : 0;
-        const avgCalEl  = document.getElementById('nutritionAvgCal');
-        const avgProtEl = document.getElementById('nutritionAvgProt');
+        const avgCalEl  = document.getElementById('nutritionAvgCal')!;
+        const avgProtEl = document.getElementById('nutritionAvgProt')!;
         if (avgCalEl)  avgCalEl.textContent  = priorIdx.length ? `${Math.round(avgCal)} kcal` : '—';
         if (avgProtEl) avgProtEl.textContent = priorIdx.length ? `${avgProt.toFixed(1)} g`    : '—';
 
         const startIndex = priorIdx.length ? priorIdx[0].i                       : null;
         const endIndex   = priorIdx.length ? priorIdx[priorIdx.length - 1].i     : null;
 
-        const ctx = document.getElementById('nutritionWeekChart').getContext('2d');
+        const ctx = document.getElementById('nutritionWeekChart')!.getContext('2d');
         if (nutritionWeekChartInstance) nutritionWeekChartInstance.destroy();
 
         const isLight  = document.documentElement.getAttribute('data-mode') === 'light';
@@ -2928,7 +2928,7 @@ async function loadNutritionWeekChart() {
 
 // Water tracker
 function getWaterTarget() {
-    const stored = parseFloat(localStorage.getItem('water_target'));
+    const stored = parseFloat(localStorage.getItem('water_target')!);
     return isNaN(stored) || stored <= 0 ? 2.5 : stored;
 }
 
@@ -2938,7 +2938,7 @@ function saveWaterTarget(val) {
 }
 
 function getWaterEntries(dateStr) {
-    try { return JSON.parse(localStorage.getItem(`water_entries_${dateStr}`)) || []; }
+    try { return JSON.parse(localStorage.getItem(`water_entries_${dateStr}`)!) || []; }
     catch { return []; }
 }
 
@@ -2947,13 +2947,13 @@ function saveWaterEntries(dateStr, entries) {
 }
 
 function loadWater(dateStr) {
-    const targetInput = document.getElementById('waterTarget');
+    const targetInput = document.getElementById('waterTarget')!;
     if (targetInput) targetInput.value = getWaterTarget();
     renderWater(dateStr, getWaterEntries(dateStr));
 }
 
 function addWater(dateStr) {
-    const input = document.getElementById('waterInput');
+    const input = document.getElementById('waterInput')!;
     const amount = parseFloat(input.value);
     if (!amount || amount <= 0) return;
     const entries = getWaterEntries(dateStr);
@@ -2974,12 +2974,12 @@ function renderWater(dateStr, entries) {
     const target = getWaterTarget();
     const pct = target > 0 ? Math.min((total / target) * 100, 100) : 0;
 
-    document.getElementById('waterCount').textContent = total.toFixed(2);
-    const bar = document.getElementById('waterBarFill');
+    document.getElementById('waterCount')!.textContent = total.toFixed(2);
+    const bar = document.getElementById('waterBarFill')!;
     bar.style.width = pct + '%';
     bar.style.background = total >= target ? '#3b82f6' : '#38bdf8';
 
-    const list = document.getElementById('waterEntryList');
+    const list = document.getElementById('waterEntryList')!;
     list.innerHTML = '';
     entries.forEach(e => {
         const row = document.createElement('div');
@@ -3004,7 +3004,7 @@ async function loadActivityLog(dateStr) {
         const activities = await actRes.json();
         const foods      = await foodRes.json();
 
-        const list = document.getElementById('activityList');
+        const list = document.getElementById('activityList')!;
         list.innerHTML = '';
         if (activities.length === 0) {
             list.innerHTML = '<p class="health-empty">No activities logged.</p>';
@@ -3033,36 +3033,36 @@ async function loadActivityLog(dateStr) {
             updateFoodSummary(foods);
         }
 
-        document.getElementById('activityBurnedValue').textContent = `${Math.round(burned)} kcal`;
+        document.getElementById('activityBurnedValue')!.textContent = `${Math.round(burned)} kcal`;
     } catch (err) {
         console.error('Error loading activity log:', err);
     }
 }
 
 // Show custom name / calories inputs when "Other" is selected
-document.getElementById('activityType').addEventListener('change', (e) => {
-    const isOther = e.target.value === 'other';
-    const nameInput = document.getElementById('activityTypeOther');
-    const calInput  = document.getElementById('activityCaloriesOther');
+document.getElementById('activityType')!.addEventListener('change', (e) => {
+    const isOther = e.target!.value === 'other';
+    const nameInput = document.getElementById('activityTypeOther')!;
+    const calInput  = document.getElementById('activityCaloriesOther')!;
     nameInput.classList.toggle('visible', isOther);
     calInput.classList.toggle('visible', isOther);
     nameInput.required = isOther;
     if (!isOther) { nameInput.value = ''; calInput.value = ''; }
 });
 
-document.getElementById('activityLogForm').addEventListener('submit', async (e) => {
+document.getElementById('activityLogForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    let type        = document.getElementById('activityType').value;
-    const duration  = parseInt(document.getElementById('activityDuration').value) || 0;
-    const intensity = document.getElementById('activityIntensity').value;
-    const date      = document.getElementById('healthDate').value;
+    let type        = document.getElementById('activityType')!.value;
+    const duration  = parseInt(document.getElementById('activityDuration')!.value) || 0;
+    const intensity = document.getElementById('activityIntensity')!.value;
+    const date      = document.getElementById('healthDate')!.value;
     const weight    = healthMetricsCache.weight_kg || 70;
 
     if (type === 'other') {
-        const customName = document.getElementById('activityTypeOther').value.trim();
+        const customName = document.getElementById('activityTypeOther')!.value.trim();
         if (!customName) return;
         type = customName;
-        const rateVal = parseFloat(document.getElementById('activityCaloriesOther').value);
+        const rateVal = parseFloat(document.getElementById('activityCaloriesOther')!.value);
         // A per-minute rate makes the activity reusable: save it so future logs auto-scale.
         if (!isNaN(rateVal) && rateVal > 0) {
             saveCustomActivity(customName, rateVal);
@@ -3085,8 +3085,8 @@ document.getElementById('activityLogForm').addEventListener('submit', async (e) 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, activity_type: type, duration_mins: duration, intensity, calories_burned })
         });
-        document.getElementById('activityLogForm').reset();
-        document.getElementById('activityType').dispatchEvent(new Event('change'));
+        document.getElementById('activityLogForm')!.reset();
+        document.getElementById('activityType')!.dispatchEvent(new Event('change'));
         loadActivityLog(date);
     } catch (err) {
         console.error('Error logging activity:', err);
@@ -3094,7 +3094,7 @@ document.getElementById('activityLogForm').addEventListener('submit', async (e) 
 });
 
 async function deleteActivityLog(id) {
-    const date = document.getElementById('healthDate').value;
+    const date = document.getElementById('healthDate')!.value;
     try {
         await fetch(`/api/activity-log?id=${id}`, { method: 'DELETE' });
         loadActivityLog(date);
@@ -3103,8 +3103,8 @@ async function deleteActivityLog(id) {
     }
 }
 
-document.getElementById('healthDate').addEventListener('change', (e) => {
-    const dateStr = e.target.value;
+document.getElementById('healthDate')!.addEventListener('change', (e) => {
+    const dateStr = e.target!.value;
     loadFoodLog(dateStr);
     loadActivityLog(dateStr);
     loadWater(dateStr);
@@ -3112,10 +3112,10 @@ document.getElementById('healthDate').addEventListener('change', (e) => {
 
 // ── Weight Log ─────────────────────────────────────────────────
 
-let weightChartInstance = null;
-let weightLogData = [];
+let weightChartInstance: any = null;
+let weightLogData: any[] = [];
 let weightChartRange = '2W';   // default range on load
-let weightAvgKg = null;        // rolling average that auto-fills Body Metrics weight
+let weightAvgKg: any = null;        // rolling average that auto-fills Body Metrics weight
 const WEIGHT_RANGE_DAYS = { '1W': 7, '2W': 14, '1M': 30, '5M': 150, '1Y': 365 };
 
 async function loadWeightLog() {
@@ -3127,7 +3127,7 @@ async function loadWeightLog() {
         // Update today's weight in Daily Summary
         const today = getLocalDateString();
         const todayEntry = data.find(d => d.date === today);
-        const summaryWeight = document.getElementById('summaryWeight');
+        const summaryWeight = document.getElementById('summaryWeight')!;
         if (summaryWeight) summaryWeight.textContent = todayEntry ? todayEntry.weight_kg + ' kg' : '—';
 
         // ── Average weight (UNCHANGED): past 7 days including today ──
@@ -3142,7 +3142,7 @@ async function loadWeightLog() {
         const avgWeight = windowEntries.length
             ? windowEntries.reduce((s, d) => s + (d.weight_kg || 0), 0) / windowEntries.length
             : 0;
-        const avgEl = document.getElementById('weightAvgDisplay');
+        const avgEl = document.getElementById('weightAvgDisplay')!;
         if (avgEl) avgEl.textContent = windowEntries.length ? `${avgWeight.toFixed(1)} kg` : '—';
 
         // Auto-fill the Body Metrics weight from this rolling average. Re-render the
@@ -3161,7 +3161,7 @@ async function loadWeightLog() {
 
 // Draw the weight chart filtered to the selected time range, crypto-chart style.
 function renderWeightChart() {
-    const canvas = document.getElementById('weightChart');
+    const canvas = document.getElementById('weightChart')!;
     if (!canvas) return;
     const data = weightLogData;
 
@@ -3178,7 +3178,7 @@ function renderWeightChart() {
     });
 
     // Percentage change: newest vs oldest actual entry within the range
-    const changeEl = document.getElementById('weightChange');
+    const changeEl = document.getElementById('weightChange')!;
     if (changeEl) {
         if (filtered.length === 0) {
             changeEl.textContent = 'N/A';
@@ -3196,7 +3196,7 @@ function renderWeightChart() {
 
     // Interval line spans the average window (last 7 days) within the filtered data
     const avgStart = new Date(todayDate); avgStart.setDate(avgStart.getDate() - 7);
-    let startIndex = null, endIndex = null;
+    let startIndex: any = null, endIndex: any = null;
     filtered.forEach((d, i) => {
         const t = msFor(d.date);
         if (t >= avgStart.getTime() && t <= todayDate.getTime()) {
@@ -3272,7 +3272,7 @@ function setupWeightRangeButtons() {
     const buttons = document.querySelectorAll('.weight-range-buttons button');
     buttons.forEach(btn => {
         btn.addEventListener('click', () => {
-            weightChartRange = btn.dataset.range;
+            weightChartRange = btn.dataset.range!;
             buttons.forEach(b => b.classList.toggle('active', b === btn));
             renderWeightChart();
         });
@@ -3280,8 +3280,8 @@ function setupWeightRangeButtons() {
 }
 
 async function saveWeightEntry() {
-    const date = document.getElementById('weightDate').value;
-    const weight = parseFloat(document.getElementById('weightKg').value);
+    const date = document.getElementById('weightDate')!.value;
+    const weight = parseFloat(document.getElementById('weightKg')!.value);
     if (!date || !weight) return;
     try {
         await fetch('/api/weight-log', {
@@ -3289,7 +3289,7 @@ async function saveWeightEntry() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, weight_kg: weight })
         });
-        document.getElementById('weightKg').value = '';
+        document.getElementById('weightKg')!.value = '';
         loadWeightLog();
     } catch (e) {
         console.error('Error saving weight:', e);
@@ -3302,13 +3302,13 @@ async function loadXP() {
     try {
         const res = await fetch('/api/xp');
         const data = await res.json();
-        const el = document.getElementById('xp-display');
+        const el = document.getElementById('xp-display')!;
         let text = `Lv.${data.level} · ${data.total_xp.toLocaleString()} XP`;
         if (data.multiplier > 1) text += ` ×${data.multiplier.toFixed(2)}`;
         el.textContent = text;
         const pct = Math.min(100, data.xp_for_next > 0 ? (data.xp_in_level / data.xp_for_next) * 100 : 100);
-        document.getElementById('xp-progress-fill').style.width = pct + '%';
-        document.getElementById('xp-progress-label').textContent =
+        document.getElementById('xp-progress-fill')!.style.width = pct + '%';
+        document.getElementById('xp-progress-label')!.textContent =
             `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
     } catch (e) {
         console.error('Error loading XP:', e);
@@ -3319,7 +3319,7 @@ async function loadXPLog() {
     try {
         const res = await fetch('/api/xp/log');
         const entries = await res.json();
-        const list = document.getElementById('xp-log-list');
+        const list = document.getElementById('xp-log-list')!;
         if (entries.length === 0) {
             list.innerHTML = '<p style="color:#8b92b0;text-align:center;padding:20px;">No XP events yet.</p>';
             return;
@@ -3362,17 +3362,17 @@ async function initializeApp() {
     loadAllTasks().then(() => populateConditionsGoalSelect());
     loadRecipes();
     loadYume();
-    document.getElementById('currentDate').value = getLocalDateString();
+    document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());
     loadFinance();
     setupReminderForms();
     loadAllReminders();
     checkReminderAlerts();
     setInterval(checkReminderAlerts, 60000);
-    document.getElementById('weightDate').value = getLocalDateString();
+    document.getElementById('weightDate')!.value = getLocalDateString();
     setupWeightRangeButtons();
     loadWeightLog();
-    document.getElementById('healthDate').value = getLocalDateString();
+    document.getElementById('healthDate')!.value = getLocalDateString();
     await loadHealthMetrics();
     loadFoodLog(getLocalDateString());
     renderActivityOptions();

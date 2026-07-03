@@ -5,6 +5,7 @@
         "rootDir": "static/ts",
         "outDir": "static/js",
         "strict": false,
+        "strictNullChecks": true,
         "noImplicitAny": false,
         "removeComments": false,
         "skipLibCheck": true
