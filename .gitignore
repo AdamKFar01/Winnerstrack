@@ -36,3 +36,4 @@ static/js/app.js
 # IDE
 .vscode/
 .idea/
+*.stale-backup
