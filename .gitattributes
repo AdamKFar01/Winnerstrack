@@ -12,5 +12,6 @@
 # Tell GitHub Linguist that JS/CSS/HTML are vendored frontend assets,
 # so Python shows as the primary language of the repo.
 static/js/*.js linguist-vendored
+*.ts linguist-vendored
 static/css/*.css linguist-vendored
 templates/*.html linguist-vendored
