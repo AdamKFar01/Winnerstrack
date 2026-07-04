@@ -2990,7 +2990,7 @@ function renderWater(dateStr, entries) {
     document.getElementById('waterCount')!.textContent = total.toFixed(2);
     const bar = document.getElementById('waterBarFill')!;
     bar.style.width = pct + '%';
-    bar.style.background = total >= target ? '#3b82f6' : '#38bdf8';
+    bar.style.background = total >= target ? 'var(--color-accent-dark)' : 'var(--color-accent)';
 
     const list = document.getElementById('waterEntryList')!;
     list.innerHTML = '';
