@@ -3075,10 +3075,10 @@ document.getElementById('activityLogForm')!.addEventListener('submit', async (e)
         const customName = document.getElementById('activityTypeOther')!.value.trim();
         if (!customName) return;
         type = customName;
-        const rateVal = parseFloat(document.getElementById('activityCaloriesOther')!.value);
-        // A per-minute rate makes the activity reusable: save it so future logs auto-scale.
-        if (!isNaN(rateVal) && rateVal > 0) {
-            saveCustomActivity(customName, rateVal);
+        const ratePer30Min = parseFloat(document.getElementById('activityCaloriesOther')!.value);
+        // Stored internally as calories per minute so it auto-scales to any duration entered next time.
+        if (!isNaN(ratePer30Min) && ratePer30Min > 0) {
+            saveCustomActivity(customName, ratePer30Min / 30);
             renderActivityOptions();
         }
     }
