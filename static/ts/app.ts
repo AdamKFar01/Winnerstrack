@@ -2816,8 +2816,12 @@ async function updateFoodSummary(entries?) {
     const protTarget = healthMetricsCache.protein_target || 0;
     const calLeftEl  = document.getElementById('summaryCalLeft')!;
     const protLeftEl = document.getElementById('summaryProtLeft')!;
-    if (calLeftEl)  calLeftEl.textContent  = target > 0      ? `${Math.round(target - totalCal)} kcal` : '—';
-    if (protLeftEl) protLeftEl.textContent = protTarget > 0  ? `${(protTarget - totalProt).toFixed(1)} g` : '—';
+    if (calLeftEl) {
+        const calLeft = Math.round(target - totalCal);
+        calLeftEl.textContent = target > 0 ? `${calLeft} kcal` : '—';
+        calLeftEl.style.color = (target > 0 && calLeft < 0) ? '#ef4444' : '';
+    }
+    if (protLeftEl) protLeftEl.textContent = protTarget > 0  ? `${Math.max(0, protTarget - totalProt).toFixed(1)} g` : '—';
 
     const bar = document.getElementById('caloriesBarFill')!;
     bar.style.width = pct + '%';
