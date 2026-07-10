@@ -1,0 +1,8 @@
+[project]
+name = "winnerstrack"
+version = "1.0.0"
+description = "WinnersTrack personal tracking app"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0.0",
+]

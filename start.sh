@@ -8,4 +8,4 @@ echo ""
 
 npx tsc
 
-python3 app.py
+uv run app.py

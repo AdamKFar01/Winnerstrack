@@ -73,9 +73,9 @@ The main endpoint groups:
 
 **Web only (no Electron):**
 ```bash
-pip install -r requirements.txt
-python3 app.py
+uv run app.py
 # opens at http://localhost:5001
+# uv installs dependencies from pyproject.toml/uv.lock automatically
 ```
 
 Or just:
