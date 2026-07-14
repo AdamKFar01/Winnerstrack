@@ -444,7 +444,15 @@ h1 {
 }
 
 #weekChart {
-    max-height: 300px;
+    max-height: 225px;
+}
+
+/* Both This Week plots scaled down to 75% */
+#weekChart,
+#pillarWeekChart {
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* ── Activity management ───────────────────────────────────── */
