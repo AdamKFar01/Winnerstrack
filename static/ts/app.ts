@@ -2454,7 +2454,60 @@ async function deleteReminder(id) {
 
 // Load initial data
 // ── Daily Goals ────────────────────────────────────────────────
-const dailyGoalComplete = [false, false, false];
+const MAX_DAILY_GOALS = 10;
+let dailyGoalsState: { text: string; completed: boolean }[] = [{ text: '', completed: false }];
+
+function renderDailyGoalRows() {
+    const container = document.getElementById('dailyGoalRows')!;
+    const isReadonly = document.getElementById('dailyGoalsCard')!.classList.contains('readonly');
+    container.innerHTML = '';
+
+    dailyGoalsState.forEach((goal, i) => {
+        const row = document.createElement('div');
+        row.className = 'daily-goal-row';
+
+        const area = document.createElement('span');
+        area.className = 'goal-check-area';
+        const icon = document.createElement('img');
+        icon.src = '/static/img/icon-g.png';
+        icon.className = 'goal-done-icon';
+        icon.alt = '';
+        icon.style.display = goal.completed ? 'block' : 'none';
+        area.appendChild(icon);
+        area.style.pointerEvents = isReadonly ? 'none' : '';
+        area.style.opacity = isReadonly ? '0.6' : '';
+        area.onclick = () => {
+            if (document.getElementById('dailyGoalsCard')!.classList.contains('readonly')) return;
+            goal.completed = !goal.completed;
+            icon.style.display = goal.completed ? 'block' : 'none';
+            saveDailyGoals();
+        };
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'goal-text-input';
+        input.placeholder = `Goal ${i + 1}...`;
+        input.value = goal.text;
+        input.disabled = isReadonly;
+        input.oninput = () => { goal.text = input.value; };
+
+        row.appendChild(area);
+        row.appendChild(input);
+        container.appendChild(row);
+    });
+
+    const addBtn = document.getElementById('addGoalRowBtn')!;
+    addBtn.style.display = (isReadonly || dailyGoalsState.length >= MAX_DAILY_GOALS) ? 'none' : '';
+}
+
+function addDailyGoalRow() {
+    if (document.getElementById('dailyGoalsCard')!.classList.contains('readonly')) return;
+    if (dailyGoalsState.length >= MAX_DAILY_GOALS) return;
+    dailyGoalsState.push({ text: '', completed: false });
+    renderDailyGoalRows();
+    const inputs = document.querySelectorAll('#dailyGoalRows .goal-text-input');
+    (inputs[inputs.length - 1] as HTMLInputElement).focus();
+}
 
 async function loadDailyGoals(dateStr) {
     const today = getLocalDateString();
@@ -2477,19 +2530,10 @@ async function loadDailyGoals(dateStr) {
         const response = await fetch(`/api/daily-goals?date=${dateStr}`);
         const data = await response.json();
 
-        for (let i = 1; i <= 3; i++) {
-            const textEl = document.getElementById(`goalText${i}`)!;
-            const iconEl = document.getElementById(`goalDoneIcon${i}`)!;
-            const areaEl = document.getElementById(`goalCheckArea${i}`)!;
-            const complete = data[`goal_${i}_complete`];
-
-            textEl.value = data[`goal_${i}_text`] || '';
-            dailyGoalComplete[i - 1] = complete;
-            iconEl.style.display = complete ? 'block' : 'none';
-            textEl.disabled = isPast;
-            areaEl.style.pointerEvents = isPast ? 'none' : '';
-            areaEl.style.opacity = isPast ? '0.6' : '';
-        }
+        dailyGoalsState = (data.goals && data.goals.length > 0)
+            ? data.goals
+            : [{ text: '', completed: false }];
+        renderDailyGoalRows();
 
         const streakEl  = document.getElementById('dailyStreak')!;
         const streakNum = document.getElementById('dailyStreakCount')!;
@@ -2505,13 +2549,6 @@ async function loadDailyGoals(dateStr) {
     }
 }
 
-function toggleGoalComplete(n) {
-    if (document.getElementById('dailyGoalsCard')!.classList.contains('readonly')) return;
-    dailyGoalComplete[n - 1] = !dailyGoalComplete[n - 1];
-    document.getElementById(`goalDoneIcon${n}`)!.style.display = dailyGoalComplete[n - 1] ? 'block' : 'none';
-    saveDailyGoals();
-}
-
 async function saveDailyGoals() {
     const dateStr = document.getElementById('currentDate')!.value;
     try {
@@ -2520,12 +2557,9 @@ async function saveDailyGoals() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 date: dateStr,
-                goal_1_text: document.getElementById('goalText1')!.value,
-                goal_1_complete: dailyGoalComplete[0] ? 1 : 0,
-                goal_2_text: document.getElementById('goalText2')!.value,
-                goal_2_complete: dailyGoalComplete[1] ? 1 : 0,
-                goal_3_text: document.getElementById('goalText3')!.value,
-                goal_3_complete: dailyGoalComplete[2] ? 1 : 0
+                goals: dailyGoalsState
+                    .filter(g => g.text.trim())
+                    .map(g => ({ text: g.text.trim(), completed: g.completed ? 1 : 0 }))
             })
         });
         loadXP();

@@ -188,6 +188,25 @@ def init_db():
                   goal_3_text TEXT DEFAULT '',
                   goal_3_complete INTEGER DEFAULT 0)''')
 
+    # Flexible daily goal items (1 to 10 per day); replaces the fixed 3-column daily_goals
+    c.execute('''CREATE TABLE IF NOT EXISTS daily_goal_items
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  date TEXT NOT NULL,
+                  position INTEGER NOT NULL,
+                  text TEXT DEFAULT '',
+                  completed INTEGER DEFAULT 0)''')
+    # One-time migration of existing daily_goals rows
+    c.execute('SELECT COUNT(*) FROM daily_goal_items')
+    if c.fetchone()[0] == 0:
+        c.execute('''SELECT date, goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
+                            goal_3_text, goal_3_complete FROM daily_goals''')
+        for r in c.fetchall():
+            for i in range(3):
+                text = (r[1 + i * 2] or '').strip()
+                if text:
+                    c.execute('''INSERT INTO daily_goal_items (date, position, text, completed)
+                                 VALUES (?, ?, ?, ?)''', (r[0], i, text, r[2 + i * 2] or 0))
+
     # Weight log table (one entry per date)
     c.execute('''CREATE TABLE IF NOT EXISTS weight_log
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -315,6 +334,13 @@ def award_xp(c, change, reason):
     return actual_change
 
 
+def daily_goals_done(c, date):
+    """A day's goals count as done when at least 3 goals were set and all of them completed."""
+    c.execute("SELECT completed FROM daily_goal_items WHERE date = ? AND TRIM(text) != ''", (date,))
+    rows = c.fetchall()
+    return len(rows) >= 3 and all(r[0] for r in rows)
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -414,16 +440,7 @@ def week_data():
         mindset  = cats.get('mindset', 0)
         total    = physical + work + health + relationships + mindset
 
-        c.execute('''SELECT goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
-                            goal_3_text, goal_3_complete
-                     FROM daily_goals WHERE date = ?''', (date,))
-        grow = c.fetchone()
-        if grow:
-            goals_all_done = bool(grow[0]) and bool(grow[1]) and \
-                             bool(grow[2]) and bool(grow[3]) and \
-                             bool(grow[4]) and bool(grow[5])
-        else:
-            goals_all_done = False
+        goals_all_done = daily_goals_done(c, date)
 
         week_data.append({
             'date': date, 'points': total, 'goals_all_done': goals_all_done,
@@ -442,77 +459,42 @@ def daily_goals_api():
 
     if request.method == 'POST':
         data = request.json
-        # Fetch previous completion state to detect newly-completed goals
-        c.execute('SELECT goal_1_complete, goal_2_complete, goal_3_complete FROM daily_goals WHERE date = ?',
-                  (data['date'],))
-        old_row = c.fetchone()
-        old_complete = [old_row[0] if old_row else 0,
-                        old_row[1] if old_row else 0,
-                        old_row[2] if old_row else 0]
+        date = data['date']
+        goals = [g for g in data.get('goals', []) if (g.get('text') or '').strip()][:10]
 
-        new_complete = [int(data.get('goal_1_complete', 0)),
-                        int(data.get('goal_2_complete', 0)),
-                        int(data.get('goal_3_complete', 0))]
-        new_texts = [data.get('goal_1_text', ''),
-                     data.get('goal_2_text', ''),
-                     data.get('goal_3_text', '')]
+        # Previous completion state (by position) to detect newly-completed goals
+        c.execute('SELECT position, completed FROM daily_goal_items WHERE date = ?', (date,))
+        old_complete = {r[0]: r[1] for r in c.fetchall()}
 
-        c.execute('''INSERT OR REPLACE INTO daily_goals
-                     (date, goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
-                      goal_3_text, goal_3_complete)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                  (data['date'],
-                   new_texts[0], new_complete[0],
-                   new_texts[1], new_complete[1],
-                   new_texts[2], new_complete[2]))
-
-        # Award +100 XP per newly completed goal (only for today's date)
+        c.execute('DELETE FROM daily_goal_items WHERE date = ?', (date,))
         today = datetime.now().strftime('%Y-%m-%d')
-        if data['date'] == today:
-            for i in range(3):
-                if new_complete[i] == 1 and old_complete[i] == 0 and new_texts[i]:
-                    award_xp(c, 100, f"Goal {i+1} completed")
+        for i, g in enumerate(goals):
+            completed = 1 if g.get('completed') else 0
+            c.execute('''INSERT INTO daily_goal_items (date, position, text, completed)
+                         VALUES (?, ?, ?, ?)''', (date, i, g['text'].strip(), completed))
+            # Award +100 XP per newly completed goal (only for today's date)
+            if date == today and completed == 1 and not old_complete.get(i, 0):
+                award_xp(c, 100, f"Goal {i+1} completed")
 
         conn.commit()
         conn.close()
         return jsonify({'success': True})
 
     date = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    c.execute('SELECT * FROM daily_goals WHERE date = ?', (date,))
-    row = c.fetchone()
+    c.execute("SELECT text, completed FROM daily_goal_items WHERE date = ? AND TRIM(text) != '' ORDER BY position", (date,))
+    goals = [{'text': r[0], 'completed': bool(r[1])} for r in c.fetchall()]
 
-    # Compute streak: consecutive past days where all 3 goals were completed
+    # Compute streak: consecutive past days with at least 3 goals, all completed
     streak = 0
     check = datetime.strptime(date, '%Y-%m-%d') - timedelta(days=1)
-    while True:
-        ds = check.strftime('%Y-%m-%d')
-        c.execute('SELECT goal_1_complete, goal_2_complete, goal_3_complete, goal_1_text, goal_2_text, goal_3_text FROM daily_goals WHERE date = ?', (ds,))
-        sr = c.fetchone()
-        if sr and sr[3] and sr[4] and sr[5] and sr[0] and sr[1] and sr[2]:
-            streak += 1
-            check -= timedelta(days=1)
-        else:
-            break
+    while daily_goals_done(c, check.strftime('%Y-%m-%d')):
+        streak += 1
+        check -= timedelta(days=1)
         if streak > 365:
             break
 
     conn.close()
-
-    if row:
-        return jsonify({
-            'date': row[1],
-            'goal_1_text': row[2], 'goal_1_complete': bool(row[3]),
-            'goal_2_text': row[4], 'goal_2_complete': bool(row[5]),
-            'goal_3_text': row[6], 'goal_3_complete': bool(row[7]),
-            'streak': streak
-        })
-    return jsonify({
-        'date': date,
-        'goal_1_text': '', 'goal_1_complete': False,
-        'goal_2_text': '', 'goal_2_complete': False,
-        'goal_3_text': '', 'goal_3_complete': False,
-        'streak': streak
-    })
+    return jsonify({'date': date, 'goals': goals, 'streak': streak})
 
 @app.route('/api/tasks', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def tasks():
@@ -1023,19 +1005,16 @@ def month_data():
     points_rows = c.fetchall()
 
     c.execute(
-        '''SELECT date, goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
-                  goal_3_text, goal_3_complete
-           FROM daily_goals WHERE strftime('%Y-%m', date) = ?''',
+        '''SELECT date, COUNT(*), SUM(CASE WHEN completed THEN 1 ELSE 0 END)
+           FROM daily_goal_items
+           WHERE strftime('%Y-%m', date) = ? AND TRIM(text) != ''
+           GROUP BY date''',
         (month_str,)
     )
     goals_rows = c.fetchall()
     conn.close()
 
-    goals_map = {}
-    for row in goals_rows:
-        goals_map[row[0]] = bool(row[1]) and bool(row[2]) and \
-                             bool(row[3]) and bool(row[4]) and \
-                             bool(row[5]) and bool(row[6])
+    goals_map = {row[0]: (row[1] >= 3 and row[2] == row[1]) for row in goals_rows}
 
     result = {}
     for date, pts in points_rows:
@@ -1314,11 +1293,7 @@ def xp_complete_day():
     pts_row = c.fetchone()
     today_points = pts_row[0] if pts_row[0] else 0
 
-    c.execute('''SELECT goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
-                        goal_3_text, goal_3_complete
-                 FROM daily_goals WHERE date = ?''', (today,))
-    grow = c.fetchone()
-    goals_done = bool(grow and grow[0] and grow[1] and grow[2] and grow[3] and grow[4] and grow[5])
+    goals_done = daily_goals_done(c, today)
 
     if today_points < 1000 or not goals_done:
         conn.close()
@@ -1333,7 +1308,7 @@ def xp_complete_day():
 
     c.execute('UPDATE user_stats SET last_win_day = ?, streak_days = ? WHERE id = 1',
               (today, new_streak))
-    award_xp(c, 200, "Perfect day bonus (1000pts + all 3 goals)")
+    award_xp(c, 200, "Perfect day bonus (1000pts + all daily goals)")
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'streak': new_streak})
@@ -1363,11 +1338,7 @@ def xp_daily_check():
     def day_was_win(date):
         c.execute('SELECT SUM(points) FROM wins WHERE date = ?', (date,))
         p = c.fetchone()[0] or 0
-        c.execute('''SELECT goal_1_text, goal_1_complete, goal_2_text, goal_2_complete,
-                            goal_3_text, goal_3_complete
-                     FROM daily_goals WHERE date = ?''', (date,))
-        g = c.fetchone()
-        return p >= 1000 and bool(g and g[0] and g[1] and g[2] and g[3] and g[4] and g[5])
+        return p >= 1000 and daily_goals_done(c, date)
 
     c.execute('UPDATE user_stats SET last_penalty_date = ? WHERE id = 1', (today,))
 
