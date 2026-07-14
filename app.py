@@ -221,6 +221,11 @@ def init_db():
         c.execute("ALTER TABLE tasks ADD COLUMN priority TEXT DEFAULT 'medium'")
     except Exception:
         pass
+    # target_month column ('YYYY-MM') for monthly goals aimed at a specific month
+    try:
+        c.execute("ALTER TABLE tasks ADD COLUMN target_month TEXT")
+    except Exception:
+        pass
 
     # Mastered recipes table
     c.execute('''CREATE TABLE IF NOT EXISTS recipes
@@ -519,6 +524,11 @@ def tasks():
         task_type = data.get('task_type', 'task')
         period = data.get('period', 'today')
         
+        # Monthly goals can target a specific month ('YYYY-MM'); default is the current month
+        target_month = data.get('target_month') or None
+        if period == 'monthly' and not target_month:
+            target_month = datetime.now().strftime('%Y-%m')
+
         # Calculate due date based on period
         due_date = data.get('due_date')
         if not due_date and period == 'today':
@@ -526,12 +536,17 @@ def tasks():
         elif not due_date and period == 'weekly':
             due_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
         elif not due_date and period == 'monthly':
-            due_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-        
-        c.execute('''INSERT INTO tasks (task, task_type, period, due_date, created_at, xp_reward, priority)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            # Due at the end of the target month
+            ty, tm = map(int, target_month.split('-'))
+            if tm == 12:
+                due_date = f'{ty}-12-31'
+            else:
+                due_date = (datetime(ty, tm + 1, 1) - timedelta(days=1)).strftime('%Y-%m-%d')
+
+        c.execute('''INSERT INTO tasks (task, task_type, period, due_date, created_at, xp_reward, priority, target_month)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                   (data['task'], task_type, period, due_date, datetime.now().isoformat(),
-                   data.get('xp_reward', 0), data.get('priority', 'medium')))
+                   data.get('xp_reward', 0), data.get('priority', 'medium'), target_month))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
@@ -569,7 +584,7 @@ def tasks():
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        sel = 'SELECT id, task, task_type, period, completed, due_date, created_at, moved_to_old, xp_reward, priority FROM tasks'
+        sel = 'SELECT id, task, task_type, period, completed, due_date, created_at, moved_to_old, xp_reward, priority, target_month FROM tasks'
 
         if period == 'old':
             today = now.strftime('%Y-%m-%d')
@@ -581,9 +596,14 @@ def tasks():
             c.execute(f'{sel} WHERE task_type = ? AND period = ? AND DATE(created_at) >= ? ORDER BY completed, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, created_at',
                      (task_type, period, week_start))
         elif period == 'monthly':
-            month_start = now.replace(day=1).strftime('%Y-%m-%d')
-            c.execute(f'{sel} WHERE task_type = ? AND period = ? AND DATE(created_at) >= ? ORDER BY completed, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, created_at',
-                     (task_type, period, month_start))
+            # Goals targeting the current month; legacy rows fall back to their creation month
+            current_month = now.strftime('%Y-%m')
+            c.execute(f'{sel} WHERE task_type = ? AND period = ? AND COALESCE(target_month, strftime(\'%Y-%m\', created_at)) = ? ORDER BY completed, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, created_at',
+                     (task_type, period, current_month))
+        elif period == 'monthly-upcoming':
+            current_month = now.strftime('%Y-%m')
+            c.execute(f'{sel} WHERE task_type = ? AND period = \'monthly\' AND COALESCE(target_month, strftime(\'%Y-%m\', created_at)) > ? ORDER BY target_month, created_at',
+                     (task_type, current_month))
         elif period == 'yearly':
             year_start = now.replace(month=1, day=1).strftime('%Y-%m-%d')
             c.execute(f'{sel} WHERE task_type = ? AND period = ? AND DATE(created_at) >= ? ORDER BY completed, CASE priority WHEN \'high\' THEN 0 WHEN \'medium\' THEN 1 ELSE 2 END, created_at',
@@ -607,7 +627,8 @@ def tasks():
                 'created_at': task['created_at'],
                 'moved_to_old': task['moved_to_old'],
                 'xp_reward': task['xp_reward'],
-                'priority': task['priority'] or 'medium'
+                'priority': task['priority'] or 'medium',
+                'target_month': task['target_month']
             })
 
         return jsonify(tasks_list)

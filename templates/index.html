@@ -401,11 +401,13 @@
                     <div class="add-task-section">
                         <form id="monthlyGoalForm">
                             <input type="text" class="task-input" placeholder="Add a monthly goal..." required>
+                            <input type="month" class="goal-month-input" id="monthlyGoalMonth" title="Month this goal is for (defaults to the current month)">
                             <input type="number" class="task-xp-input" placeholder="XP" min="0">
                             <button type="submit" class="btn-primary">Add</button>
                         </form>
                     </div>
                     <div id="monthlyGoalsList"></div>
+                    <div id="upcomingMonthlyGoals"></div>
                 </div>
             </div>
 

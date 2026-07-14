@@ -1028,7 +1028,9 @@ function setupTaskForms() {
             const xpInput  = e.target!.querySelector('.task-xp-input');
             const xpReward = xpInput ? (parseInt(xpInput.value) || 0) : 0;
             const priority = priorityFromXP(xpReward, period);
-            await addTask(e.target!.querySelector('.task-input')!.value, 'goal', period, xpReward, priority);
+            const monthInput = e.target!.querySelector('.goal-month-input');
+            const targetMonth = monthInput ? monthInput.value : '';
+            await addTask(e.target!.querySelector('.task-input')!.value, 'goal', period, xpReward, priority, targetMonth);
             e.target!.reset();
         });
     }
@@ -1038,12 +1040,12 @@ function setupTaskForms() {
     bindGoalForm('lifelongGoalForm', 'lifelong');
 }
 
-async function addTask(task, taskType, period, xpReward = 0, priority = 'medium') {
+async function addTask(task, taskType, period, xpReward = 0, priority = 'medium', targetMonth = '') {
     try {
         const response = await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ task, task_type: taskType, period, xp_reward: xpReward, priority })
+            body: JSON.stringify({ task, task_type: taskType, period, xp_reward: xpReward, priority, target_month: targetMonth })
         });
         
         if (response.ok) {
@@ -1060,6 +1062,59 @@ async function loadAllTasks() {
     await loadTasksByPeriod('monthly', 'monthlyGoalsList', 'goal');
     await loadTasksByPeriod('yearly', 'yearlyGoalsList', 'goal');
     await loadTasksByPeriod('lifelong', 'lifelongGoalsList', 'goal');
+    await loadUpcomingMonthlyGoals();
+}
+
+async function loadUpcomingMonthlyGoals() {
+    try {
+        const res = await fetch('/api/tasks?type=goal&period=monthly-upcoming');
+        const tasks = await res.json();
+        const container = document.getElementById('upcomingMonthlyGoals')!;
+        container.innerHTML = '';
+        if (tasks.length === 0) return;
+
+        const title = document.createElement('div');
+        title.className = 'upcoming-goals-title';
+        title.textContent = 'Upcoming';
+        container.appendChild(title);
+
+        let lastMonth = '';
+        tasks.forEach(task => {
+            const month = task.target_month || (task.created_at || '').slice(0, 7);
+            if (month !== lastMonth) {
+                lastMonth = month;
+                const header = document.createElement('div');
+                header.className = 'upcoming-month-header';
+                header.textContent = formatPeriodMonth(month);
+                container.appendChild(header);
+            }
+
+            const item = document.createElement('div');
+            item.className = 'task-item upcoming-goal-item';
+
+            const textDiv = document.createElement('div');
+            textDiv.className = 'task-item-text';
+            textDiv.textContent = task.task;
+            item.appendChild(textDiv);
+
+            if (task.xp_reward > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'task-xp-badge';
+                badge.textContent = `+${task.xp_reward} XP`;
+                item.appendChild(badge);
+            }
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'task-item-delete';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.addEventListener('click', () => deleteTask(task.id));
+            item.appendChild(deleteBtn);
+
+            container.appendChild(item);
+        });
+    } catch (err) {
+        console.error('Error loading upcoming monthly goals:', err);
+    }
 }
 
 async function loadTasksByPeriod(period, listId, taskType) {
