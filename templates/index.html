@@ -447,26 +447,6 @@
                 </div>
             </div>
 
-            <!-- Mastered Recipes -->
-            <div class="collapsible-section">
-                <div class="section-header">
-                    <button class="collapse-btn" onclick="toggleSection('mastered-recipes')">⟩</button>
-                    <h3>Mastered Recipes</h3>
-                </div>
-                <div class="section-content" id="mastered-recipes">
-                    <form id="recipeForm" class="recipe-form">
-                        <input type="text" id="recipeName" class="task-input" placeholder="Dish name..." required>
-                        <div class="recipe-form-row">
-                            <input type="number" id="recipeProtein" class="task-xp-input" placeholder="Protein (g)" min="0">
-                            <input type="number" id="recipeCalories" class="task-xp-input" placeholder="Calories" min="0">
-                        </div>
-                        <textarea id="recipeDescription" class="recipe-description-input" placeholder="Ingredients &amp; how to make it..."></textarea>
-                        <button type="submit" class="btn-primary">Add Recipe</button>
-                    </form>
-                    <div id="recipesList"></div>
-                </div>
-            </div>
-
             <!-- Lifelong Goals -->
             <div class="collapsible-section">
                 <div class="section-header">
@@ -980,6 +960,26 @@
                 <div class="net-calories-box" id="activityBurnedBox">
                     <span class="net-cal-label">Total calories burned from activity</span>
                     <span class="net-cal-value" id="activityBurnedValue">0 kcal</span>
+                </div>
+            </div>
+
+            <!-- Mastered Recipes -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('mastered-recipes')">⟩</button>
+                    <h3>Mastered Recipes</h3>
+                </div>
+                <div class="section-content" id="mastered-recipes">
+                    <form id="recipeForm" class="recipe-form">
+                        <input type="text" id="recipeName" class="task-input" placeholder="Dish name..." required>
+                        <div class="recipe-form-row">
+                            <input type="number" id="recipeProtein" class="task-xp-input" placeholder="Protein (g)" min="0">
+                            <input type="number" id="recipeCalories" class="task-xp-input" placeholder="Calories" min="0">
+                        </div>
+                        <textarea id="recipeDescription" class="recipe-description-input" placeholder="Ingredients &amp; how to make it..."></textarea>
+                        <button type="submit" class="btn-primary">Add Recipe</button>
+                    </form>
+                    <div id="recipesList"></div>
                 </div>
             </div>
         </div>
