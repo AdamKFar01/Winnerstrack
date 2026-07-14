@@ -1251,6 +1251,144 @@ async function loadRecipes() {
     }
 }
 
+// Periods
+document.getElementById('periodForm')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('periodTitle')!.value.trim();
+    const start = document.getElementById('periodStart')!.value;
+    const end = document.getElementById('periodEnd')!.value;
+    if (!title || !start || !end) return;
+    if (end < start) {
+        alert('End month must be after the start month.');
+        return;
+    }
+    const goals = document.getElementById('periodGoalsInput')!.value
+        .split('\n').map(l => l.trim()).filter(l => l);
+    await fetch('/api/periods', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, start_date: start, end_date: end, goals })
+    });
+    e.target!.reset();
+    loadPeriods();
+});
+
+function formatPeriodMonth(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${names[m - 1]} ${y}`;
+}
+
+function periodMonthSpan(start, end) {
+    const [sy, sm] = start.split('-').map(Number);
+    const [ey, em] = end.split('-').map(Number);
+    const months = (ey - sy) * 12 + (em - sm);
+    return months === 1 ? '1 month' : `${months} months`;
+}
+
+async function loadPeriods() {
+    try {
+        const res = await fetch('/api/periods');
+        const periods = await res.json();
+        const list = document.getElementById('periodsList')!;
+        list.innerHTML = '';
+        if (periods.length === 0) {
+            list.innerHTML = '<p style="color:#8b92b0;text-align:center;padding:20px;">No periods yet.</p>';
+            return;
+        }
+        periods.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'period-card';
+
+            const header = document.createElement('div');
+            header.className = 'recipe-card-header';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'recipe-card-name';
+            titleEl.textContent = p.title;
+
+            const interval = document.createElement('span');
+            interval.className = 'period-interval';
+            interval.textContent = `${formatPeriodMonth(p.start_date)} – ${formatPeriodMonth(p.end_date)} · ${periodMonthSpan(p.start_date, p.end_date)}`;
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'recipe-card-delete';
+            delBtn.textContent = 'Delete';
+            delBtn.onclick = async () => {
+                if (!confirm(`Delete "${p.title}" and all its goals?`)) return;
+                await fetch(`/api/periods?id=${p.id}`, { method: 'DELETE' });
+                loadPeriods();
+            };
+
+            header.appendChild(titleEl);
+            header.appendChild(interval);
+            header.appendChild(delBtn);
+            card.appendChild(header);
+
+            const goalsEl = document.createElement('ul');
+            goalsEl.className = 'period-goal-list';
+            p.goals.forEach(g => {
+                const li = document.createElement('li');
+                li.className = 'period-goal-item' + (g.completed ? ' completed' : '');
+
+                const text = document.createElement('span');
+                text.className = 'period-goal-text';
+                text.textContent = g.text;
+                text.onclick = async () => {
+                    await fetch('/api/period-goals', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: g.id, completed: g.completed ? 0 : 1 })
+                    });
+                    loadPeriods();
+                };
+
+                const rm = document.createElement('button');
+                rm.className = 'period-goal-remove';
+                rm.textContent = '×';
+                rm.onclick = async () => {
+                    await fetch(`/api/period-goals?id=${g.id}`, { method: 'DELETE' });
+                    loadPeriods();
+                };
+
+                li.appendChild(text);
+                li.appendChild(rm);
+                goalsEl.appendChild(li);
+            });
+            card.appendChild(goalsEl);
+
+            const addForm = document.createElement('form');
+            addForm.className = 'period-add-goal-form';
+            const addInput = document.createElement('input');
+            addInput.type = 'text';
+            addInput.className = 'task-input';
+            addInput.placeholder = 'Add a goal to this period...';
+            const addBtn = document.createElement('button');
+            addBtn.type = 'submit';
+            addBtn.className = 'btn-primary';
+            addBtn.textContent = 'Add';
+            addForm.appendChild(addInput);
+            addForm.appendChild(addBtn);
+            addForm.onsubmit = async (ev) => {
+                ev.preventDefault();
+                const text = addInput.value.trim();
+                if (!text) return;
+                await fetch('/api/period-goals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ period_id: p.id, text })
+                });
+                loadPeriods();
+            };
+            card.appendChild(addForm);
+
+            list.appendChild(card);
+        });
+    } catch (err) {
+        console.error('Error loading periods:', err);
+    }
+}
+
 // ── Goal Conditions ───────────────────────────────────────────
 
 async function populateConditionsGoalSelect() {
@@ -3378,6 +3516,7 @@ async function initializeApp() {
     setupTaskForms();
     loadAllTasks().then(() => populateConditionsGoalSelect());
     loadRecipes();
+    loadPeriods();
     loadYume();
     document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());

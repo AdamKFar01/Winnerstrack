@@ -231,6 +231,22 @@ def init_db():
                   description TEXT DEFAULT '',
                   created_at TEXT NOT NULL)''')
 
+    # Periods table (e.g. "Master's", Sept 2026 to Sept 2027)
+    c.execute('''CREATE TABLE IF NOT EXISTS periods
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  title TEXT NOT NULL,
+                  start_date TEXT NOT NULL,
+                  end_date TEXT NOT NULL,
+                  created_at TEXT NOT NULL)''')
+
+    # Goals belonging to a period
+    c.execute('''CREATE TABLE IF NOT EXISTS period_goals
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  period_id INTEGER NOT NULL,
+                  text TEXT NOT NULL,
+                  completed INTEGER DEFAULT 0,
+                  created_at TEXT NOT NULL)''')
+
     # Goal conditions table
     c.execute('''CREATE TABLE IF NOT EXISTS goal_conditions
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1379,6 +1395,81 @@ def recipes():
             'id': r[0], 'name': r[1], 'protein_g': r[2],
             'calories': r[3], 'description': r[4], 'created_at': r[5]
         } for r in rows])
+
+
+@app.route('/api/periods', methods=['GET', 'POST', 'DELETE'])
+def periods_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        data = request.json
+        now = datetime.now().isoformat()
+        c.execute('''INSERT INTO periods (title, start_date, end_date, created_at)
+                     VALUES (?, ?, ?, ?)''',
+                  (data['title'], data['start_date'], data['end_date'], now))
+        period_id = c.lastrowid
+        for text in data.get('goals', []):
+            text = text.strip()
+            if text:
+                c.execute('''INSERT INTO period_goals (period_id, text, completed, created_at)
+                             VALUES (?, ?, 0, ?)''', (period_id, text, now))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'id': period_id})
+
+    elif request.method == 'DELETE':
+        period_id = request.args.get('id')
+        c.execute('DELETE FROM period_goals WHERE period_id = ?', (period_id,))
+        c.execute('DELETE FROM periods WHERE id = ?', (period_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT id, title, start_date, end_date, created_at FROM periods ORDER BY start_date')
+        period_rows = c.fetchall()
+        c.execute('SELECT id, period_id, text, completed FROM period_goals ORDER BY id')
+        goal_rows = c.fetchall()
+        conn.close()
+        goals_by_period = {}
+        for g in goal_rows:
+            goals_by_period.setdefault(g[1], []).append(
+                {'id': g[0], 'text': g[2], 'completed': bool(g[3])})
+        return jsonify([{
+            'id': p[0], 'title': p[1], 'start_date': p[2], 'end_date': p[3],
+            'created_at': p[4], 'goals': goals_by_period.get(p[0], [])
+        } for p in period_rows])
+
+
+@app.route('/api/period-goals', methods=['POST', 'PUT', 'DELETE'])
+def period_goals_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        data = request.json
+        c.execute('''INSERT INTO period_goals (period_id, text, completed, created_at)
+                     VALUES (?, ?, 0, ?)''',
+                  (int(data['period_id']), data['text'], datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'PUT':
+        data = request.json
+        c.execute('UPDATE period_goals SET completed = ? WHERE id = ?',
+                  (int(data.get('completed', 0)), int(data['id'])))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        goal_id = request.args.get('id')
+        c.execute('DELETE FROM period_goals WHERE id = ?', (goal_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
 
 
 @app.route('/api/goal-conditions', methods=['GET', 'POST', 'PUT', 'DELETE'])

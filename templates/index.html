@@ -427,6 +427,26 @@
                 </div>
             </div>
 
+            <!-- Periods -->
+            <div class="collapsible-section">
+                <div class="section-header">
+                    <button class="collapse-btn" onclick="toggleSection('period-goals')">⟩</button>
+                    <h3>Periods</h3>
+                </div>
+                <div class="section-content" id="period-goals">
+                    <form id="periodForm" class="recipe-form">
+                        <input type="text" id="periodTitle" class="task-input" placeholder="Period title (e.g. Master's)..." required>
+                        <div class="recipe-form-row">
+                            <input type="month" id="periodStart" class="task-input" title="Start month" required>
+                            <input type="month" id="periodEnd" class="task-input" title="End month" required>
+                        </div>
+                        <textarea id="periodGoalsInput" class="recipe-description-input" placeholder="Goals for this period, one per line..."></textarea>
+                        <button type="submit" class="btn-primary">Add Period</button>
+                    </form>
+                    <div id="periodsList"></div>
+                </div>
+            </div>
+
             <!-- Mastered Recipes -->
             <div class="collapsible-section">
                 <div class="section-header">
