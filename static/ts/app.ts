@@ -1317,12 +1317,10 @@ document.getElementById('periodForm')!.addEventListener('submit', async (e) => {
         alert('End month must be after the start month.');
         return;
     }
-    const goals = document.getElementById('periodGoalsInput')!.value
-        .split('\n').map(l => l.trim()).filter(l => l);
     await fetch('/api/periods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, start_date: start, end_date: end, goals })
+        body: JSON.stringify({ title, start_date: start, end_date: end })
     });
     e.target!.reset();
     loadPeriods();
@@ -1339,6 +1337,65 @@ function periodMonthSpan(start, end) {
     const [ey, em] = end.split('-').map(Number);
     const months = (ey - sy) * 12 + (em - sm);
     return months === 1 ? '1 month' : `${months} months`;
+}
+
+function buildPeriodGoalRow(g, periodId, isSub) {
+    const row = document.createElement('div');
+    row.className = (isSub ? 'period-goal-row period-subgoal-row' : 'period-goal-row')
+        + (g.completed ? ' completed' : '');
+
+    const tick = document.createElement('div');
+    tick.className = 'goal-tick' + (g.completed ? ' goal-tick-done' : '');
+    tick.onclick = async () => {
+        await fetch('/api/period-goals', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: g.id, completed: g.completed ? 0 : 1 })
+        });
+        loadPeriods();
+    };
+
+    const text = document.createElement('span');
+    text.className = 'period-goal-text';
+    text.textContent = g.text;
+
+    const rm = document.createElement('button');
+    rm.className = 'period-goal-remove';
+    rm.textContent = '×';
+    rm.title = isSub ? 'Delete sub goal' : 'Delete goal and its sub goals';
+    rm.onclick = async () => {
+        if (!isSub && g.subgoals && g.subgoals.length > 0 &&
+            !confirm(`Delete "${g.text}" and its ${g.subgoals.length} sub goal(s)?`)) return;
+        await fetch(`/api/period-goals?id=${g.id}`, { method: 'DELETE' });
+        loadPeriods();
+    };
+
+    row.appendChild(tick);
+    row.appendChild(text);
+    row.appendChild(rm);
+    return row;
+}
+
+function buildPeriodGoalForm(placeholder, onAdd) {
+    const form = document.createElement('form');
+    form.className = 'period-add-goal-form';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'task-input';
+    input.placeholder = placeholder;
+    const btn = document.createElement('button');
+    btn.type = 'submit';
+    btn.className = 'btn-primary';
+    btn.textContent = 'Add';
+    form.appendChild(input);
+    form.appendChild(btn);
+    form.onsubmit = async (ev) => {
+        ev.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        await onAdd(text);
+    };
+    return form;
 }
 
 async function loadPeriods() {
@@ -1380,61 +1437,34 @@ async function loadPeriods() {
             header.appendChild(delBtn);
             card.appendChild(header);
 
-            const goalsEl = document.createElement('ul');
+            const goalsEl = document.createElement('div');
             goalsEl.className = 'period-goal-list';
             p.goals.forEach(g => {
-                const li = document.createElement('li');
-                li.className = 'period-goal-item' + (g.completed ? ' completed' : '');
-
-                const text = document.createElement('span');
-                text.className = 'period-goal-text';
-                text.textContent = g.text;
-                text.onclick = async () => {
+                goalsEl.appendChild(buildPeriodGoalRow(g, p.id, false));
+                g.subgoals.forEach(sg => {
+                    goalsEl.appendChild(buildPeriodGoalRow(sg, p.id, true));
+                });
+                const subForm = buildPeriodGoalForm('Add a sub goal...', async (text) => {
                     await fetch('/api/period-goals', {
-                        method: 'PUT',
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: g.id, completed: g.completed ? 0 : 1 })
+                        body: JSON.stringify({ period_id: p.id, text, parent_id: g.id })
                     });
                     loadPeriods();
-                };
-
-                const rm = document.createElement('button');
-                rm.className = 'period-goal-remove';
-                rm.textContent = '×';
-                rm.onclick = async () => {
-                    await fetch(`/api/period-goals?id=${g.id}`, { method: 'DELETE' });
-                    loadPeriods();
-                };
-
-                li.appendChild(text);
-                li.appendChild(rm);
-                goalsEl.appendChild(li);
+                });
+                subForm.classList.add('period-subgoal-row');
+                goalsEl.appendChild(subForm);
             });
             card.appendChild(goalsEl);
 
-            const addForm = document.createElement('form');
-            addForm.className = 'period-add-goal-form';
-            const addInput = document.createElement('input');
-            addInput.type = 'text';
-            addInput.className = 'task-input';
-            addInput.placeholder = 'Add a goal to this period...';
-            const addBtn = document.createElement('button');
-            addBtn.type = 'submit';
-            addBtn.className = 'btn-primary';
-            addBtn.textContent = 'Add';
-            addForm.appendChild(addInput);
-            addForm.appendChild(addBtn);
-            addForm.onsubmit = async (ev) => {
-                ev.preventDefault();
-                const text = addInput.value.trim();
-                if (!text) return;
+            const addForm = buildPeriodGoalForm('Add a goal to this period...', async (text) => {
                 await fetch('/api/period-goals', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ period_id: p.id, text })
                 });
                 loadPeriods();
-            };
+            });
             card.appendChild(addForm);
 
             list.appendChild(card);

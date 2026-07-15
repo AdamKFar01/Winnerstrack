@@ -2737,30 +2737,46 @@ html.light-mode .recipe-stat.calories { color: #b45309; border-color: rgba(180,8
     flex-shrink: 0;
 }
 .period-goal-list {
-    list-style: none;
-    padding: 0;
     margin: 12px 0 0;
 }
-.period-goal-item {
+.period-goal-row {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 6px 0;
-    font-size: 0.92em;
+    font-size: 0.95em;
     color: #d4d8ec;
-}
-.period-goal-item::before {
-    content: '•';
-    color: var(--color-primary);
-    flex-shrink: 0;
 }
 .period-goal-text {
     flex: 1;
-    cursor: pointer;
 }
-.period-goal-item.completed .period-goal-text {
+.period-goal-row.completed .period-goal-text {
     text-decoration: line-through;
     color: #8b92b0;
+}
+.period-subgoal-row {
+    margin-left: 32px;
+    font-size: 0.88em;
+}
+.period-subgoal-row .goal-tick {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+}
+.period-subgoal-row .goal-tick.goal-tick-done::after {
+    font-size: 10px;
+}
+.period-add-goal-form.period-subgoal-row {
+    margin-top: 2px;
+    margin-bottom: 8px;
+}
+.period-add-goal-form.period-subgoal-row .task-input {
+    padding: 6px 10px;
+    font-size: 0.85em;
+}
+.period-add-goal-form.period-subgoal-row .btn-primary {
+    padding: 6px 12px;
+    font-size: 0.85em;
 }
 .period-goal-remove {
     background: transparent;
@@ -2783,9 +2799,8 @@ html.light-mode .recipe-stat.calories { color: #b45309; border-color: rgba(180,8
 
 html.light-mode .period-card { background: rgba(var(--color-primary-rgb),0.04); border-color: rgba(var(--color-primary-dark-rgb),0.18); }
 html.light-mode .period-interval { color: var(--color-primary-dark); border-color: rgba(var(--color-primary-dark-rgb),0.28); background: rgba(var(--color-primary-dark-rgb),0.07); }
-html.light-mode .period-goal-item { color: #374151; }
-html.light-mode .period-goal-item.completed .period-goal-text { color: #9ca3af; }
-html.light-mode .period-goal-item::before { color: var(--color-primary-dark); }
+html.light-mode .period-goal-row { color: #374151; }
+html.light-mode .period-goal-row.completed .period-goal-text { color: #9ca3af; }
 
 /* ── XP Display ─────────────────────────────────────────────── */
 @keyframes xp-sweep {

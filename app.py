@@ -263,13 +263,17 @@ def init_db():
                   end_date TEXT NOT NULL,
                   created_at TEXT NOT NULL)''')
 
-    # Goals belonging to a period
+    # Goals belonging to a period; parent_id set means the row is a subgoal
     c.execute('''CREATE TABLE IF NOT EXISTS period_goals
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   period_id INTEGER NOT NULL,
                   text TEXT NOT NULL,
                   completed INTEGER DEFAULT 0,
                   created_at TEXT NOT NULL)''')
+    try:
+        c.execute("ALTER TABLE period_goals ADD COLUMN parent_id INTEGER")
+    except Exception:
+        pass
 
     # Goal conditions table
     c.execute('''CREATE TABLE IF NOT EXISTS goal_conditions
@@ -1421,13 +1425,23 @@ def periods_api():
     else:
         c.execute('SELECT id, title, start_date, end_date, created_at FROM periods ORDER BY start_date')
         period_rows = c.fetchall()
-        c.execute('SELECT id, period_id, text, completed FROM period_goals ORDER BY id')
+        c.execute('SELECT id, period_id, text, completed, parent_id FROM period_goals ORDER BY id')
         goal_rows = c.fetchall()
         conn.close()
+
+        subs_by_parent = {}
+        for g in goal_rows:
+            if g[4]:
+                subs_by_parent.setdefault(g[4], []).append(
+                    {'id': g[0], 'text': g[2], 'completed': bool(g[3])})
+
         goals_by_period = {}
         for g in goal_rows:
-            goals_by_period.setdefault(g[1], []).append(
-                {'id': g[0], 'text': g[2], 'completed': bool(g[3])})
+            if not g[4]:
+                goals_by_period.setdefault(g[1], []).append(
+                    {'id': g[0], 'text': g[2], 'completed': bool(g[3]),
+                     'subgoals': subs_by_parent.get(g[0], [])})
+
         return jsonify([{
             'id': p[0], 'title': p[1], 'start_date': p[2], 'end_date': p[3],
             'created_at': p[4], 'goals': goals_by_period.get(p[0], [])
@@ -1439,26 +1453,50 @@ def period_goals_api():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
+    def sync_parent(parent_id):
+        """A goal with subgoals is complete exactly when all its subgoals are."""
+        if not parent_id:
+            return
+        c.execute('SELECT COUNT(*), SUM(completed) FROM period_goals WHERE parent_id = ?', (parent_id,))
+        total, done = c.fetchone()
+        if total > 0:
+            c.execute('UPDATE period_goals SET completed = ? WHERE id = ?',
+                      (1 if done == total else 0, parent_id))
+
     if request.method == 'POST':
         data = request.json
-        c.execute('''INSERT INTO period_goals (period_id, text, completed, created_at)
-                     VALUES (?, ?, 0, ?)''',
-                  (int(data['period_id']), data['text'], datetime.now().isoformat()))
+        parent_id = int(data['parent_id']) if data.get('parent_id') else None
+        c.execute('''INSERT INTO period_goals (period_id, text, completed, created_at, parent_id)
+                     VALUES (?, ?, 0, ?, ?)''',
+                  (int(data['period_id']), data['text'], datetime.now().isoformat(), parent_id))
+        sync_parent(parent_id)
         conn.commit()
         conn.close()
         return jsonify({'success': True})
 
     elif request.method == 'PUT':
         data = request.json
+        goal_id = int(data['id'])
         c.execute('UPDATE period_goals SET completed = ? WHERE id = ?',
-                  (int(data.get('completed', 0)), int(data['id'])))
+                  (int(data.get('completed', 0)), goal_id))
+        c.execute('SELECT parent_id FROM period_goals WHERE id = ?', (goal_id,))
+        row = c.fetchone()
+        sync_parent(row[0] if row else None)
         conn.commit()
         conn.close()
         return jsonify({'success': True})
 
     else:
         goal_id = request.args.get('id')
-        c.execute('DELETE FROM period_goals WHERE id = ?', (goal_id,))
+        c.execute('SELECT parent_id FROM period_goals WHERE id = ?', (goal_id,))
+        row = c.fetchone()
+        parent_id = row[0] if row else None
+        c.execute('DELETE FROM period_goals WHERE id = ? OR parent_id = ?', (goal_id, goal_id))
+        # Only re-sync if subgoals remain; deleting the last subgoal must not untick the goal
+        if parent_id:
+            c.execute('SELECT COUNT(*) FROM period_goals WHERE parent_id = ?', (parent_id,))
+            if c.fetchone()[0] > 0:
+                sync_parent(parent_id)
         conn.commit()
         conn.close()
         return jsonify({'success': True})
