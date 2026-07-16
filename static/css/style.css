@@ -2391,6 +2391,13 @@ html.light-mode .meal-dot-filled { background: var(--color-primary-dark); border
     margin-top: 4px;
 }
 
+/* Fewer than 4 of the last 7 days logged for this stat */
+.weekly-summary-value.insufficient {
+    color: #ef4444 !important;
+    font-size: 1.6em;
+    padding-top: 8px;
+}
+
 html.light-mode .weekly-summary-card {
     background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 70%);
     border-color: rgba(var(--color-primary-dark-rgb), 0.2);

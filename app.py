@@ -1114,25 +1114,30 @@ def health_week_summary():
     row = c.fetchone()
     calorie_target = row[0] if row else 0
 
-    # Only days with something actually logged count toward the averages
+    # Only days with something actually logged count toward the averages,
+    # and each stat needs at least MIN_DAYS logged days to be meaningful.
+    MIN_DAYS = 4
+
     c.execute('''SELECT date, SUM(calories), SUM(protein_g) FROM food_log
                  WHERE date BETWEEN ? AND ? GROUP BY date''', (start, end))
     food_rows = [r for r in c.fetchall() if (r[1] or 0) > 0 or (r[2] or 0) > 0]
 
     avg_protein = None
     avg_deficit = None
-    if food_rows:
+    if len(food_rows) >= MIN_DAYS:
         avg_protein = sum(r[2] or 0 for r in food_rows) / len(food_rows)
         if calorie_target > 0:
             avg_deficit = sum(calorie_target - (r[1] or 0) for r in food_rows) / len(food_rows)
 
-    c.execute('SELECT AVG(weight_kg) FROM weight_log WHERE date BETWEEN ? AND ?', (start, end))
-    avg_weight = c.fetchone()[0]
+    c.execute('SELECT COUNT(*), AVG(weight_kg) FROM weight_log WHERE date BETWEEN ? AND ?', (start, end))
+    weight_days, avg_weight = c.fetchone()
+    if weight_days < MIN_DAYS:
+        avg_weight = None
 
     c.execute('''SELECT date, SUM(calories_burned) FROM activity_log
                  WHERE date BETWEEN ? AND ? GROUP BY date''', (start, end))
     burned_rows = [r for r in c.fetchall() if (r[1] or 0) > 0]
-    avg_burned = (sum(r[1] for r in burned_rows) / len(burned_rows)) if burned_rows else None
+    avg_burned = (sum(r[1] for r in burned_rows) / len(burned_rows)) if len(burned_rows) >= MIN_DAYS else None
 
     conn.close()
     return jsonify({

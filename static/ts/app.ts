@@ -3120,16 +3120,26 @@ async function loadWeeklyHealthSummary() {
         const res = await fetch(`/api/health-week-summary?date=${date}`);
         const d = await res.json();
 
-        const deficitEl = document.getElementById('weekAvgDeficit')!;
-        deficitEl.textContent = d.avg_deficit != null ? d.avg_deficit : '—';
-        deficitEl.style.color = (d.avg_deficit != null && d.avg_deficit < 0) ? '#ef4444' : '';
+        // A null value means fewer than 4 of the last 7 days had data for that stat
+        const setStat = (id, value) => {
+            const el = document.getElementById(id)!;
+            if (value == null) {
+                el.textContent = 'N/A';
+                el.classList.add('insufficient');
+                el.style.color = '';
+            } else {
+                el.textContent = `${value}`;
+                el.classList.remove('insufficient');
+            }
+            return el;
+        };
 
-        document.getElementById('weekAvgProtein')!.textContent =
-            d.avg_protein != null ? `${d.avg_protein}` : '—';
-        document.getElementById('weekAvgWeight')!.textContent =
-            d.avg_weight != null ? `${d.avg_weight}` : '—';
-        document.getElementById('weekAvgBurned')!.textContent =
-            d.avg_calories_burned != null ? `${d.avg_calories_burned}` : '—';
+        const deficitEl = setStat('weekAvgDeficit', d.avg_deficit);
+        if (d.avg_deficit != null && d.avg_deficit < 0) deficitEl.style.color = '#ef4444';
+
+        setStat('weekAvgProtein', d.avg_protein);
+        setStat('weekAvgWeight', d.avg_weight);
+        setStat('weekAvgBurned', d.avg_calories_burned);
     } catch (err) {
         console.error('Error loading weekly health summary:', err);
     }
