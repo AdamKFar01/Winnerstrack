@@ -469,6 +469,53 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 const savedTab = localStorage.getItem('activeTab');
 if (savedTab) activateTab(savedTab);
 
+// ── Drag-to-reorder tabs (like browser tabs) ──────────────────
+function setupTabReordering() {
+    const nav = document.querySelector('.tabs')!;
+    if (!nav) return;
+
+    // Restore saved order
+    const savedOrder = JSON.parse(localStorage.getItem('tabOrder') || 'null');
+    if (Array.isArray(savedOrder)) {
+        savedOrder.forEach(tabId => {
+            const btn = nav.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (btn) nav.appendChild(btn);
+        });
+    }
+
+    let dragged: any = null;
+
+    nav.querySelectorAll('.tab-btn').forEach((btn: any) => {
+        btn.draggable = true;
+
+        btn.addEventListener('dragstart', (e) => {
+            dragged = btn;
+            btn.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        btn.addEventListener('dragend', () => {
+            btn.classList.remove('dragging');
+            dragged = null;
+            const order = [...nav.querySelectorAll('.tab-btn')].map((b: any) => b.dataset.tab);
+            localStorage.setItem('tabOrder', JSON.stringify(order));
+        });
+
+        btn.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!dragged || dragged === btn) return;
+            const rect = btn.getBoundingClientRect();
+            const before = e.clientX < rect.left + rect.width / 2;
+            nav.insertBefore(dragged, before ? btn : btn.nextSibling);
+        });
+    });
+
+    // Allow dropping anywhere on the bar
+    nav.addEventListener('dragover', (e) => e.preventDefault());
+    nav.addEventListener('drop', (e) => e.preventDefault());
+}
+setupTabReordering();
+
 // Set current date
 const dateInput = document.getElementById('currentDate')!;
 dateInput.value = getLocalDateString();

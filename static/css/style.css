@@ -223,6 +223,7 @@ html.light-mode .date-arrow-btn {
     color: #8b92b0;
     transition: all 0.3s;
     border-bottom: 2px solid transparent;
+    user-select: none;
     margin-bottom: -1px;
 }
 
@@ -1482,6 +1483,10 @@ html.light-mode p {
 html.light-mode .tabs {
     border-bottom-color: rgba(var(--color-primary-dark-rgb), 0.2);
 }
+.tab-btn.dragging {
+    opacity: 0.4;
+}
+
 html.light-mode .tab-btn {
     color: #6b7280;
 }
