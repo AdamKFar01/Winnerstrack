@@ -1204,9 +1204,13 @@ def meal_pattern():
 def nutrition_week():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    try:
+        end_dt = datetime.strptime(request.args.get('date', ''), '%Y-%m-%d')
+    except ValueError:
+        end_dt = datetime.now()
     result = []
     for i in range(7):
-        date = (datetime.now() - timedelta(days=6-i)).strftime('%Y-%m-%d')
+        date = (end_dt - timedelta(days=6-i)).strftime('%Y-%m-%d')
         c.execute('SELECT COALESCE(SUM(calories),0), COALESCE(SUM(protein_g),0) FROM food_log WHERE date = ?', (date,))
         row = c.fetchone()
         result.append({'date': date, 'calories': row[0] or 0, 'protein': row[1] or 0})

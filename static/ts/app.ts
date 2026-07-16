@@ -482,6 +482,7 @@ dateInput.addEventListener('change', () => {
     loadActivityLog(dateInput.value);
     loadWater(dateInput.value);
     updateSummaryWeightForDate(dateInput.value);
+    loadNutritionWeekChart();
 });
 
 // Category change listener - populate activities
@@ -3196,7 +3197,9 @@ async function updateFoodSummary(entries?) {
 
 async function loadNutritionWeekChart() {
     try {
-        const res = await fetch('/api/nutrition-week');
+        const today = getLocalDateString();
+        const endDate = document.getElementById('currentDate')!.value || today;
+        const res = await fetch(`/api/nutrition-week?date=${endDate}`);
         const data = await res.json();
         const labels = data.map(d => {
             const dt = new Date(d.date + 'T00:00:00');
@@ -3205,7 +3208,20 @@ async function loadNutritionWeekChart() {
         const calories = data.map(d => d.calories);
         const protein  = data.map(d => d.protein);
 
-        const today = getLocalDateString();
+        // Update the section title to show the range when viewing a past week
+        const titleEl = document.querySelector('.nutrition-week-title');
+        if (titleEl) {
+            if (endDate === today) {
+                titleEl.textContent = 'Nutrition This Week';
+            } else {
+                const fmt = ds => new Date(ds + 'T00:00:00')
+                    .toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                titleEl.textContent = `Nutrition ${fmt(data[0].date)} – ${fmt(data[6].date)}`;
+            }
+        }
+
+        // Today is excluded from the averages because it is still in progress;
+        // fully past weeks average all 7 days.
         const priorIdx = data
             .map((d, i) => ({ d, i }))
             .filter(x => x.d.date !== today);
