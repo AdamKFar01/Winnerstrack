@@ -2384,6 +2384,11 @@ async function checkReminderAlerts() {
         if (heading) {
             heading.classList.toggle('alert-active', hasHighAlert);
         }
+        // Turn the main Reminders tab title red too while the bell is red
+        const remindersTabBtn = document.querySelector('.tab-btn[data-tab="reminders"]');
+        if (remindersTabBtn) {
+            remindersTabBtn.classList.toggle('alert-active', hasHighAlert);
+        }
     } catch (e) {
         console.error('Error checking reminder alerts:', e);
     }

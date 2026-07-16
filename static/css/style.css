@@ -3441,6 +3441,12 @@ html.light-mode .calc-mode-btn:hover:not(.active) {
     font-weight: 800;
 }
 
+/* Main Reminders tab title while a high-urgency reminder is in its notice window */
+.tab-btn.alert-active,
+.tab-btn.alert-active.active {
+    color: #ef4444;
+}
+
 /* Bell icon next to each high-urgency reminder */
 .reminder-bell-icon {
     width: 18px;
