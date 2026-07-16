@@ -2134,6 +2134,13 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
     gap: 12px;
 }
 
+/* Box around the whole food log (title, recent chips, all four meals) */
+.food-log-card { padding: 20px; }
+.food-log-card .health-date-bar { margin-bottom: 12px; }
+.food-log-card .meals-pair-row { margin-bottom: 12px; }
+.food-log-card .meals-pair-row:last-child { margin-bottom: 0; }
+.food-log-card .health-meal-section { margin-bottom: 0; }
+
 /* Meal sections */
 .health-meal-section {
     background: rgba(255, 255, 255, 0.02);
