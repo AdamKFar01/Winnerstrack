@@ -2966,8 +2966,66 @@ async function loadFoodLog(dateStr) {
             });
         });
         updateFoodSummary(entries);
+        loadMealPattern();
     } catch (err) {
         console.error('Error loading food log:', err);
+    }
+}
+
+async function loadMealPattern() {
+    try {
+        const res = await fetch('/api/meal-pattern');
+        const data = await res.json();
+        const bars  = document.getElementById('mealComboBars')!;
+        const usual = document.getElementById('mealPatternUsual')!;
+        const strip = document.getElementById('mealStrip')!;
+        bars.innerHTML = '';
+        strip.innerHTML = '';
+        usual.textContent = '';
+
+        const combos = [
+            { key: 'breakfast+lunch',  label: 'Breakfast + Lunch'  },
+            { key: 'breakfast+dinner', label: 'Breakfast + Dinner' },
+            { key: 'lunch+dinner',     label: 'Lunch + Dinner'     },
+            { key: 'all_three',        label: 'All three'          }
+        ].map(c => ({ ...c, count: data.combos[c.key] || 0 }));
+
+        const max = Math.max(1, ...combos.map(c => c.count));
+        combos.forEach(c => {
+            if (c.key === 'all_three' && c.count === 0) return;
+            const row = document.createElement('div');
+            row.className = 'meal-combo-row';
+            row.innerHTML = `
+                <span class="meal-combo-label">${c.label}</span>
+                <span class="meal-combo-bar-wrap"><span class="meal-combo-bar-fill" style="width:${Math.round(c.count / max * 100)}%"></span></span>
+                <span class="meal-combo-count">${c.count} day${c.count === 1 ? '' : 's'}</span>
+            `;
+            bars.appendChild(row);
+        });
+
+        const best = combos.reduce((a, b) => (b.count > a.count ? b : a));
+        if (best.count > 0) {
+            usual.textContent = `Usual pattern: ${best.label} (${best.count} of ${data.days_logged} logged days)`;
+        }
+
+        // 14-day strip: header of weekday letters, then one dot row per meal
+        const header = document.createElement('div');
+        header.className = 'meal-strip-row';
+        header.innerHTML = '<span class="meal-strip-label"></span>' +
+            data.strip.map(d => `<span class="meal-strip-day">${d.day}</span>`).join('');
+        strip.appendChild(header);
+
+        [['B', 'breakfast'], ['L', 'lunch'], ['D', 'dinner']].forEach(([letter, meal]) => {
+            const row = document.createElement('div');
+            row.className = 'meal-strip-row';
+            row.innerHTML = `<span class="meal-strip-label">${letter}</span>` +
+                data.strip.map(d =>
+                    `<span class="meal-dot${d[meal] ? ' meal-dot-filled' : ''}" title="${d.date}"></span>`
+                ).join('');
+            strip.appendChild(row);
+        });
+    } catch (err) {
+        console.error('Error loading meal pattern:', err);
     }
 }
 

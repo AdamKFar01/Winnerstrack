@@ -1113,6 +1113,47 @@ def food_log_recent():
     return jsonify([{'food_name': r[0], 'calories': round(r[1] or 0), 'protein_g': round(r[2] or 0, 1)} for r in rows])
 
 
+@app.route('/api/meal-pattern')
+def meal_pattern():
+    """Which main meals (breakfast/lunch/dinner) were logged per day: 30-day combo counts + 14-day strip."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    today = datetime.now()
+    start = (today - timedelta(days=29)).strftime('%Y-%m-%d')
+    c.execute('''SELECT DISTINCT date, meal FROM food_log
+                 WHERE date >= ? AND meal IN ('breakfast', 'lunch', 'dinner')''', (start,))
+    by_date = {}
+    for d, m in c.fetchall():
+        by_date.setdefault(d, set()).add(m)
+    conn.close()
+
+    combos = {'breakfast+lunch': 0, 'breakfast+dinner': 0, 'lunch+dinner': 0, 'all_three': 0}
+    for meals in by_date.values():
+        if len(meals) == 3:
+            combos['all_three'] += 1
+        elif meals == {'breakfast', 'lunch'}:
+            combos['breakfast+lunch'] += 1
+        elif meals == {'breakfast', 'dinner'}:
+            combos['breakfast+dinner'] += 1
+        elif meals == {'lunch', 'dinner'}:
+            combos['lunch+dinner'] += 1
+
+    strip = []
+    for i in range(13, -1, -1):
+        d = today - timedelta(days=i)
+        ds = d.strftime('%Y-%m-%d')
+        meals = by_date.get(ds, set())
+        strip.append({
+            'date': ds,
+            'day': d.strftime('%a')[0],
+            'breakfast': 'breakfast' in meals,
+            'lunch': 'lunch' in meals,
+            'dinner': 'dinner' in meals
+        })
+
+    return jsonify({'combos': combos, 'days_logged': len(by_date), 'strip': strip})
+
+
 @app.route('/api/nutrition-week')
 def nutrition_week():
     conn = sqlite3.connect(DB_PATH)

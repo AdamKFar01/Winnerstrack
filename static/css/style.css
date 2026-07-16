@@ -2145,6 +2145,103 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
 
 .health-meal-section:last-child { margin-bottom: 0; }
 
+/* ── Meal Pattern ───────────────────────────────────────────── */
+.meal-pattern-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.15);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+.meal-pattern-range {
+    font-size: 0.75em;
+    font-weight: 400;
+    color: #8b92b0;
+    margin-left: 8px;
+}
+.meal-combo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.meal-combo-label {
+    width: 145px;
+    font-size: 0.85em;
+    color: #d4d8ec;
+    flex-shrink: 0;
+}
+.meal-combo-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.meal-combo-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: var(--color-primary);
+    transition: width 0.3s;
+}
+.meal-combo-count {
+    width: 56px;
+    font-size: 0.8em;
+    color: #8b92b0;
+    text-align: right;
+    flex-shrink: 0;
+}
+.meal-pattern-usual {
+    font-size: 0.83em;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 4px 0 14px;
+}
+.meal-strip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.meal-strip-label {
+    width: 16px;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: #8b92b0;
+    flex-shrink: 0;
+}
+.meal-strip-day {
+    width: 14px;
+    font-size: 0.68em;
+    color: #8b92b0;
+    text-align: center;
+    flex-shrink: 0;
+}
+.meal-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(var(--color-primary-rgb), 0.3);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.meal-dot-filled {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+html.light-mode .meal-pattern-section {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(var(--color-primary-dark-rgb), 0.15);
+}
+html.light-mode .meal-combo-label { color: #374151; }
+html.light-mode .meal-combo-bar-wrap { background: rgba(0, 0, 0, 0.07); }
+html.light-mode .meal-combo-bar-fill { background: var(--color-primary-dark); }
+html.light-mode .meal-pattern-usual { color: var(--color-primary-dark); }
+html.light-mode .meal-dot { border-color: rgba(var(--color-primary-dark-rgb), 0.3); }
+html.light-mode .meal-dot-filled { background: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+
 .health-meal-title {
     font-size: 0.9em;
     font-weight: 400;
