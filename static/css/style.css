@@ -1109,6 +1109,9 @@ h1 {
     padding: 16px 20px;
     border-radius: 15px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .finance-mini-card.balance {
