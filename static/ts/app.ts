@@ -473,11 +473,15 @@ if (savedTab) activateTab(savedTab);
 const dateInput = document.getElementById('currentDate')!;
 dateInput.value = getLocalDateString();
 
-// Date change listener
+// Date change listener — drives every date-scoped view, including the whole Health tab
 dateInput.addEventListener('change', () => {
     loadDailySummary();
     loadWins();
     loadDailyGoals(dateInput.value);
+    loadFoodLog(dateInput.value);
+    loadActivityLog(dateInput.value);
+    loadWater(dateInput.value);
+    updateSummaryWeightForDate(dateInput.value);
 });
 
 // Category change listener - populate activities
@@ -2860,7 +2864,7 @@ async function loadHealthMetrics() {
         // BMR×1.2 + today's burned (the stored value is just the rest base).
         let burned = 0;
         if (mode === 'activity_log') {
-            const dateStr = document.getElementById('healthDate')!.value || getLocalDateString();
+            const dateStr = document.getElementById('currentDate')!.value || getLocalDateString();
             try {
                 const actRes = await fetch(`/api/activity-log?date=${dateStr}`);
                 const acts = await actRes.json();
@@ -3064,7 +3068,7 @@ async function addFoodEntry(meal) {
     if (!name) return;
     const cal   = parseFloat(document.getElementById(`foodCal${cap}`)!.value)  || 0;
     const prot  = parseFloat(document.getElementById(`foodProt${cap}`)!.value) || 0;
-    const date  = document.getElementById('healthDate')!.value;
+    const date  = document.getElementById('currentDate')!.value;
 
     try {
         await fetch('/api/food-log', {
@@ -3088,7 +3092,7 @@ async function addFoodEntry(meal) {
 }
 
 async function deleteFoodEntry(id) {
-    const date = document.getElementById('healthDate')!.value;
+    const date = document.getElementById('currentDate')!.value;
     try {
         await fetch(`/api/food-log?id=${id}`, { method: 'DELETE' });
         loadFoodLog(date);
@@ -3101,7 +3105,8 @@ async function deleteFoodEntry(id) {
 
 async function loadWeeklyHealthSummary() {
     try {
-        const res = await fetch('/api/health-week-summary');
+        const date = document.getElementById('currentDate')!.value || getLocalDateString();
+        const res = await fetch(`/api/health-week-summary?date=${date}`);
         const d = await res.json();
 
         const deficitEl = document.getElementById('weekAvgDeficit')!;
@@ -3121,7 +3126,7 @@ async function loadWeeklyHealthSummary() {
 
 async function updateFoodSummary(entries?) {
     if (!entries) {
-        const date = document.getElementById('healthDate')!.value;
+        const date = document.getElementById('currentDate')!.value;
         try {
             const res = await fetch(`/api/food-log?date=${date}`);
             entries = await res.json();
@@ -3409,7 +3414,7 @@ document.getElementById('activityLogForm')!.addEventListener('submit', async (e)
     let type        = document.getElementById('activityType')!.value;
     const duration  = parseInt(document.getElementById('activityDuration')!.value) || 0;
     const intensity = document.getElementById('activityIntensity')!.value;
-    const date      = document.getElementById('healthDate')!.value;
+    const date      = document.getElementById('currentDate')!.value;
     const weight    = healthMetricsCache.weight_kg || 70;
 
     if (type === 'other') {
@@ -3448,7 +3453,7 @@ document.getElementById('activityLogForm')!.addEventListener('submit', async (e)
 });
 
 async function deleteActivityLog(id) {
-    const date = document.getElementById('healthDate')!.value;
+    const date = document.getElementById('currentDate')!.value;
     try {
         await fetch(`/api/activity-log?id=${id}`, { method: 'DELETE' });
         loadActivityLog(date);
@@ -3457,12 +3462,6 @@ async function deleteActivityLog(id) {
     }
 }
 
-document.getElementById('healthDate')!.addEventListener('change', (e) => {
-    const dateStr = e.target!.value;
-    loadFoodLog(dateStr);
-    loadActivityLog(dateStr);
-    loadWater(dateStr);
-});
 
 // ── Weight Log ─────────────────────────────────────────────────
 
@@ -3472,17 +3471,22 @@ let weightChartRange = '2W';   // default range on load
 let weightAvgKg: any = null;        // rolling average that auto-fills Body Metrics weight
 const WEIGHT_RANGE_DAYS = { '1W': 7, '2W': 14, '1M': 30, '5M': 150, '1Y': 365 };
 
+function updateSummaryWeightForDate(dateStr) {
+    const summaryWeight = document.getElementById('summaryWeight')!;
+    if (!summaryWeight) return;
+    const entry = weightLogData.find(d => d.date === dateStr);
+    summaryWeight.textContent = entry ? entry.weight_kg + ' kg' : '—';
+}
+
 async function loadWeightLog() {
     try {
         const res = await fetch('/api/weight-log');
         weightLogData = await res.json();
         const data = weightLogData;
 
-        // Update today's weight in Daily Summary
+        // Update the Daily Summary weight for the globally selected date
         const today = getLocalDateString();
-        const todayEntry = data.find(d => d.date === today);
-        const summaryWeight = document.getElementById('summaryWeight')!;
-        if (summaryWeight) summaryWeight.textContent = todayEntry ? todayEntry.weight_kg + ' kg' : '—';
+        updateSummaryWeightForDate(document.getElementById('currentDate')!.value || today);
 
         // ── Average weight (UNCHANGED): past 7 days including today ──
         const todayDate = new Date(today + 'T00:00:00');
@@ -3728,7 +3732,6 @@ async function initializeApp() {
     document.getElementById('weightDate')!.value = getLocalDateString();
     setupWeightRangeButtons();
     loadWeightLog();
-    document.getElementById('healthDate')!.value = getLocalDateString();
     await loadHealthMetrics();
     loadFoodLog(getLocalDateString());
     renderActivityOptions();

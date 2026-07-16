@@ -751,7 +751,6 @@
                     <!-- Today's Food Log -->
                     <div class="health-date-bar">
                         <h3 id="healthDateLabel">Today's Log</h3>
-                        <input type="date" id="healthDate">
                     </div>
 
                     <!-- Recent foods quick-add -->
@@ -848,7 +847,7 @@
                             </div>
                         </div>
                         <div class="health-summary-block" id="waterSummaryBlock">
-                            <div class="health-summary-label">Water Intake <span id="waterCount">0.00</span> / <input type="number" id="waterTarget" class="water-target-input" value="2.5" min="0.1" step="0.1" onchange="saveWaterTarget(parseFloat(this.value) || 2.5); renderWater(document.getElementById('healthDate').value || getLocalDateString(), getWaterEntries(document.getElementById('healthDate').value || getLocalDateString()))"> L</div>
+                            <div class="health-summary-label">Water Intake <span id="waterCount">0.00</span> / <input type="number" id="waterTarget" class="water-target-input" value="2.5" min="0.1" step="0.1" onchange="saveWaterTarget(parseFloat(this.value) || 2.5); renderWater(document.getElementById('currentDate').value || getLocalDateString(), getWaterEntries(document.getElementById('currentDate').value || getLocalDateString()))"> L</div>
                             <div class="calories-bar-wrap">
                                 <div class="water-bar-fill" id="waterBarFill" style="width:0%"></div>
                             </div>
@@ -857,7 +856,7 @@
                                     <input type="number" id="waterInput" class="water-input" placeholder="0.0" min="0" step="0.1">
                                     <span class="water-input-unit">L</span>
                                 </div>
-                                <button class="btn-teal water-add-btn" onclick="addWater(document.getElementById('healthDate').value || getLocalDateString())">Add</button>
+                                <button class="btn-teal water-add-btn" onclick="addWater(document.getElementById('currentDate').value || getLocalDateString())">Add</button>
                             </div>
                             <div id="waterEntryList" class="water-entry-list"></div>
                         </div>

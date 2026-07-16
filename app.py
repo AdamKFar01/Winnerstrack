@@ -1103,17 +1103,21 @@ def health_week_summary():
     """Weekly averages for the Health tab: deficit, protein, weight, activity calories burned."""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    today = datetime.now()
-    dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
-    start, end = dates[0], dates[-1]
+    try:
+        end_dt = datetime.strptime(request.args.get('date', ''), '%Y-%m-%d')
+    except ValueError:
+        end_dt = datetime.now()
+    end = end_dt.strftime('%Y-%m-%d')
+    start = (end_dt - timedelta(days=6)).strftime('%Y-%m-%d')
 
     c.execute('SELECT calorie_target FROM health_metrics WHERE id = 1')
     row = c.fetchone()
     calorie_target = row[0] if row else 0
 
+    # Only days with something actually logged count toward the averages
     c.execute('''SELECT date, SUM(calories), SUM(protein_g) FROM food_log
                  WHERE date BETWEEN ? AND ? GROUP BY date''', (start, end))
-    food_rows = c.fetchall()
+    food_rows = [r for r in c.fetchall() if (r[1] or 0) > 0 or (r[2] or 0) > 0]
 
     avg_protein = None
     avg_deficit = None
@@ -1125,16 +1129,17 @@ def health_week_summary():
     c.execute('SELECT AVG(weight_kg) FROM weight_log WHERE date BETWEEN ? AND ?', (start, end))
     avg_weight = c.fetchone()[0]
 
-    c.execute('SELECT COALESCE(SUM(calories_burned), 0) FROM activity_log WHERE date BETWEEN ? AND ?', (start, end))
-    total_burned = c.fetchone()[0] or 0
-    avg_burned = total_burned / 7
+    c.execute('''SELECT date, SUM(calories_burned) FROM activity_log
+                 WHERE date BETWEEN ? AND ? GROUP BY date''', (start, end))
+    burned_rows = [r for r in c.fetchall() if (r[1] or 0) > 0]
+    avg_burned = (sum(r[1] for r in burned_rows) / len(burned_rows)) if burned_rows else None
 
     conn.close()
     return jsonify({
         'avg_deficit': round(avg_deficit) if avg_deficit is not None else None,
         'avg_protein': round(avg_protein, 1) if avg_protein is not None else None,
         'avg_weight': round(avg_weight, 1) if avg_weight is not None else None,
-        'avg_calories_burned': round(avg_burned),
+        'avg_calories_burned': round(avg_burned) if avg_burned is not None else None,
         'days_logged': len(food_rows)
     })
 
