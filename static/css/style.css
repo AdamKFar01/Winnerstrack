@@ -2322,6 +2322,85 @@ html.light-mode .meal-dot-filled { background: var(--color-primary-dark); border
 
 .health-empty { color: #6b7280; font-size: 0.85em; text-align: center; padding: 8px 0; margin: 0; }
 
+/* ── Weekly Summary ─────────────────────────────────────────── */
+.weekly-summary-card {
+    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: 8px;
+    padding: 22px;
+    margin-bottom: 24px;
+}
+
+.weekly-summary-card h3 {
+    font-size: 1em;
+    font-weight: 600;
+    color: #e5e7eb;
+    margin: 0 0 16px;
+}
+
+.weekly-summary-range {
+    font-size: 0.75em;
+    font-weight: 400;
+    color: #8b92b0;
+    margin-left: 8px;
+}
+
+.weekly-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.weekly-summary-stat {
+    flex: 1;
+    min-width: 130px;
+    padding: 16px 18px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.deficit-stat { border-color: rgba(var(--color-primary-rgb), 0.35); }
+.protein-stat { border-color: rgba(var(--color-accent-rgb), 0.35); }
+.weight-stat  { border-color: rgba(245, 158, 11, 0.35); }
+.burned-stat  { border-color: rgba(251, 113, 133, 0.35); }
+
+.weekly-summary-label {
+    font-size: 0.78em;
+    color: #8b92b0;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.weekly-summary-value {
+    font-size: 2.1em;
+    font-weight: 400;
+    color: #e5e7eb;
+    line-height: 1.1;
+}
+
+.deficit-stat .weekly-summary-value { color: var(--color-primary); }
+.protein-stat .weekly-summary-value { color: var(--color-accent); }
+.weight-stat  .weekly-summary-value { color: #f59e0b; }
+.burned-stat  .weekly-summary-value { color: #fb7185; }
+
+.weekly-summary-unit {
+    font-size: 0.78em;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+html.light-mode .weekly-summary-card {
+    background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 70%);
+    border-color: rgba(var(--color-primary-dark-rgb), 0.2);
+}
+html.light-mode .weekly-summary-card h3 { color: #1f2937; }
+html.light-mode .weekly-summary-value { color: #1f2937; }
+html.light-mode .deficit-stat { border-color: rgba(var(--color-primary-dark-rgb), 0.3); }
+html.light-mode .deficit-stat .weekly-summary-value { color: var(--color-primary-dark); }
+html.light-mode .protein-stat .weekly-summary-value { color: var(--color-accent); }
+
 /* Right summary panel */
 .health-summary-right {
     background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);

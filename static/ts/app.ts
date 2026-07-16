@@ -2967,6 +2967,7 @@ async function loadFoodLog(dateStr) {
         });
         updateFoodSummary(entries);
         loadMealPattern();
+        loadWeeklyHealthSummary();
     } catch (err) {
         console.error('Error loading food log:', err);
     }
@@ -3095,6 +3096,26 @@ async function deleteFoodEntry(id) {
         loadNutritionWeekChart();
     } catch (err) {
         console.error('Error deleting food entry:', err);
+    }
+}
+
+async function loadWeeklyHealthSummary() {
+    try {
+        const res = await fetch('/api/health-week-summary');
+        const d = await res.json();
+
+        const deficitEl = document.getElementById('weekAvgDeficit')!;
+        deficitEl.textContent = d.avg_deficit != null ? d.avg_deficit : '—';
+        deficitEl.style.color = (d.avg_deficit != null && d.avg_deficit < 0) ? '#ef4444' : '';
+
+        document.getElementById('weekAvgProtein')!.textContent =
+            d.avg_protein != null ? `${d.avg_protein}` : '—';
+        document.getElementById('weekAvgWeight')!.textContent =
+            d.avg_weight != null ? `${d.avg_weight}` : '—';
+        document.getElementById('weekAvgBurned')!.textContent =
+            d.avg_calories_burned != null ? `${d.avg_calories_burned}` : '—';
+    } catch (err) {
+        console.error('Error loading weekly health summary:', err);
     }
 }
 
@@ -3366,6 +3387,7 @@ async function loadActivityLog(dateStr) {
         }
 
         document.getElementById('activityBurnedValue')!.textContent = `${Math.round(burned)} kcal`;
+        loadWeeklyHealthSummary();
     } catch (err) {
         console.error('Error loading activity log:', err);
     }
@@ -3486,6 +3508,7 @@ async function loadWeightLog() {
         }
 
         renderWeightChart();
+        loadWeeklyHealthSummary();
     } catch (e) {
         console.error('Error loading weight log:', e);
     }

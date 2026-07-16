@@ -1098,6 +1098,47 @@ def health_metrics_api():
     })
 
 
+@app.route('/api/health-week-summary')
+def health_week_summary():
+    """Weekly averages for the Health tab: deficit, protein, weight, activity calories burned."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    today = datetime.now()
+    dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
+    start, end = dates[0], dates[-1]
+
+    c.execute('SELECT calorie_target FROM health_metrics WHERE id = 1')
+    row = c.fetchone()
+    calorie_target = row[0] if row else 0
+
+    c.execute('''SELECT date, SUM(calories), SUM(protein_g) FROM food_log
+                 WHERE date BETWEEN ? AND ? GROUP BY date''', (start, end))
+    food_rows = c.fetchall()
+
+    avg_protein = None
+    avg_deficit = None
+    if food_rows:
+        avg_protein = sum(r[2] or 0 for r in food_rows) / len(food_rows)
+        if calorie_target > 0:
+            avg_deficit = sum(calorie_target - (r[1] or 0) for r in food_rows) / len(food_rows)
+
+    c.execute('SELECT AVG(weight_kg) FROM weight_log WHERE date BETWEEN ? AND ?', (start, end))
+    avg_weight = c.fetchone()[0]
+
+    c.execute('SELECT COALESCE(SUM(calories_burned), 0) FROM activity_log WHERE date BETWEEN ? AND ?', (start, end))
+    total_burned = c.fetchone()[0] or 0
+    avg_burned = total_burned / 7
+
+    conn.close()
+    return jsonify({
+        'avg_deficit': round(avg_deficit) if avg_deficit is not None else None,
+        'avg_protein': round(avg_protein, 1) if avg_protein is not None else None,
+        'avg_weight': round(avg_weight, 1) if avg_weight is not None else None,
+        'avg_calories_burned': round(avg_burned),
+        'days_logged': len(food_rows)
+    })
+
+
 @app.route('/api/food-log/recent')
 def food_log_recent():
     """Return the 10 most recently used unique food names with their avg macros."""

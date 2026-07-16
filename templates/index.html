@@ -647,6 +647,33 @@
         <div class="tab-content" id="health">
             <h2>Health</h2>
 
+            <!-- Weekly Summary -->
+            <div class="weekly-summary-card">
+                <h3>Weekly Summary <span class="weekly-summary-range">last 7 days</span></h3>
+                <div class="weekly-summary-row">
+                    <div class="weekly-summary-stat deficit-stat">
+                        <div class="weekly-summary-label">Avg Deficit</div>
+                        <div class="weekly-summary-value" id="weekAvgDeficit">—</div>
+                        <div class="weekly-summary-unit">kcal/day</div>
+                    </div>
+                    <div class="weekly-summary-stat protein-stat">
+                        <div class="weekly-summary-label">Avg Protein</div>
+                        <div class="weekly-summary-value" id="weekAvgProtein">—</div>
+                        <div class="weekly-summary-unit">g/day</div>
+                    </div>
+                    <div class="weekly-summary-stat weight-stat">
+                        <div class="weekly-summary-label">Avg Weight</div>
+                        <div class="weekly-summary-value" id="weekAvgWeight">—</div>
+                        <div class="weekly-summary-unit">kg</div>
+                    </div>
+                    <div class="weekly-summary-stat burned-stat">
+                        <div class="weekly-summary-label">Avg Burned</div>
+                        <div class="weekly-summary-value" id="weekAvgBurned">—</div>
+                        <div class="weekly-summary-unit">kcal/day</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Two-column health layout -->
             <div class="health-main-grid">
 
