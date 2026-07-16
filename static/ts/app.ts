@@ -483,6 +483,7 @@ dateInput.addEventListener('change', () => {
     loadWater(dateInput.value);
     updateSummaryWeightForDate(dateInput.value);
     loadNutritionWeekChart();
+    syncCalendarToGlobalDate(dateInput.value);
 });
 
 // Category change listener - populate activities
@@ -2076,14 +2077,23 @@ async function selectDate(date) {
     selectedDate = new Date(date);
     await renderCalendar();
     loadEventsForSelectedDate();
-    
-    const dateStr = selectedDate.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+
+    const dateStr = selectedDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     });
     document.getElementById('selectedDate')!.textContent = dateStr;
+}
+
+// Keep the calendar's selected day and "Events on ..." panel in sync with the
+// global date picker at the top of the app, next to the theme toggle.
+function syncCalendarToGlobalDate(dateValue) {
+    const [y, m, d] = dateValue.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    currentCalendarDate = new Date(date);
+    selectDate(date);
 }
 
 async function previousMonth() {
@@ -3727,8 +3737,7 @@ async function initializeApp() {
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
-    await renderCalendar();
-    loadEventsForSelectedDate();
+    syncCalendarToGlobalDate(dateInput.value);
     loadDailySummary();
     loadPillarScores();
     loadWins();
