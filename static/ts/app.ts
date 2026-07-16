@@ -2089,11 +2089,11 @@ async function selectDate(date) {
 
 // Keep the calendar's selected day and "Events on ..." panel in sync with the
 // global date picker at the top of the app, next to the theme toggle.
-function syncCalendarToGlobalDate(dateValue) {
+async function syncCalendarToGlobalDate(dateValue) {
     const [y, m, d] = dateValue.split('-').map(Number);
     const date = new Date(y, m - 1, d);
     currentCalendarDate = new Date(date);
-    selectDate(date);
+    await selectDate(date);
 }
 
 async function previousMonth() {
@@ -3737,7 +3737,7 @@ async function initializeApp() {
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
-    syncCalendarToGlobalDate(dateInput.value);
+    await syncCalendarToGlobalDate(dateInput.value);
     loadDailySummary();
     loadPillarScores();
     loadWins();
