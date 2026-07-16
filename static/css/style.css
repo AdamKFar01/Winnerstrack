@@ -2873,6 +2873,8 @@ html.light-mode .goal-progress-bar { background: rgba(0,0,0,0.08); }
     display: flex;
     gap: 10px;
 }
+/* Wide enough for the full "Protein (g)" / "Calories" placeholders */
+.recipe-form-row .task-xp-input { width: 87px; }
 .recipe-description-input {
     width: 100%;
     min-height: 90px;
