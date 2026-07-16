@@ -1123,19 +1123,65 @@ html.light-mode .date-arrow-btn {
 /* Mini cards in the top summary row */
 .finance-mini-cards {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex: 2;
+    flex-wrap: wrap;
 }
 
 .finance-mini-card {
     flex: 1;
-    padding: 16px 20px;
+    min-width: 110px;
+    padding: 12px 14px;
     border-radius: 15px;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    position: relative;
 }
+
+.finance-mini-card.custom {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.finance-card-delete {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: #8b92b0;
+    font-size: 1em;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 2px;
+}
+.finance-mini-card.custom:hover .finance-card-delete { opacity: 0.8; }
+.finance-card-delete:hover { color: #ff6b6b; }
+
+.finance-add-account-btn {
+    flex: 0 0 auto;
+    align-self: stretch;
+    background: transparent;
+    color: #8b92b0;
+    border: 1px dashed rgba(139, 146, 176, 0.4);
+    border-radius: 15px;
+    padding: 8px 14px;
+    font-size: 0.78em;
+    font-family: inherit;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+.finance-add-account-btn:hover {
+    color: #c7cce0;
+    border-color: #8b92b0;
+}
+html.light-mode .finance-add-account-btn { color: #6b7280; border-color: rgba(107, 114, 128, 0.45); }
+html.light-mode .finance-mini-card.custom { border-color: rgba(0, 0, 0, 0.15); }
 
 .finance-mini-card.balance {
     background: transparent;
@@ -1161,7 +1207,7 @@ html.light-mode .date-arrow-btn {
 .finance-mini-card.crypto .amount { color: var(--color-accent); }
 
 .finance-mini-card .amount {
-    font-size: 1.8em;
+    font-size: 1.5em;
     font-weight: 400;
     color: #e5e7eb;
 }

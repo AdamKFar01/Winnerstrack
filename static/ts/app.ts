@@ -1789,17 +1789,25 @@ document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e
 document.getElementById('financeForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const type = document.getElementById('financeType')!.value;
+    let type = document.getElementById('financeType')!.value;
     const amount = parseFloat(document.getElementById('financeAmount')!.value);
     const category = document.getElementById('financeCategory')!.value;
     const description = document.getElementById('financeDescription')!.value;
     const date = document.getElementById('financeDate')!.value;
-    
+
+    // Custom category options carry the account id in their value ("account_deposit:3")
+    let account_id: any = null;
+    if (type.startsWith('account_')) {
+        const parts = type.split(':');
+        type = parts[0];
+        account_id = parseInt(parts[1]);
+    }
+
     try {
         const response = await fetch('/api/finance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, amount, category, description, date })
+            body: JSON.stringify({ type, amount, category, description, date, account_id })
         });
         
         if (response.ok) {
@@ -1852,8 +1860,57 @@ async function loadFinanceMonthlyChart() {
     } catch (e) { console.error('Error loading monthly finance chart:', e); }
 }
 
+// ── Custom finance categories (beyond Savings/Crypto) ────────
+let financeAccounts: any[] = [];
+const FINANCE_ACCOUNT_COLORS = ['#f59e0b', '#f472b6', '#34d399', '#60a5fa', '#a78bfa', '#fb7185'];
+
+async function loadFinanceAccounts() {
+    try {
+        const res = await fetch('/api/finance-accounts');
+        financeAccounts = await res.json();
+
+        // Rebuild the custom deposit/withdrawal options in the type dropdown
+        const sel = document.getElementById('financeType')!;
+        sel.querySelectorAll('option[data-custom]').forEach(o => o.remove());
+        financeAccounts.forEach(a => {
+            [['account_deposit', 'Deposit'], ['account_withdrawal', 'Withdrawal']].forEach(([type, label]) => {
+                const opt = document.createElement('option');
+                opt.value = `${type}:${a.id}`;
+                opt.textContent = `${a.name} ${label}`;
+                opt.setAttribute('data-custom', '1');
+                sel.appendChild(opt);
+            });
+        });
+    } catch (e) {
+        console.error('Error loading finance accounts:', e);
+    }
+}
+
+async function addFinanceAccount() {
+    const name = prompt('New finance category name (e.g. Betting):');
+    if (!name || !name.trim()) return;
+    const res = await fetch('/api/finance-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() })
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Could not add category');
+        return;
+    }
+    loadFinance();
+}
+
+async function deleteFinanceAccount(id, name) {
+    if (!confirm(`Delete "${name}" and all its transactions?`)) return;
+    await fetch(`/api/finance-accounts?id=${id}`, { method: 'DELETE' });
+    loadFinance();
+}
+
 async function loadFinance() {
     try {
+        await loadFinanceAccounts();
         const response = await fetch('/api/finance');
         const records = await response.json();
 
@@ -1861,40 +1918,75 @@ async function loadFinance() {
         let totalExpense = 0;
         let totalCryptoIn = 0;
         let totalCryptoOut = 0;
+        const accountBalances = {};
 
         records.forEach(record => {
             if (record.type === 'income')              totalIncome    += record.amount;
             else if (record.type === 'expense')        totalExpense   += record.amount;
             else if (record.type === 'crypto_investment') totalCryptoIn  += record.amount;
             else if (record.type === 'crypto_withdrawal') totalCryptoOut += record.amount;
+            else if (record.type === 'account_deposit' && record.account_id)
+                accountBalances[record.account_id] = (accountBalances[record.account_id] || 0) + record.amount;
+            else if (record.type === 'account_withdrawal' && record.account_id)
+                accountBalances[record.account_id] = (accountBalances[record.account_id] || 0) - record.amount;
         });
 
         const currentBalance = totalIncome - totalExpense;
         const currentCrypto  = totalCryptoIn - totalCryptoOut;
+        const customTotal = financeAccounts.reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
 
         document.getElementById('balance')!.textContent      = `£${currentBalance.toFixed(2)}`;
         document.getElementById('cryptoBalance')!.textContent = `£${currentCrypto.toFixed(2)}`;
-        document.getElementById('totalBalance')!.textContent  = `£${(currentBalance + currentCrypto).toFixed(2)}`;
+        document.getElementById('totalBalance')!.textContent  = `£${(currentBalance + currentCrypto + customTotal).toFixed(2)}`;
         document.getElementById('brokeMessage')!.style.display =
             (currentBalance < 100000 || currentCrypto < 100000) ? 'block' : 'none';
 
-        // Dual-line balance chart — one point per transaction, shared x-axis
+        // Render one mini card per custom category, before the add button
+        const cardsWrap = document.getElementById('financeMiniCards')!;
+        cardsWrap.querySelectorAll('.finance-mini-card.custom').forEach(el => el.remove());
+        const addBtn = document.getElementById('addFinanceAccountBtn')!;
+        financeAccounts.forEach((a, i) => {
+            const card = document.createElement('div');
+            card.className = 'finance-mini-card custom';
+            const color = FINANCE_ACCOUNT_COLORS[i % FINANCE_ACCOUNT_COLORS.length];
+            card.style.borderColor = color + '59';
+            card.innerHTML = `
+                <button class="finance-card-delete" title="Delete category">×</button>
+                <h3 style="color:${color}">${a.name}</h3>
+                <div class="amount" style="color:${color}">£${(accountBalances[a.id] || 0).toFixed(2)}</div>
+            `;
+            (card.querySelector('.finance-card-delete') as any).onclick = () => deleteFinanceAccount(a.id, a.name);
+            cardsWrap.insertBefore(card, addBtn);
+        });
+
+        // Balance chart — one line per account, one point per transaction, shared x-axis
         const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
         let runningSavings = 0;
         let runningCrypto  = 0;
+        const runningAccounts = {};
+        financeAccounts.forEach(a => { runningAccounts[a.id] = 0; });
         const chartLabels: any[]  = [];
         const savingsData: any[]  = [];
         const cryptoData: any[]   = [];
+        const accountData = {};
+        financeAccounts.forEach(a => { accountData[a.id] = []; });
 
         sorted.forEach(record => {
             if (record.type === 'income')                 runningSavings += record.amount;
             else if (record.type === 'expense')           runningSavings -= record.amount;
             else if (record.type === 'crypto_investment') runningCrypto  += record.amount;
             else if (record.type === 'crypto_withdrawal') runningCrypto  -= record.amount;
+            else if (record.type === 'account_deposit' && record.account_id in runningAccounts)
+                runningAccounts[record.account_id] += record.amount;
+            else if (record.type === 'account_withdrawal' && record.account_id in runningAccounts)
+                runningAccounts[record.account_id] -= record.amount;
 
             chartLabels.push(record.date);
             savingsData.push(parseFloat(runningSavings.toFixed(2)));
             cryptoData.push(parseFloat(runningCrypto.toFixed(2)));
+            financeAccounts.forEach(a => {
+                accountData[a.id].push(parseFloat(runningAccounts[a.id].toFixed(2)));
+            });
         });
 
         const isLight = document.documentElement.classList.contains('light-mode');
@@ -1935,7 +2027,21 @@ async function loadFinance() {
                         pointRadius: 3,
                         fill: true,
                         tension: 0.3
-                    }
+                    },
+                    ...financeAccounts.map((a, i) => {
+                        const color = FINANCE_ACCOUNT_COLORS[i % FINANCE_ACCOUNT_COLORS.length];
+                        return {
+                            label: `${a.name} Balance`,
+                            data: accountData[a.id],
+                            borderColor: color,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            pointBackgroundColor: color,
+                            pointRadius: 3,
+                            fill: false,
+                            tension: 0.3
+                        };
+                    })
                 ]
             },
             options: {
@@ -1966,18 +2072,28 @@ async function loadFinance() {
             return;
         }
 
-        const isPositiveType = t => t === 'income' || t === 'crypto_investment';
+        const isPositiveType = t => t === 'income' || t === 'crypto_investment' || t === 'account_deposit';
+        const accountNames = {};
+        financeAccounts.forEach(a => { accountNames[a.id] = a.name; });
 
         function makeFinanceItem(record) {
             const financeItem = document.createElement('div');
-            financeItem.className = `finance-item ${record.type}`;
+            // Custom account rows reuse income/expense styling for the +/- colors
+            const styleType = record.type === 'account_deposit' ? 'income'
+                            : record.type === 'account_withdrawal' ? 'expense'
+                            : record.type;
+            let label = record.category || record.type;
+            if (record.account_id && accountNames[record.account_id]) {
+                label = `${accountNames[record.account_id]} ${record.type === 'account_deposit' ? 'deposit' : 'withdrawal'}`;
+            }
+            financeItem.className = `finance-item ${styleType}`;
             financeItem.innerHTML = `
                 <div class="finance-item-info">
-                    <div class="finance-item-category">${record.category || record.type}</div>
+                    <div class="finance-item-category">${label}</div>
                     <div class="finance-item-description">${record.description || ''}</div>
                     <div class="finance-item-date">${record.date}</div>
                 </div>
-                <div class="finance-item-amount ${record.type}">
+                <div class="finance-item-amount ${styleType}">
                     ${isPositiveType(record.type) ? '+' : '-'}£${record.amount.toFixed(2)}
                 </div>
             `;

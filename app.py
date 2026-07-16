@@ -93,6 +93,15 @@ def init_db():
                   category TEXT,
                   description TEXT,
                   date TEXT NOT NULL)''')
+    # Custom finance categories (e.g. Betting) beyond built-in Savings/Crypto
+    c.execute('''CREATE TABLE IF NOT EXISTS finance_accounts
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL UNIQUE,
+                  created_at TEXT NOT NULL)''')
+    try:
+        c.execute("ALTER TABLE finance ADD COLUMN account_id INTEGER")
+    except Exception:
+        pass
     
     # Activities table
     c.execute('''CREATE TABLE IF NOT EXISTS activities
@@ -626,10 +635,10 @@ def finance():
     
     if request.method == 'POST':
         data = request.json
-        c.execute('''INSERT INTO finance (type, amount, category, description, date)
-                     VALUES (?, ?, ?, ?, ?)''',
+        c.execute('''INSERT INTO finance (type, amount, category, description, date, account_id)
+                     VALUES (?, ?, ?, ?, ?, ?)''',
                   (data['type'], data['amount'], data.get('category'),
-                   data.get('description'), data['date']))
+                   data.get('description'), data['date'], data.get('account_id')))
 
         # XP for income (savings) deposits
         if data['type'] == 'income':
@@ -655,10 +664,10 @@ def finance():
         return jsonify({'success': True})
     
     else:
-        c.execute('SELECT * FROM finance ORDER BY date DESC')
+        c.execute('SELECT id, type, amount, category, description, date, account_id FROM finance ORDER BY date DESC')
         records = c.fetchall()
         conn.close()
-        
+
         finance_list = []
         for record in records:
             finance_list.append({
@@ -667,10 +676,49 @@ def finance():
                 'amount': record[2],
                 'category': record[3],
                 'description': record[4],
-                'date': record[5]
+                'date': record[5],
+                'account_id': record[6]
             })
         
         return jsonify(finance_list)
+
+@app.route('/api/finance-accounts', methods=['GET', 'POST', 'DELETE'])
+def finance_accounts_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        name = (request.json.get('name') or '').strip()
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category name is required'}), 400
+        if name.lower() in ('savings', 'crypto', 'total balance'):
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        try:
+            c.execute('INSERT INTO finance_accounts (name, created_at) VALUES (?, ?)',
+                      (name, datetime.now().isoformat()))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        account_id = request.args.get('id')
+        c.execute('DELETE FROM finance WHERE account_id = ?', (account_id,))
+        c.execute('DELETE FROM finance_accounts WHERE id = ?', (account_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT id, name FROM finance_accounts ORDER BY created_at')
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([{'id': r[0], 'name': r[1]} for r in rows])
+
 
 @app.route('/api/finance/monthly')
 def finance_monthly():
