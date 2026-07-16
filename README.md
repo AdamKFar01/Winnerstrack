@@ -10,7 +10,7 @@ Full-stack desktop app: Flask REST API backend, SQLite database, vanilla JS fron
 
 I chose SQLite because there's one user and no concurrency. I chose vanilla JS because the UI is straightforward enough that a framework would add more ceremony than value. I chose Electron because I wanted a real desktop app without rewriting the frontend in React Native or dealing with a separate native layer.
 
-![WinnersTrack screenshot](static/img/READMEIM.jpg)
+![WinnersTrack screenshot](static/img/READMEIM.png)
 
 ---
 
