@@ -473,6 +473,14 @@ if (savedTab) activateTab(savedTab);
 const dateInput = document.getElementById('currentDate')!;
 dateInput.value = getLocalDateString();
 
+// Header arrows: step the global date one day at a time
+function shiftGlobalDate(deltaDays) {
+    const [y, m, d] = (dateInput.value || getLocalDateString()).split('-').map(Number);
+    const date = new Date(y, m - 1, d + deltaDays);
+    dateInput.value = dateToLocalString(date);
+    dateInput.dispatchEvent(new Event('change'));
+}
+
 // Date change listener — drives every date-scoped view, including the whole Health tab
 dateInput.addEventListener('change', () => {
     loadDailySummary();

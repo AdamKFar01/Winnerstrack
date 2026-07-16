@@ -31,7 +31,9 @@
                 <div class="header-separator"></div>
                 <button id="themeToggle" class="theme-toggle" title="Toggle light/dark mode">☀</button>
                 <div class="date-selector">
+                    <button class="date-arrow-btn" onclick="shiftGlobalDate(-1)" title="Previous day">‹</button>
                     <input type="date" id="currentDate" />
+                    <button class="date-arrow-btn" onclick="shiftGlobalDate(1)" title="Next day">›</button>
                 </div>
             </div>
         </header>

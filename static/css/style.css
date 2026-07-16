@@ -175,6 +175,36 @@ h1 {
     box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.4);
 }
 
+.date-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.date-arrow-btn {
+    background: #0f1724;
+    color: var(--color-primary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.1em;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.date-arrow-btn:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.3);
+}
+
+html.light-mode .date-arrow-btn {
+    background: #fff;
+    color: var(--color-primary-dark);
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
 .tabs {
     display: flex;
     gap: 10px;
