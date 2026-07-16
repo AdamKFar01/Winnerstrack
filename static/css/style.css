@@ -2179,7 +2179,7 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
 .log-toggle-btn {
     background: transparent;
     color: #8b92b0;
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    border: 1px solid rgba(139, 146, 176, 0.35);
     border-radius: 6px;
     padding: 4px 10px;
     font-size: 0.78em;
@@ -2188,13 +2188,12 @@ html.light-mode .recent-food-chip { color: var(--color-primary-dark); background
     transition: color 0.2s, border-color 0.2s;
 }
 .log-toggle-btn:hover {
-    color: var(--color-primary);
-    border-color: var(--color-primary);
+    color: #c7cce0;
+    border-color: #8b92b0;
 }
-.water-entry-list .log-toggle-btn,
-#waterLogToggleBtn { margin-top: 8px; }
-html.light-mode .log-toggle-btn { color: #6b7280; border-color: rgba(var(--color-primary-dark-rgb), 0.3); }
-html.light-mode .log-toggle-btn:hover { color: var(--color-primary-dark); border-color: var(--color-primary-dark); }
+#waterLogToggleBtn { margin-top: 8px; margin-bottom: 14px; }
+html.light-mode .log-toggle-btn { color: #6b7280; border-color: rgba(107, 114, 128, 0.4); }
+html.light-mode .log-toggle-btn:hover { color: #374151; border-color: #6b7280; }
 
 /* Meal sections */
 .health-meal-section {
