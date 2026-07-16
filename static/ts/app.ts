@@ -738,7 +738,7 @@ function loadPillarsChart(scores) {
     pillarsChartInstance = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['Physical', 'Work', 'Health', 'Relationships', ['Mindset', '& Discipline']],
+            labels: ['Physical', 'Work', 'Health', 'Social Life', ['Mindset', '& Discipline']],
             datasets: [{
                 data,
                 backgroundColor: `rgba(${pRgb}, 0.15)`,
@@ -938,7 +938,7 @@ async function loadWeekChart() {
 
         const pillarLabels = {
             physical: 'Physical', work: 'Work', health: 'Health',
-            relationships: 'Relationships', mindset: 'Mindset & Discipline', total: 'Total'
+            relationships: 'Social Life', mindset: 'Mindset & Discipline', total: 'Total'
         };
 
         const pillarDatasets = Object.keys(pillarColors).map(key => ({
