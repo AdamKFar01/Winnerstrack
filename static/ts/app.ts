@@ -1317,11 +1317,11 @@ async function loadRecipes() {
                     desc.classList.add('collapsed');
                     const toggle = document.createElement('span');
                     toggle.className = 'desc-toggle';
-                    toggle.textContent = '...';
+                    toggle.textContent = 'Show more ▾';
                     toggle.title = 'Show full description';
                     toggle.onclick = () => {
                         const nowCollapsed = desc.classList.toggle('collapsed');
-                        toggle.textContent = nowCollapsed ? '...' : 'show less';
+                        toggle.textContent = nowCollapsed ? 'Show more ▾' : 'Show less ▴';
                         toggle.title = nowCollapsed ? 'Show full description' : '';
                     };
                     card.appendChild(desc);
