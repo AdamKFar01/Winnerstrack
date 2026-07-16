@@ -752,6 +752,7 @@
                     <div class="health-metrics-card food-log-card">
                     <div class="health-date-bar">
                         <h3 id="healthDateLabel">Today's Log</h3>
+                        <button class="log-toggle-btn" id="recentToggleBtn" onclick="toggleRecentFoods()" style="display:none">Recent foods</button>
                     </div>
 
                     <!-- Recent foods quick-add -->
@@ -860,7 +861,8 @@
                                 </div>
                                 <button class="btn-teal water-add-btn" onclick="addWater(document.getElementById('currentDate').value || getLocalDateString())">Add</button>
                             </div>
-                            <div id="waterEntryList" class="water-entry-list"></div>
+                            <button class="log-toggle-btn" id="waterLogToggleBtn" onclick="toggleWaterLog()" style="display:none">Show log</button>
+                            <div id="waterEntryList" class="water-entry-list" style="display:none"></div>
                         </div>
                         <div class="health-summary-block">
                             <div class="summary-bottom-row">

@@ -1302,7 +1302,25 @@ async function loadRecipes() {
                 const desc = document.createElement('div');
                 desc.className = 'recipe-card-description';
                 desc.textContent = r.description;
-                card.appendChild(desc);
+
+                const firstLine = r.description.split('\n')[0];
+                const needsToggle = r.description.includes('\n') || firstLine.length > 90;
+                if (needsToggle) {
+                    desc.classList.add('collapsed');
+                    const toggle = document.createElement('span');
+                    toggle.className = 'desc-toggle';
+                    toggle.textContent = '...';
+                    toggle.title = 'Show full description';
+                    toggle.onclick = () => {
+                        const nowCollapsed = desc.classList.toggle('collapsed');
+                        toggle.textContent = nowCollapsed ? '...' : 'show less';
+                        toggle.title = nowCollapsed ? 'Show full description' : '';
+                    };
+                    card.appendChild(desc);
+                    card.appendChild(toggle);
+                } else {
+                    card.appendChild(desc);
+                }
             }
 
             list.appendChild(card);
@@ -3047,14 +3065,29 @@ async function loadMealPattern() {
 
 let activeMeal = 'breakfast';
 
+let recentFoodsVisible = false;
+
+function toggleRecentFoods() {
+    recentFoodsVisible = !recentFoodsVisible;
+    document.getElementById('recentFoodsBar')!.style.display = recentFoodsVisible ? 'flex' : 'none';
+    document.getElementById('recentToggleBtn')!.textContent =
+        recentFoodsVisible ? 'Hide recent' : 'Recent foods';
+}
+
 async function loadRecentFoods() {
     try {
         const res = await fetch('/api/food-log/recent');
         const foods = await res.json();
         const bar   = document.getElementById('recentFoodsBar')!;
         const chips = document.getElementById('recentFoodsChips')!;
-        if (!foods.length) { bar.style.display = 'none'; return; }
-        bar.style.display = 'flex';
+        const toggleBtn = document.getElementById('recentToggleBtn')!;
+        if (!foods.length) {
+            bar.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.display = 'none';
+            return;
+        }
+        if (toggleBtn) toggleBtn.style.display = '';
+        bar.style.display = recentFoodsVisible ? 'flex' : 'none';
         chips.innerHTML = '';
         foods.forEach(f => {
             const chip = document.createElement('button');
@@ -3363,6 +3396,16 @@ function deleteWaterEntry(dateStr, id) {
     renderWater(dateStr, entries);
 }
 
+let waterLogVisible = false;
+
+function toggleWaterLog() {
+    waterLogVisible = !waterLogVisible;
+    const list = document.getElementById('waterEntryList')!;
+    const btn = document.getElementById('waterLogToggleBtn')!;
+    list.style.display = waterLogVisible ? '' : 'none';
+    btn.textContent = waterLogVisible ? 'Hide log' : 'Show log';
+}
+
 function renderWater(dateStr, entries) {
     const total = Math.round(entries.reduce((s, e) => s + e.amount, 0) * 100) / 100;
     const target = getWaterTarget();
@@ -3372,6 +3415,13 @@ function renderWater(dateStr, entries) {
     const bar = document.getElementById('waterBarFill')!;
     bar.style.width = pct + '%';
     bar.style.background = total >= target ? 'var(--color-accent-dark)' : 'var(--color-accent)';
+
+    // The entry list stays hidden behind the Show log button
+    const toggleBtn = document.getElementById('waterLogToggleBtn')!;
+    toggleBtn.style.display = entries.length > 0 ? '' : 'none';
+    toggleBtn.textContent = waterLogVisible ? 'Hide log' : 'Show log';
+    document.getElementById('waterEntryList')!.style.display =
+        (waterLogVisible && entries.length > 0) ? '' : 'none';
 
     const list = document.getElementById('waterEntryList')!;
     list.innerHTML = '';
