@@ -1886,20 +1886,47 @@ async function loadFinanceAccounts() {
     }
 }
 
-async function addFinanceAccount() {
-    const name = prompt('New finance category name (e.g. Betting):');
-    if (!name || !name.trim()) return;
-    const res = await fetch('/api/finance-accounts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() })
+function addFinanceAccount() {
+    const cardsWrap = document.getElementById('financeMiniCards')!;
+    const addBtn = document.getElementById('addFinanceAccountBtn')!;
+    if (cardsWrap.querySelector('.finance-mini-card.editing')) return;
+
+    // Inline editable card next to the existing ones (Electron has no window.prompt)
+    const card = document.createElement('div');
+    card.className = 'finance-mini-card custom editing';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'finance-new-category-input';
+    input.placeholder = 'Add category name';
+    card.appendChild(input);
+    cardsWrap.insertBefore(card, addBtn);
+    input.focus();
+
+    let done = false;
+    const finish = async (save) => {
+        if (done) return;
+        done = true;
+        const name = input.value.trim();
+        card.remove();
+        if (!save || !name) return;   // no name entered: just remove the box
+        const res = await fetch('/api/finance-accounts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || 'Could not add category');
+            return;
+        }
+        loadFinance();
+    };
+
+    input.addEventListener('keydown', (e: any) => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') finish(false);
     });
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.error || 'Could not add category');
-        return;
-    }
-    loadFinance();
+    input.addEventListener('blur', () => finish(true));
 }
 
 async function deleteFinanceAccount(id, name) {

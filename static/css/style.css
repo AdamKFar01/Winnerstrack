@@ -1183,6 +1183,22 @@ html.light-mode .date-arrow-btn {
 html.light-mode .finance-add-account-btn { color: #6b7280; border-color: rgba(107, 114, 128, 0.45); }
 html.light-mode .finance-mini-card.custom { border-color: rgba(0, 0, 0, 0.15); }
 
+.finance-new-category-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(139, 146, 176, 0.5);
+    color: #e5e7eb;
+    font-family: inherit;
+    font-size: 0.9em;
+    text-align: center;
+    padding: 6px 2px;
+    outline: none;
+}
+.finance-new-category-input::placeholder { color: #8b92b0; }
+.finance-new-category-input:focus { border-bottom-color: var(--color-primary); }
+html.light-mode .finance-new-category-input { color: #1f2937; }
+
 .finance-mini-card.balance {
     background: transparent;
     border: 1px solid rgba(var(--color-primary-rgb), 0.3);
