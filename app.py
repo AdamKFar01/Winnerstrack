@@ -127,6 +127,10 @@ def init_db():
                   importance TEXT DEFAULT 'normal',
                   description TEXT,
                   created_at TEXT NOT NULL)''')
+    try:
+        c.execute("ALTER TABLE calendar_events ADD COLUMN completed INTEGER DEFAULT 0")
+    except Exception:
+        pass
     
     # Pillar scores table (one persistent row per user)
     c.execute('''CREATE TABLE IF NOT EXISTS pillar_scores
@@ -901,11 +905,16 @@ def calendar_events_api():
     
     elif request.method == 'PUT':
         data = request.json
-        c.execute('''UPDATE calendar_events 
-                     SET title = ?, date = ?, start_time = ?, end_time = ?, category = ?, importance = ?, description = ?
-                     WHERE id = ?''',
-                  (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
-                   data['category'], data.get('importance', 'normal'), data.get('description', ''), data['id']))
+        if 'completed' in data and 'title' not in data:
+            # Lightweight completion toggle
+            c.execute('UPDATE calendar_events SET completed = ? WHERE id = ?',
+                      (int(data['completed']), data['id']))
+        else:
+            c.execute('''UPDATE calendar_events
+                         SET title = ?, date = ?, start_time = ?, end_time = ?, category = ?, importance = ?, description = ?
+                         WHERE id = ?''',
+                      (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
+                       data['category'], data.get('importance', 'normal'), data.get('description', ''), data['id']))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
@@ -922,15 +931,17 @@ def calendar_events_api():
         month = request.args.get('month')
         year = request.args.get('year')
         
+        sel = '''SELECT id, title, date, start_time, end_time, category, importance, description, completed
+                 FROM calendar_events'''
         if month and year:
-            c.execute('SELECT * FROM calendar_events WHERE strftime("%Y-%m", date) = ? ORDER BY date, start_time',
+            c.execute(f'{sel} WHERE strftime("%Y-%m", date) = ? ORDER BY date, start_time',
                      (f"{year}-{month.zfill(2)}",))
         else:
-            c.execute('SELECT * FROM calendar_events ORDER BY date, start_time')
-        
+            c.execute(f'{sel} ORDER BY date, start_time')
+
         events = c.fetchall()
         conn.close()
-        
+
         events_list = []
         for event in events:
             events_list.append({
@@ -941,7 +952,8 @@ def calendar_events_api():
                 'end_time': event[4],
                 'category': event[5],
                 'importance': event[6],
-                'description': event[7]
+                'description': event[7],
+                'completed': bool(event[8])
             })
         
         return jsonify(events_list)

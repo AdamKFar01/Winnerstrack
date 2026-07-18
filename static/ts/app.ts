@@ -2270,7 +2270,8 @@ function createDayElement(day, otherMonth, date) {
         
         dayEvents.slice(0, 3).forEach(event => {
             const miniEvent = document.createElement('div');
-            miniEvent.className = `mini-event importance-${event.importance}`;
+            miniEvent.className = `mini-event importance-${event.importance}`
+                + (event.completed ? ' completed' : '');
             miniEvent.textContent = event.title;
             eventsContainer.appendChild(miniEvent);
         });
@@ -2460,14 +2461,16 @@ function loadEventsForSelectedDate() {
     
     dayEvents.forEach(event => {
         const eventDiv = document.createElement('div');
-        eventDiv.className = `calendar-event-item importance-${event.importance}`;
-        
+        eventDiv.className = `calendar-event-item importance-${event.importance}`
+            + (event.completed ? ' completed' : '');
+
         const timeStr = event.start_time
             ? `${event.start_time}${event.end_time ? ' - ' + event.end_time : ''}`
             : 'All day';
-        
+
         eventDiv.innerHTML = `
             <div class="event-header">
+                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : 'Mark as done'}"></div>
                 <div>
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">${timeStr}</div>
@@ -2482,9 +2485,26 @@ function loadEventsForSelectedDate() {
                 <button class="btn-delete-event" onclick="deleteCalendarEvent(${event.id})">Delete</button>
             </div>
         `;
-        
+        (eventDiv.querySelector('.goal-tick') as any).onclick =
+            () => toggleCalendarEventComplete(event.id, !event.completed);
+
         eventsList.appendChild(eventDiv);
     });
+}
+
+async function toggleCalendarEventComplete(id, completed) {
+    try {
+        await fetch('/api/calendar-events', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, completed: completed ? 1 : 0 })
+        });
+        await loadCalendarEvents();
+        await renderCalendar();
+        loadEventsForSelectedDate();
+    } catch (error) {
+        console.error('Error toggling event completion:', error);
+    }
 }
 
 async function deleteCalendarEvent(id) {

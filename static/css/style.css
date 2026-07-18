@@ -745,6 +745,13 @@ html.light-mode .date-arrow-btn {
 .mini-event.importance-very  { border-left-color: #f59e0b; background: rgba(245, 158, 11,  0.2); }
 .mini-event.importance-quite { border-left-color: #10b981; background: rgba(16,  185, 129, 0.2); }
 
+/* Completed events fade to light grey regardless of importance (must follow the rules above) */
+.mini-event.completed {
+    border-left-color: #9ca3af;
+    background: rgba(156, 163, 175, 0.12);
+    color: #9ca3af;
+}
+
 .add-event-section {
     background: linear-gradient(135deg, rgba(59, 7, 100, 0.18) 0%, transparent 70%);
     padding: 25px;
@@ -859,12 +866,23 @@ html.light-mode .date-arrow-btn {
 .calendar-event-item.importance-very { border-left-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11,  0.2); }
 .calendar-event-item.importance-quite{ border-left-color: #10b981; box-shadow: 0 0 10px rgba(16,  185, 129, 0.2); }
 
+/* Completed events fade to light grey (must follow the importance rules above) */
+.calendar-event-item.completed {
+    border-left-color: #9ca3af;
+    box-shadow: none;
+    opacity: 0.65;
+}
+.calendar-event-item.completed .event-title { color: #9ca3af; text-decoration: line-through; }
+.calendar-event-item.completed .event-badge { color: #9ca3af; border-color: rgba(156, 163, 175, 0.4); background: rgba(156, 163, 175, 0.1); }
+
 .event-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: start;
+    gap: 12px;
     margin-bottom: 10px;
 }
+.event-header .goal-tick { margin-top: 2px; }
 
 .event-title {
     color: var(--color-primary);
@@ -1774,6 +1792,13 @@ html.light-mode .mini-event {
     background: rgba(var(--color-primary-rgb), 0.15);
     color: #1f2937;
 }
+html.light-mode .mini-event.completed {
+    background: rgba(156, 163, 175, 0.15);
+    border-left-color: #9ca3af;
+    color: #9ca3af;
+}
+html.light-mode .calendar-event-item.completed { border-left-color: #9ca3af; box-shadow: none; }
+html.light-mode .calendar-event-item.completed .event-title { color: #9ca3af; }
 
 /* Theme toggle in light mode */
 html.light-mode .theme-toggle {
