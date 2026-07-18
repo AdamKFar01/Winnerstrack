@@ -918,6 +918,7 @@ html.light-mode .date-arrow-btn {
     font-size: 0.9em;
     margin-top: 10px;
     font-style: italic;
+    white-space: pre-wrap;
 }
 
 .event-actions {
