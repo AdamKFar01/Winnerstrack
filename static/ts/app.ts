@@ -2297,9 +2297,121 @@ function createDayElement(day, otherMonth, date) {
         dayDiv.appendChild(badge);
     }
 
-    dayDiv.onclick = () => selectDate(date);
+    dayDiv.onclick = () => {
+        selectDate(date);
+        openDayView(date);
+    };
 
     return dayDiv;
+}
+
+// ── Day schedule view (hour-by-hour zoom into one day) ────────
+const DAY_VIEW_PX_PER_MIN = 1;
+
+function openDayView(date) {
+    (document.querySelector('.calendar-grid') as any).style.display = 'none';
+    (document.querySelector('.calendar-nav') as any).style.display = 'none';
+    document.getElementById('dayView')!.style.display = '';
+    document.getElementById('dayViewTitle')!.textContent = date.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    renderDayViewGrid(dateToLocalString(date));
+}
+
+function closeDayView() {
+    document.getElementById('dayView')!.style.display = 'none';
+    (document.querySelector('.calendar-grid') as any).style.display = '';
+    (document.querySelector('.calendar-nav') as any).style.display = '';
+}
+
+function renderDayViewGrid(dateStr) {
+    const grid = document.getElementById('dayViewGrid')!;
+    const allDayWrap = document.getElementById('dayViewAllDay')!;
+    grid.innerHTML = '';
+    allDayWrap.innerHTML = '';
+    grid.style.height = `${24 * 60 * DAY_VIEW_PX_PER_MIN}px`;
+
+    const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
+    const events = calendarEvents.filter(e => e.date === dateStr);
+
+    // Untimed events go in an "all day" strip above the grid
+    events.filter(e => !e.start_time).forEach(e => {
+        const chip = document.createElement('div');
+        chip.className = `day-view-allday-chip importance-${e.importance}` + (e.completed ? ' completed' : '');
+        chip.textContent = e.title;
+        allDayWrap.appendChild(chip);
+    });
+
+    // Hour lines and labels
+    for (let h = 0; h < 24; h++) {
+        const line = document.createElement('div');
+        line.className = 'day-view-hour-line';
+        line.style.top = `${h * 60 * DAY_VIEW_PX_PER_MIN}px`;
+        line.innerHTML = `<span class="day-view-hour-label">${String(h).padStart(2, '0')}:00</span>`;
+        grid.appendChild(line);
+    }
+
+    // Timed events, with side-by-side columns when they overlap
+    const timed = events.filter(e => e.start_time).map(e => {
+        const start = mins(e.start_time);
+        const end = e.end_time ? Math.max(mins(e.end_time), start + 30) : start + 60;
+        return { ...e, start, end, col: 0, cols: 1 };
+    }).sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const clusters: any[] = [];
+    let cluster: any[] = [];
+    let clusterEnd = -1;
+    timed.forEach(ev => {
+        if (cluster.length && ev.start >= clusterEnd) {
+            clusters.push(cluster);
+            cluster = [];
+            clusterEnd = -1;
+        }
+        cluster.push(ev);
+        clusterEnd = Math.max(clusterEnd, ev.end);
+    });
+    if (cluster.length) clusters.push(cluster);
+
+    clusters.forEach(cl => {
+        const colEnds: number[] = [];
+        cl.forEach(ev => {
+            let col = colEnds.findIndex(end => end <= ev.start);
+            if (col === -1) { col = colEnds.length; colEnds.push(0); }
+            colEnds[col] = ev.end;
+            ev.col = col;
+        });
+        cl.forEach(ev => { ev.cols = colEnds.length; });
+    });
+
+    const layer = document.createElement('div');
+    layer.className = 'day-view-events';
+    timed.forEach(ev => {
+        const block = document.createElement('div');
+        block.className = `day-view-event importance-${ev.importance}` + (ev.completed ? ' completed' : '');
+        block.style.top = `${ev.start * DAY_VIEW_PX_PER_MIN}px`;
+        block.style.height = `${(ev.end - ev.start) * DAY_VIEW_PX_PER_MIN - 2}px`;
+        block.style.left = `calc(${(ev.col / ev.cols) * 100}% + 2px)`;
+        block.style.width = `calc(${100 / ev.cols}% - 6px)`;
+        const timeStr = `${ev.start_time}${ev.end_time ? ' – ' + ev.end_time : ''}`;
+        block.innerHTML = `<div class="day-view-event-title">${ev.title}</div><div class="day-view-event-time">${timeStr}</div>`;
+        block.title = `${ev.title} (${timeStr})`;
+        layer.appendChild(block);
+    });
+    grid.appendChild(layer);
+
+    // Current-time line when viewing today
+    if (dateStr === getLocalDateString()) {
+        const now = new Date();
+        const nowLine = document.createElement('div');
+        nowLine.className = 'day-view-now-line';
+        nowLine.style.top = `${(now.getHours() * 60 + now.getMinutes()) * DAY_VIEW_PX_PER_MIN}px`;
+        grid.appendChild(nowLine);
+    }
+
+    // Scroll to just before the first event (or 08:00 on an empty day)
+    const scrollWrap = document.querySelector('.day-view-scroll')!;
+    const target = timed.length ? Math.max(0, timed[0].start - 60) : 8 * 60;
+    scrollWrap.scrollTop = target * DAY_VIEW_PX_PER_MIN;
 }
 
 async function selectDate(date) {
@@ -2490,6 +2602,11 @@ function loadEventsForSelectedDate() {
 
         eventsList.appendChild(eventDiv);
     });
+
+    // Keep the open day view in sync when events change or the date moves
+    if (document.getElementById('dayView')!.style.display !== 'none') {
+        openDayView(selectedDate);
+    }
 }
 
 async function toggleCalendarEventComplete(id, completed) {
