@@ -469,6 +469,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 const savedTab = localStorage.getItem('activeTab');
 if (savedTab) activateTab(savedTab);
 
+// Ctrl+Tab / Ctrl+Shift+Tab cycles through the main tabs in their current order
+document.addEventListener('keydown', (e: any) => {
+    if (!e.ctrlKey || e.key !== 'Tab') return;
+    e.preventDefault();
+    const btns = [...document.querySelectorAll('.tabs .tab-btn')] as any[];
+    if (!btns.length) return;
+    const current = btns.findIndex(b => b.classList.contains('active'));
+    const next = (current + (e.shiftKey ? -1 : 1) + btns.length) % btns.length;
+    activateTab(btns[next].dataset.tab);
+    localStorage.setItem('activeTab', btns[next].dataset.tab);
+});
+
 // ── Drag-to-reorder tabs (like browser tabs) ──────────────────
 function setupTabReordering() {
     const nav = document.querySelector('.tabs')!;
