@@ -3712,7 +3712,7 @@ async function loadNutritionWeekChart() {
 // Water tracker
 function getWaterTarget() {
     const stored = parseFloat(localStorage.getItem('water_target')!);
-    return isNaN(stored) || stored <= 0 ? 2.5 : stored;
+    return isNaN(stored) || stored <= 0 ? 2 : stored;
 }
 
 function saveWaterTarget(val) {
