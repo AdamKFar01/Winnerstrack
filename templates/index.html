@@ -883,7 +883,7 @@
                             </div>
                         </div>
                         <div class="health-summary-block" id="waterSummaryBlock">
-                            <div class="health-summary-label">Water Intake <span id="waterCount">0.00</span> / <input type="number" id="waterTarget" class="water-target-input" value="2" min="0.1" step="0.1" onchange="saveWaterTarget(parseFloat(this.value) || 2); renderWater(document.getElementById('currentDate').value || getLocalDateString(), getWaterEntries(document.getElementById('currentDate').value || getLocalDateString()))"> L</div>
+                            <div class="health-summary-label">Water Intake <span id="waterCount">0.00</span> / <span id="waterTargetDisplay">2</span> L</div>
                             <div class="calories-bar-wrap">
                                 <div class="water-bar-fill" id="waterBarFill" style="width:0%"></div>
                             </div>

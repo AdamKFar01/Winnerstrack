@@ -3733,8 +3733,6 @@ function saveWaterTargetFromMenu() {
     const v = parseFloat((document.getElementById('waterTargetMenuInput') as any).value);
     if (!isNaN(v) && v > 0) {
         saveWaterTarget(v);
-        const targetInput = document.getElementById('waterTarget') as any;
-        if (targetInput) targetInput.value = v;
         const d = document.getElementById('currentDate')!.value || getLocalDateString();
         renderWater(d, getWaterEntries(d));
     }
@@ -3769,8 +3767,6 @@ function saveWaterEntries(dateStr, entries) {
 }
 
 function loadWater(dateStr) {
-    const targetInput = document.getElementById('waterTarget')!;
-    if (targetInput) targetInput.value = getWaterTarget();
     renderWater(dateStr, getWaterEntries(dateStr));
 }
 
@@ -3807,6 +3803,8 @@ function renderWater(dateStr, entries) {
     const pct = target > 0 ? Math.min((total / target) * 100, 100) : 0;
 
     document.getElementById('waterCount')!.textContent = total.toFixed(2);
+    const targetDisplay = document.getElementById('waterTargetDisplay');
+    if (targetDisplay) targetDisplay.textContent = `${target}`;
     const bar = document.getElementById('waterBarFill')!;
     bar.style.width = pct + '%';
     bar.style.background = total >= target ? 'var(--color-accent-dark)' : 'var(--color-accent)';

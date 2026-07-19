@@ -2883,22 +2883,6 @@ html.light-mode .summary-menu-btn:hover { color: #374151; background: rgba(0, 0,
     margin-top: 0;
 }
 
-.water-target-input {
-    width: 40px;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
-    color: inherit;
-    font-size: inherit;
-    font-family: inherit;
-    text-align: center;
-    padding: 0 2px;
-}
-
-.water-target-input:focus {
-    outline: none;
-    border-bottom-color: var(--color-accent);
-}
 
 .water-entry-list {
     display: flex;
@@ -3012,7 +2996,6 @@ html.light-mode .health-summary-right h3 { border-bottom-color: rgba(var(--color
 
 html.light-mode .calories-bar-wrap { background: rgba(0, 0, 0, 0.07); }
 html.light-mode .water-input { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: var(--color-text); }
-html.light-mode .water-target-input { border-bottom-color: rgba(0,0,0,0.3); }
 
 html.light-mode .health-activity-item {
     background: rgba(255, 255, 255, 0.7);
