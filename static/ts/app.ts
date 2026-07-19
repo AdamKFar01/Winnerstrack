@@ -3710,6 +3710,45 @@ async function loadNutritionWeekChart() {
 }
 
 // Water tracker
+// ── Daily Summary options menu (⋮) ────────────────────────────
+function toggleSummaryMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('summaryMenu')!;
+    const show = menu.style.display === 'none';
+    menu.style.display = show ? '' : 'none';
+    document.getElementById('waterTargetEditor')!.style.display = 'none';
+}
+
+function openWaterTargetEditor(e) {
+    e.stopPropagation();
+    const editor = document.getElementById('waterTargetEditor')!;
+    editor.style.display = '';
+    const input = document.getElementById('waterTargetMenuInput')! as any;
+    input.value = getWaterTarget();
+    input.focus();
+    input.onkeydown = (ev) => { if (ev.key === 'Enter') saveWaterTargetFromMenu(); };
+}
+
+function saveWaterTargetFromMenu() {
+    const v = parseFloat((document.getElementById('waterTargetMenuInput') as any).value);
+    if (!isNaN(v) && v > 0) {
+        saveWaterTarget(v);
+        const targetInput = document.getElementById('waterTarget') as any;
+        if (targetInput) targetInput.value = v;
+        const d = document.getElementById('currentDate')!.value || getLocalDateString();
+        renderWater(d, getWaterEntries(d));
+    }
+    document.getElementById('summaryMenu')!.style.display = 'none';
+}
+
+// Close the menu when clicking anywhere outside it
+document.addEventListener('click', (e: any) => {
+    const menu = document.getElementById('summaryMenu');
+    if (menu && menu.style.display !== 'none' && !e.target.closest('.summary-menu-wrap')) {
+        menu.style.display = 'none';
+    }
+});
+
 function getWaterTarget() {
     const stored = parseFloat(localStorage.getItem('water_target')!);
     return isNaN(stored) || stored <= 0 ? 2 : stored;

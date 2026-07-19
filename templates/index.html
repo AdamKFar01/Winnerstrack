@@ -853,7 +853,19 @@
                 <!-- RIGHT: Daily Summary + Daily Weight -->
                 <div class="health-right-col">
                     <div class="health-summary-right">
-                        <h3>Daily Summary</h3>
+                        <div class="summary-header-row">
+                            <h3>Daily Summary</h3>
+                            <div class="summary-menu-wrap">
+                                <button class="summary-menu-btn" id="summaryMenuBtn" onclick="toggleSummaryMenu(event)" title="Options">⋮</button>
+                                <div class="summary-menu" id="summaryMenu" style="display:none">
+                                    <div class="summary-menu-item" onclick="openWaterTargetEditor(event)">Change water intake maximum</div>
+                                    <div class="summary-menu-editor" id="waterTargetEditor" style="display:none" onclick="event.stopPropagation()">
+                                        <input type="number" id="waterTargetMenuInput" min="0.1" step="0.1"> <span class="summary-menu-unit">L</span>
+                                        <button class="btn-teal btn-sm" onclick="saveWaterTargetFromMenu()">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="health-summary-block">
                             <div class="health-summary-label">Calories <span id="summaryCalConsumed">0</span> / <span id="summaryCalTarget">—</span> kcal<span id="summaryCalDeficit" class="summary-deficit-note"></span></div>
                             <div class="calories-bar-wrap">

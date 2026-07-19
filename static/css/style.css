@@ -2686,6 +2686,74 @@ html.light-mode .deficit-stat { border-color: rgba(var(--color-primary-dark-rgb)
 html.light-mode .deficit-stat .weekly-summary-value { color: var(--color-primary-dark); }
 html.light-mode .protein-stat .weekly-summary-value { color: var(--color-accent); }
 
+/* Daily Summary ⋮ options menu */
+.summary-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.15);
+}
+.summary-header-row h3 {
+    margin: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+.summary-menu-wrap { position: relative; }
+.summary-menu-btn {
+    background: transparent;
+    border: none;
+    color: #8b92b0;
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.summary-menu-btn:hover { color: #c7cce0; background: rgba(255, 255, 255, 0.06); }
+.summary-menu {
+    position: absolute;
+    top: 26px;
+    right: 0;
+    z-index: 20;
+    min-width: 230px;
+    background: #151b2e;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+.summary-menu-item {
+    padding: 8px 10px;
+    font-size: 0.85em;
+    color: #d4d8ec;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.summary-menu-item:hover { background: rgba(var(--color-primary-rgb), 0.12); }
+.summary-menu-editor {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+}
+.summary-menu-editor input {
+    width: 64px;
+    padding: 5px 8px;
+    background: transparent;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    border-radius: 6px;
+    color: #e5e7eb;
+    font-family: inherit;
+    font-size: 0.85em;
+}
+.summary-menu-unit { color: #8b92b0; font-size: 0.85em; }
+
+html.light-mode .summary-menu { background: #ffffff; border-color: rgba(var(--color-primary-dark-rgb), 0.25); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
+html.light-mode .summary-menu-item { color: #374151; }
+html.light-mode .summary-menu-editor input { color: #1f2937; }
+html.light-mode .summary-menu-btn:hover { color: #374151; background: rgba(0, 0, 0, 0.06); }
+
 /* Right summary panel */
 .health-summary-right {
     background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
