@@ -1397,7 +1397,7 @@ html.light-mode .finance-new-category-input { color: #1f2937; }
 
 #balanceChart {
     width: 100% !important;
-    max-height: 260px;
+    max-height: 380px;
 }
 
 .broke-message {
