@@ -973,6 +973,7 @@ async function loadWeekChart() {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false }
                 },
@@ -1029,6 +1030,7 @@ async function loadWeekChart() {
             data: { labels, datasets: pillarDatasets },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
                     legend: {
@@ -2085,6 +2087,7 @@ async function loadFinance() {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: true,
@@ -3677,6 +3680,7 @@ async function loadNutritionWeekChart() {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 layout: { padding: { bottom: 22 } },
                 scales: {
@@ -4042,6 +4046,7 @@ function renderWeightChart() {
         data: { labels: filtered.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}/${y}`; }), datasets },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             layout: { padding: { bottom: 22 } },
             plugins: {
                 legend: { display: weightTarget > 0, labels: { color: tickColor, boxWidth: 12 } },
@@ -4144,6 +4149,29 @@ async function checkCompleteDay() {
         console.error('Error checking complete day:', e);
     }
 }
+
+// Restore saved chart-box heights and persist changes from the drag handle
+function setupChartResizePersistence() {
+    const saved = JSON.parse(localStorage.getItem('chartHeights') || '{}');
+    document.querySelectorAll('.chart-resize').forEach((el: any) => {
+        const key = el.dataset.chart;
+        if (!key) return;
+        if (saved[key]) el.style.height = saved[key] + 'px';
+        let timer: any;
+        new ResizeObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const h = Math.round(el.getBoundingClientRect().height);
+                const cur = JSON.parse(localStorage.getItem('chartHeights') || '{}');
+                if (cur[key] !== h && h > 0) {
+                    cur[key] = h;
+                    localStorage.setItem('chartHeights', JSON.stringify(cur));
+                }
+            }, 250);
+        }).observe(el);
+    });
+}
+setupChartResizePersistence();
 
 async function initializeApp() {
     await loadCategories();

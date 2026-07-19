@@ -474,9 +474,22 @@ html.light-mode .date-arrow-btn {
     background: linear-gradient(135deg, rgba(59, 7, 100, 0.18) 0%, transparent 70%);
 }
 
-#weekChart {
-    max-height: 300px;
+/* Resizable chart boxes: drag the bottom-right handle to change height */
+.chart-resize {
+    position: relative;
+    resize: vertical;
+    overflow: hidden;
+    min-height: 120px;
+    height: 300px;
 }
+.chart-resize > canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.chart-resize[data-chart="balanceChart"]       { height: 380px; }
+.chart-resize[data-chart="financeMonthlyChart"]{ height: 220px; }
+.chart-resize[data-chart="weightChart"]        { height: 200px; }
+.chart-resize[data-chart="nutritionWeekChart"] { height: 200px; }
 
 /* ── Activity management ───────────────────────────────────── */
 .activity-management {
@@ -1395,10 +1408,6 @@ html.light-mode .finance-new-category-input { color: #1f2937; }
     border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.15);
 }
 
-#balanceChart {
-    width: 100% !important;
-    max-height: 380px;
-}
 
 .broke-message {
     margin-top: 16px;
@@ -3537,7 +3546,6 @@ html.light-mode .avg-label-prot { color: #34d399; }
 .weight-form-row .btn-teal { width: 100%; }
 
 .weight-chart-container {
-    max-height: 200px;
     position: relative;
 }
 

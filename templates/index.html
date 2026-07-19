@@ -176,8 +176,12 @@
 
             <div class="week-chart">
                 <h2>This Week</h2>
-                <canvas id="weekChart"></canvas>
-                <canvas id="pillarWeekChart" style="margin-top:28px;"></canvas>
+                <div class="chart-resize" data-chart="weekChart">
+                    <canvas id="weekChart"></canvas>
+                </div>
+                <div class="chart-resize" data-chart="pillarWeekChart" style="margin-top:28px;">
+                    <canvas id="pillarWeekChart"></canvas>
+                </div>
             </div>
 
             <!-- Activity Management Section -->
@@ -638,7 +642,9 @@
 
                 <div class="finance-col-chart">
                     <h3>Balance Over Time</h3>
-                    <canvas id="balanceChart"></canvas>
+                    <div class="chart-resize" data-chart="balanceChart">
+                        <canvas id="balanceChart"></canvas>
+                    </div>
                     <div id="brokeMessage" class="broke-message" style="display:none">
                         WORK WORK WORK! YOU'RE BROKE!
                     </div>
@@ -652,7 +658,7 @@
 
             <div class="finance-monthly-card">
                 <h3>Monthly Overview</h3>
-                <div style="position:relative;height:220px;">
+                <div class="chart-resize" data-chart="financeMonthlyChart">
                     <canvas id="financeMonthlyChart"></canvas>
                 </div>
             </div>
@@ -914,7 +920,7 @@
                                         <button type="button" data-range="1Y">1Y</button>
                                     </div>
                                 </div>
-                                <div class="weight-chart-container">
+                                <div class="weight-chart-container chart-resize" data-chart="weightChart">
                                     <canvas id="weightChart"></canvas>
                                 </div>
                             </div>
@@ -928,7 +934,7 @@
                     <div class="weight-checkin-card">
                         <h3 class="nutrition-week-title">Nutrition This Week</h3>
                         <div class="chart-with-avg">
-                            <div class="weight-chart-container">
+                            <div class="weight-chart-container chart-resize" data-chart="nutritionWeekChart">
                                 <canvas id="nutritionWeekChart"></canvas>
                             </div>
                             <div class="nutrition-avg-group">
