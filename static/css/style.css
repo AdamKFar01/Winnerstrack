@@ -2609,9 +2609,10 @@ html.light-mode .meal-dot-filled { background: var(--color-primary-dark); border
 }
 
 .weekly-summary-card h3 {
-    font-size: 1em;
-    font-weight: 600;
-    color: #e5e7eb;
+    font-size: 1.1em;
+    font-weight: 400;
+    color: var(--color-primary);
+    text-shadow: none;
     margin: 0 0 16px;
 }
 
@@ -2679,7 +2680,7 @@ html.light-mode .weekly-summary-card {
     background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.08) 0%, transparent 70%);
     border-color: rgba(var(--color-primary-dark-rgb), 0.2);
 }
-html.light-mode .weekly-summary-card h3 { color: #1f2937; }
+html.light-mode .weekly-summary-card h3 { color: var(--color-primary-dark); }
 html.light-mode .weekly-summary-value { color: #1f2937; }
 html.light-mode .deficit-stat { border-color: rgba(var(--color-primary-dark-rgb), 0.3); }
 html.light-mode .deficit-stat .weekly-summary-value { color: var(--color-primary-dark); }
