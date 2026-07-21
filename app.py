@@ -104,6 +104,11 @@ def init_db():
                  (id INTEGER PRIMARY KEY,
                   crypto_label TEXT DEFAULT 'Crypto')''')
     c.execute('INSERT OR IGNORE INTO finance_settings (id) VALUES (1)')
+    # Comma-separated card keys ('savings', 'crypto', 'account:<id>') in display order
+    try:
+        c.execute("ALTER TABLE finance_settings ADD COLUMN card_order TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     # Freeform "what's inside" lines per category, keyed 'crypto' or 'account:<id>'
     c.execute('''CREATE TABLE IF NOT EXISTS finance_holdings
@@ -705,23 +710,34 @@ def finance_settings_api():
     c = conn.cursor()
 
     if request.method == 'PUT':
-        name = (request.json.get('crypto_label') or '').strip()
-        if not name:
-            conn.close()
-            return jsonify({'success': False, 'error': 'Category name is required'}), 400
-        if name.lower() in ('savings', 'total balance'):
-            conn.close()
-            return jsonify({'success': False, 'error': 'That category already exists'}), 400
-        c.execute('UPDATE finance_settings SET crypto_label = ? WHERE id = 1', (name,))
+        data = request.json
+
+        if 'crypto_label' in data:
+            name = (data.get('crypto_label') or '').strip()
+            if not name:
+                conn.close()
+                return jsonify({'success': False, 'error': 'Category name is required'}), 400
+            if name.lower() in ('savings', 'total balance'):
+                conn.close()
+                return jsonify({'success': False, 'error': 'That category already exists'}), 400
+            c.execute('UPDATE finance_settings SET crypto_label = ? WHERE id = 1', (name,))
+
+        if 'card_order' in data:
+            order = ','.join(str(k).strip() for k in (data.get('card_order') or []) if str(k).strip())
+            c.execute('UPDATE finance_settings SET card_order = ? WHERE id = 1', (order,))
+
         conn.commit()
         conn.close()
         return jsonify({'success': True})
 
     else:
-        c.execute('SELECT crypto_label FROM finance_settings WHERE id = 1')
+        c.execute('SELECT crypto_label, card_order FROM finance_settings WHERE id = 1')
         row = c.fetchone()
         conn.close()
-        return jsonify({'crypto_label': row[0] if row else 'Crypto'})
+        return jsonify({
+            'crypto_label': row[0] if row else 'Crypto',
+            'card_order': [k for k in (row[1] or '').split(',') if k] if row else []
+        })
 
 @app.route('/api/finance-holdings', methods=['GET', 'PUT'])
 def finance_holdings_api():

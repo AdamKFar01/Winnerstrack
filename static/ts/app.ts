@@ -1933,26 +1933,35 @@ function hideFinancePeek() {
     document.getElementById('financePeekBackdrop')!.style.display = 'none';
 }
 
+// Only one press can be in flight at a time, so this state is shared — it also
+// lets a drag cancel a pending peek from outside.
+let financePeekTimer: any = null;
+let financePeeked = false;
+
+function cancelFinancePeek() {
+    clearTimeout(financePeekTimer);
+    if (financePeeked) hideFinancePeek();
+    financePeeked = false;
+}
+
 // Wires press-and-hold onto a card. `onClick` (if given) fires on a normal
 // short click, and is suppressed when the press became a peek instead.
 function attachFinancePeek(el, getPeek, onClick?) {
-    let timer: any = null;
-    let peeked = false;
-
     const start = (e) => {
         // Left button only, and never from the rename/delete controls
         if (e.button !== undefined && e.button !== 0) return;
         if (e.target.closest('.finance-card-delete, .finance-card-name, input')) return;
-        peeked = false;
-        timer = setTimeout(() => {
-            peeked = true;
+        clearTimeout(financePeekTimer);
+        financePeeked = false;
+        financePeekTimer = setTimeout(() => {
+            financePeeked = true;
             showFinancePeek(getPeek());
         }, FINANCE_PEEK_DELAY);
     };
 
     const end = () => {
-        clearTimeout(timer);
-        if (peeked) hideFinancePeek();
+        clearTimeout(financePeekTimer);
+        if (financePeeked) hideFinancePeek();
     };
 
     el.addEventListener('mousedown', start);
@@ -1962,11 +1971,11 @@ function attachFinancePeek(el, getPeek, onClick?) {
     el.addEventListener('touchend', end);
     el.addEventListener('touchcancel', end);
     // Long-press on touch would otherwise pop the OS context menu
-    el.addEventListener('contextmenu', e => { if (peeked) e.preventDefault(); });
+    el.addEventListener('contextmenu', e => { if (financePeeked) e.preventDefault(); });
 
     if (onClick) {
         el.addEventListener('click', (e) => {
-            if (peeked) return;
+            if (financePeeked) return;
             if (e.target.closest('.finance-card-delete, .finance-card-name, input')) return;
             onClick();
         });
@@ -2016,11 +2025,15 @@ attachFinancePeek(
         amount: `£${financeSnapshot.crypto.toFixed(2)}`,
         color: cssVar('--color-accent'),
         lines: financeHoldings['crypto'] || [],
-        emptyNote: 'Nothing recorded yet — click the card to add holdings.'
+        emptyNote: 'Nothing recorded yet. Click the card to add holdings.'
     }),
     () => openHoldingsEditor('crypto', cryptoLabel)
 );
 document.querySelector('.finance-mini-card.crypto')!.classList.add('has-holdings');
+
+// Savings has no holdings breakdown, but still rearranges with the rest
+makeFinanceCardDraggable(document.querySelector('.finance-mini-card.balance'));
+makeFinanceCardDraggable(document.querySelector('.finance-mini-card.crypto'));
 
 // Total Balance peeks as a rollup of every category rather than holdings
 attachFinancePeek(document.getElementById('financeTotalCard'), () => ({
@@ -2043,11 +2056,77 @@ async function loadFinanceSettings() {
         const res = await fetch('/api/finance-settings');
         const settings = await res.json();
         cryptoLabel = settings.crypto_label || 'Crypto';
+        financeCardOrder = settings.card_order || [];
         document.getElementById('cryptoLabel')!.textContent = cryptoLabel;
     } catch (e) {
         console.error('Error loading finance settings:', e);
     }
 }
+
+// ── Drag to rearrange the category cards (iOS-widget style) ──
+let financeCardOrder: string[] = [];
+
+function applyFinanceCardOrder() {
+    const wrap = document.getElementById('financeMiniCards')!;
+    const addBtn = document.getElementById('addFinanceAccountBtn')!;
+    const cards = [...wrap.querySelectorAll('[data-card-key]')] as any[];
+    // Cards with no saved position (a category just added) sort to the end;
+    // sort is stable, so those keep the order they were rendered in
+    const rank = key => {
+        const i = financeCardOrder.indexOf(key);
+        return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+    };
+    cards.sort((a, b) => rank(a.dataset.cardKey) - rank(b.dataset.cardKey));
+    cards.forEach(card => wrap.insertBefore(card, addBtn));
+}
+
+async function saveFinanceCardOrder() {
+    const wrap = document.getElementById('financeMiniCards')!;
+    financeCardOrder = [...wrap.querySelectorAll('[data-card-key]')].map((c: any) => c.dataset.cardKey);
+    await fetch('/api/finance-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_order: financeCardOrder })
+    });
+}
+
+// Which card sits after the pointer, so the dragged one can slot in before it
+function cardAfterPoint(wrap, x) {
+    const others = [...wrap.querySelectorAll('[data-card-key]:not(.dragging)')] as any[];
+    return others.find(card => {
+        const box = card.getBoundingClientRect();
+        return x < box.left + box.width / 2;
+    }) || null;
+}
+
+function makeFinanceCardDraggable(card) {
+    card.draggable = true;
+
+    card.addEventListener('dragstart', (e) => {
+        // A drag is not a peek — drop the pending long-press and any open overlay
+        cancelFinancePeek();
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        // Firefox needs data set for the drag to start at all
+        e.dataTransfer.setData('text/plain', card.dataset.cardKey);
+    });
+
+    card.addEventListener('dragend', async () => {
+        card.classList.remove('dragging');
+        await saveFinanceCardOrder();
+    });
+}
+
+document.getElementById('financeMiniCards')!.addEventListener('dragover', (e: any) => {
+    const wrap = e.currentTarget;
+    const dragging = wrap.querySelector('.dragging');
+    if (!dragging) return;
+    e.preventDefault();
+    // Reposition live so the other cards shuffle out of the way as you move
+    const after = cardAfterPoint(wrap, e.clientX);
+    if (after) wrap.insertBefore(dragging, after);
+    else wrap.insertBefore(dragging, document.getElementById('addFinanceAccountBtn'));
+});
 
 function renameCryptoLabel() {
     const nameEl = document.getElementById('cryptoLabel') as HTMLElement;
@@ -2257,17 +2336,21 @@ async function loadFinance() {
             (card.querySelector('.finance-card-name') as any).onclick = () => renameFinanceAccount(card, a);
 
             const key = `account:${a.id}`;
+            card.dataset.cardKey = key;
             card.classList.add('has-holdings');
+            makeFinanceCardDraggable(card);
             attachFinancePeek(card, () => ({
                 title: a.name,
                 amount: `£${(accountBalances[a.id] || 0).toFixed(2)}`,
                 color,
                 lines: financeHoldings[key] || [],
-                emptyNote: 'Nothing recorded yet — click the card to add holdings.'
+                emptyNote: 'Nothing recorded yet. Click the card to add holdings.'
             }), () => openHoldingsEditor(key, a.name));
 
             cardsWrap.insertBefore(card, addBtn);
         });
+
+        applyFinanceCardOrder();
 
         // Balance chart — one line per account, one point per transaction, shared x-axis
         const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));

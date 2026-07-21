@@ -1259,8 +1259,12 @@ html.light-mode .day-view-event.completed { color: #9ca3af; }
 }
 
 .finance-total-card {
-    flex: 1.4;
-    padding: 22px 32px;
+    flex: 0 0 auto;
+    min-width: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 20px;
     border-radius: 15px;
     text-align: center;
     background: linear-gradient(135deg, rgba(59, 7, 100, 0.35) 0%, transparent 70%);
@@ -1268,17 +1272,17 @@ html.light-mode .day-view-event.completed { color: #9ca3af; }
 }
 
 .finance-total-card h3 {
-    font-size: 1em;
+    font-size: 0.82em;
     font-weight: 400;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     text-shadow: none;
     color: var(--color-primary);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
 }
 
 .finance-total-card .amount {
-    font-size: 2.8em;
+    font-size: 1.9em;
     font-weight: 400;
     color: var(--color-primary);
 }
@@ -1535,6 +1539,19 @@ html.light-mode #financeHoldingsText { background: rgba(0, 0, 0, 0.03); border-c
 /* Cards that open a holdings editor on click */
 .finance-mini-card.has-holdings,
 .finance-total-card.has-holdings { cursor: pointer; user-select: none; }
+
+/* ── Drag to rearrange ───────────────────────────────────────── */
+.finance-mini-card[data-card-key] {
+    user-select: none;
+    /* Cards slide aside as the dragged one passes over them */
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.finance-mini-card.dragging {
+    opacity: 0.4;
+    transform: scale(0.97);
+    transition: none;
+}
 
 .finance-mini-card .amount {
     font-size: 1.5em;
