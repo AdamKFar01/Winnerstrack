@@ -98,6 +98,12 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   name TEXT NOT NULL UNIQUE,
                   created_at TEXT NOT NULL)''')
+
+    # Display-name overrides for the fixed Crypto card (Savings/Total Balance stay fixed)
+    c.execute('''CREATE TABLE IF NOT EXISTS finance_settings
+                 (id INTEGER PRIMARY KEY,
+                  crypto_label TEXT DEFAULT 'Crypto')''')
+    c.execute('INSERT OR IGNORE INTO finance_settings (id) VALUES (1)')
     try:
         c.execute("ALTER TABLE finance ADD COLUMN account_id INTEGER")
     except Exception:
@@ -685,6 +691,30 @@ def finance():
             })
         
         return jsonify(finance_list)
+
+@app.route('/api/finance-settings', methods=['GET', 'PUT'])
+def finance_settings_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'PUT':
+        name = (request.json.get('crypto_label') or '').strip()
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category name is required'}), 400
+        if name.lower() in ('savings', 'total balance'):
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        c.execute('UPDATE finance_settings SET crypto_label = ? WHERE id = 1', (name,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT crypto_label FROM finance_settings WHERE id = 1')
+        row = c.fetchone()
+        conn.close()
+        return jsonify({'crypto_label': row[0] if row else 'Crypto'})
 
 @app.route('/api/finance-accounts', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def finance_accounts_api():

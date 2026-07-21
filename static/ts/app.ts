@@ -1876,7 +1876,59 @@ async function loadFinanceMonthlyChart() {
 
 // ── Custom finance categories (beyond Savings/Crypto) ────────
 let financeAccounts: any[] = [];
+let cryptoLabel = 'Crypto';
 const FINANCE_ACCOUNT_COLORS = ['#f59e0b', '#f472b6', '#34d399', '#60a5fa', '#a78bfa', '#fb7185'];
+
+async function loadFinanceSettings() {
+    try {
+        const res = await fetch('/api/finance-settings');
+        const settings = await res.json();
+        cryptoLabel = settings.crypto_label || 'Crypto';
+        document.getElementById('cryptoLabel')!.textContent = cryptoLabel;
+    } catch (e) {
+        console.error('Error loading finance settings:', e);
+    }
+}
+
+function renameCryptoLabel() {
+    const nameEl = document.getElementById('cryptoLabel') as HTMLElement;
+    if (!nameEl) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'finance-new-category-input';
+    input.value = cryptoLabel;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+    const finish = async (save) => {
+        if (done) return;
+        done = true;
+        const name = input.value.trim();
+        if (save && name && name !== cryptoLabel) {
+            const res = await fetch('/api/finance-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ crypto_label: name })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Could not rename category');
+            }
+        }
+        nameEl.textContent = cryptoLabel;
+        input.replaceWith(nameEl);
+        loadFinance();
+    };
+
+    input.addEventListener('keydown', (e: any) => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', () => finish(true));
+}
+document.getElementById('cryptoLabel')!.onclick = renameCryptoLabel;
 
 async function loadFinanceAccounts() {
     try {
@@ -1989,6 +2041,7 @@ function renameFinanceAccount(card, account) {
 async function loadFinance() {
     try {
         await loadFinanceAccounts();
+        await loadFinanceSettings();
         const response = await fetch('/api/finance');
         const records = await response.json();
 
@@ -2097,7 +2150,7 @@ async function loadFinance() {
                         tension: 0.3
                     },
                     {
-                        label: 'Crypto Balance',
+                        label: `${cryptoLabel} Balance`,
                         data: cryptoData,
                         borderColor: aColor,
                         backgroundColor: `rgba(${aRgb}, 0.06)`,
