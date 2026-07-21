@@ -1879,6 +1879,165 @@ let financeAccounts: any[] = [];
 let cryptoLabel = 'Crypto';
 const FINANCE_ACCOUNT_COLORS = ['#f59e0b', '#f472b6', '#34d399', '#60a5fa', '#a78bfa', '#fb7185'];
 
+// What each category is composed of, keyed 'crypto' / 'account:<id>'
+let financeHoldings: any = {};
+// Latest computed balances, so the peek overlays can read current figures
+let financeSnapshot: any = { savings: 0, crypto: 0, accounts: {}, total: 0 };
+
+async function loadFinanceHoldings() {
+    try {
+        const res = await fetch('/api/finance-holdings');
+        financeHoldings = await res.json();
+    } catch (e) {
+        console.error('Error loading finance holdings:', e);
+        financeHoldings = {};
+    }
+}
+
+// ── Hold-click peek ──────────────────────────────────────────
+// Press and hold a card to blow it up (like holding an Instagram post);
+// releasing anywhere shrinks it back automatically.
+const FINANCE_PEEK_DELAY = 300;
+
+function showFinancePeek(peek) {
+    document.getElementById('financePeekTitle')!.textContent = peek.title;
+    document.getElementById('financePeekAmount')!.textContent = peek.amount;
+    (document.getElementById('financePeekAmount') as HTMLElement).style.color = peek.color || '';
+    (document.getElementById('financePeekTitle') as HTMLElement).style.color = peek.color || '';
+
+    const list = document.getElementById('financePeekList')!;
+    list.innerHTML = '';
+    if (!peek.lines.length) {
+        const li = document.createElement('li');
+        li.className = 'empty-note';
+        li.textContent = peek.emptyNote;
+        list.appendChild(li);
+    }
+    peek.lines.forEach(line => {
+        const li = document.createElement('li');
+        // Category rollups come as {text, amount}; holdings are plain strings
+        if (typeof line === 'string') {
+            li.textContent = line;
+        } else {
+            li.innerHTML = `<span></span><span class="peek-amount"></span>`;
+            (li.children[0] as HTMLElement).textContent = line.text;
+            (li.children[1] as HTMLElement).textContent = line.amount;
+        }
+        list.appendChild(li);
+    });
+
+    document.getElementById('financePeekBackdrop')!.style.display = 'flex';
+}
+
+function hideFinancePeek() {
+    document.getElementById('financePeekBackdrop')!.style.display = 'none';
+}
+
+// Wires press-and-hold onto a card. `onClick` (if given) fires on a normal
+// short click, and is suppressed when the press became a peek instead.
+function attachFinancePeek(el, getPeek, onClick?) {
+    let timer: any = null;
+    let peeked = false;
+
+    const start = (e) => {
+        // Left button only, and never from the rename/delete controls
+        if (e.button !== undefined && e.button !== 0) return;
+        if (e.target.closest('.finance-card-delete, .finance-card-name, input')) return;
+        peeked = false;
+        timer = setTimeout(() => {
+            peeked = true;
+            showFinancePeek(getPeek());
+        }, FINANCE_PEEK_DELAY);
+    };
+
+    const end = () => {
+        clearTimeout(timer);
+        if (peeked) hideFinancePeek();
+    };
+
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('mouseleave', end);
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    // Long-press on touch would otherwise pop the OS context menu
+    el.addEventListener('contextmenu', e => { if (peeked) e.preventDefault(); });
+
+    if (onClick) {
+        el.addEventListener('click', (e) => {
+            if (peeked) return;
+            if (e.target.closest('.finance-card-delete, .finance-card-name, input')) return;
+            onClick();
+        });
+    }
+}
+
+// ── Holdings editor ──────────────────────────────────────────
+let holdingsEditorKey: string | null = null;
+
+function openHoldingsEditor(key, title) {
+    holdingsEditorKey = key;
+    document.getElementById('financeHoldingsTitle')!.textContent = `What's inside ${title}`;
+    const text = document.getElementById('financeHoldingsText') as HTMLTextAreaElement;
+    text.value = (financeHoldings[key] || []).join('\n');
+    document.getElementById('financeHoldingsBackdrop')!.style.display = 'flex';
+    text.focus();
+}
+
+function closeHoldingsEditor(e?) {
+    if (e && e.target !== e.currentTarget) return;
+    holdingsEditorKey = null;
+    document.getElementById('financeHoldingsBackdrop')!.style.display = 'none';
+}
+
+document.getElementById('financeHoldingsText')!.addEventListener('keydown', (e: any) => {
+    if (e.key === 'Escape') closeHoldingsEditor();
+});
+
+async function saveHoldings() {
+    if (!holdingsEditorKey) return;
+    const text = document.getElementById('financeHoldingsText') as HTMLTextAreaElement;
+    const items = text.value.split('\n').map(l => l.trim()).filter(Boolean);
+    await fetch('/api/finance-holdings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_key: holdingsEditorKey, items })
+    });
+    closeHoldingsEditor();
+    loadFinance();
+}
+
+// The Savings card is deliberately left out: it has no holdings to break down.
+attachFinancePeek(
+    document.querySelector('.finance-mini-card.crypto'),
+    () => ({
+        title: cryptoLabel,
+        amount: `£${financeSnapshot.crypto.toFixed(2)}`,
+        color: cssVar('--color-accent'),
+        lines: financeHoldings['crypto'] || [],
+        emptyNote: 'Nothing recorded yet — click the card to add holdings.'
+    }),
+    () => openHoldingsEditor('crypto', cryptoLabel)
+);
+document.querySelector('.finance-mini-card.crypto')!.classList.add('has-holdings');
+
+// Total Balance peeks as a rollup of every category rather than holdings
+attachFinancePeek(document.getElementById('financeTotalCard'), () => ({
+    title: 'Total Balance',
+    amount: `£${financeSnapshot.total.toFixed(2)}`,
+    color: '',
+    lines: [
+        { text: 'Savings', amount: `£${financeSnapshot.savings.toFixed(2)}` },
+        { text: cryptoLabel, amount: `£${financeSnapshot.crypto.toFixed(2)}` },
+        ...financeAccounts.map(a => ({
+            text: a.name,
+            amount: `£${(financeSnapshot.accounts[a.id] || 0).toFixed(2)}`
+        }))
+    ],
+    emptyNote: ''
+}));
+
 async function loadFinanceSettings() {
     try {
         const res = await fetch('/api/finance-settings');
@@ -2042,6 +2201,7 @@ async function loadFinance() {
     try {
         await loadFinanceAccounts();
         await loadFinanceSettings();
+        await loadFinanceHoldings();
         const response = await fetch('/api/finance');
         const records = await response.json();
 
@@ -2066,6 +2226,13 @@ async function loadFinance() {
         const currentCrypto  = totalCryptoIn - totalCryptoOut;
         const customTotal = financeAccounts.reduce((s, a) => s + (accountBalances[a.id] || 0), 0);
 
+        financeSnapshot = {
+            savings: currentBalance,
+            crypto: currentCrypto,
+            accounts: accountBalances,
+            total: currentBalance + currentCrypto + customTotal
+        };
+
         document.getElementById('balance')!.textContent      = `£${currentBalance.toFixed(2)}`;
         document.getElementById('cryptoBalance')!.textContent = `£${currentCrypto.toFixed(2)}`;
         document.getElementById('totalBalance')!.textContent  = `£${(currentBalance + currentCrypto + customTotal).toFixed(2)}`;
@@ -2088,6 +2255,17 @@ async function loadFinance() {
             `;
             (card.querySelector('.finance-card-delete') as any).onclick = () => deleteFinanceAccount(a.id, a.name);
             (card.querySelector('.finance-card-name') as any).onclick = () => renameFinanceAccount(card, a);
+
+            const key = `account:${a.id}`;
+            card.classList.add('has-holdings');
+            attachFinancePeek(card, () => ({
+                title: a.name,
+                amount: `£${(accountBalances[a.id] || 0).toFixed(2)}`,
+                color,
+                lines: financeHoldings[key] || [],
+                emptyNote: 'Nothing recorded yet — click the card to add holdings.'
+            }), () => openHoldingsEditor(key, a.name));
+
             cardsWrap.insertBefore(card, addBtn);
         });
 

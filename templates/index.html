@@ -577,8 +577,30 @@
         <!-- Finance Tab -->
         <div class="tab-content" id="finance">
             <h2>Finance Tracker</h2>
+            <!-- Hold-click peek: enlarged card with what's inside, auto-closes on release -->
+            <div class="finance-peek-backdrop" id="financePeekBackdrop" style="display:none">
+                <div class="finance-peek-card" id="financePeekCard">
+                    <h3 id="financePeekTitle"></h3>
+                    <div class="amount" id="financePeekAmount"></div>
+                    <ul class="finance-peek-list" id="financePeekList"></ul>
+                </div>
+            </div>
+
+            <!-- Holdings editor: one line per holding -->
+            <div class="finance-holdings-backdrop" id="financeHoldingsBackdrop" style="display:none" onclick="closeHoldingsEditor(event)">
+                <div class="finance-holdings-modal" onclick="event.stopPropagation()">
+                    <h3 id="financeHoldingsTitle"></h3>
+                    <p class="finance-holdings-hint">One holding per line, e.g. "0.5 BTC" or "Vanguard S&amp;P 500 x40".</p>
+                    <textarea id="financeHoldingsText" rows="8" spellcheck="false"></textarea>
+                    <div class="finance-holdings-actions">
+                        <button class="btn-teal btn-sm" onclick="saveHoldings()">Save</button>
+                        <button class="btn-plain btn-sm" onclick="closeHoldingsEditor()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="finance-total-summary">
-                <div class="finance-total-card">
+                <div class="finance-total-card" id="financeTotalCard">
                     <h3>Total Balance</h3>
                     <div class="amount" id="totalBalance">£0.00</div>
                 </div>

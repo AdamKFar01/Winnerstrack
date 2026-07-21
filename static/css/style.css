@@ -1388,6 +1388,154 @@ html.light-mode .finance-new-category-input { color: #1f2937; }
 .finance-card-name { cursor: pointer; }
 .finance-card-name:hover { text-decoration: underline; }
 
+/* ── Hold-click peek (Instagram-style): dim everything, blow up one card ── */
+.finance-peek-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* The press stays on the card underneath, so never swallow pointer events */
+    pointer-events: none;
+}
+
+.finance-peek-card {
+    min-width: 260px;
+    max-width: min(420px, 86vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 24px 28px;
+    border-radius: 18px;
+    background: #131a2b;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.35);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    animation: financePeekIn 0.16s ease-out;
+}
+
+@keyframes financePeekIn {
+    from { transform: scale(0.86); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+.finance-peek-card h3 {
+    font-size: 0.95em;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+}
+
+.finance-peek-card .amount {
+    font-size: 2em;
+    margin-bottom: 6px;
+}
+
+.finance-peek-list {
+    list-style: none;
+    text-align: left;
+    margin-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 14px;
+}
+.finance-peek-list:empty { display: none; }
+
+.finance-peek-list li {
+    font-size: 0.9em;
+    color: #c7cce0;
+    padding: 5px 0 5px 16px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+}
+.finance-peek-list li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+}
+.finance-peek-list li .peek-amount { color: #8b92b0; white-space: nowrap; }
+.finance-peek-list li.empty-note { color: #8b92b0; font-style: italic; padding-left: 0; }
+.finance-peek-list li.empty-note::before { content: ''; }
+
+html.light-mode .finance-peek-card { background: #ffffff; border-color: rgba(0, 0, 0, 0.12); }
+html.light-mode .finance-peek-list li { color: #374151; }
+html.light-mode .finance-peek-list { border-top-color: rgba(0, 0, 0, 0.1); }
+
+/* ── Holdings editor ─────────────────────────────────────────── */
+.finance-holdings-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 210;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.finance-holdings-modal {
+    width: min(440px, 88vw);
+    padding: 24px 26px;
+    border-radius: 16px;
+    background: #131a2b;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.finance-holdings-modal h3 { margin-bottom: 6px; }
+
+.finance-holdings-hint {
+    font-size: 0.8em;
+    color: #8b92b0;
+    margin-bottom: 12px;
+}
+
+#financeHoldingsText {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-family: inherit;
+    font-size: 0.9em;
+    line-height: 1.6;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+}
+#financeHoldingsText:focus { border-color: rgba(var(--color-primary-rgb), 0.5); }
+
+.finance-holdings-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.btn-plain {
+    background: transparent;
+    color: #8b92b0;
+    border: 1px solid rgba(139, 146, 176, 0.4);
+    border-radius: 8px;
+    padding: 10px 22px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-family: inherit;
+    margin-top: 8px;
+    transition: color 0.2s, border-color 0.2s;
+}
+.btn-plain:hover { color: #c7cce0; border-color: #8b92b0; }
+
+html.light-mode .finance-holdings-modal { background: #ffffff; border-color: rgba(0, 0, 0, 0.12); }
+html.light-mode #financeHoldingsText { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.15); color: #1f2937; }
+
+/* Cards that open a holdings editor on click */
+.finance-mini-card.has-holdings,
+.finance-total-card.has-holdings { cursor: pointer; user-select: none; }
+
 .finance-mini-card .amount {
     font-size: 1.5em;
     font-weight: 400;

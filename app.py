@@ -104,6 +104,13 @@ def init_db():
                  (id INTEGER PRIMARY KEY,
                   crypto_label TEXT DEFAULT 'Crypto')''')
     c.execute('INSERT OR IGNORE INTO finance_settings (id) VALUES (1)')
+
+    # Freeform "what's inside" lines per category, keyed 'crypto' or 'account:<id>'
+    c.execute('''CREATE TABLE IF NOT EXISTS finance_holdings
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  account_key TEXT NOT NULL,
+                  item TEXT NOT NULL,
+                  position INTEGER DEFAULT 0)''')
     try:
         c.execute("ALTER TABLE finance ADD COLUMN account_id INTEGER")
     except Exception:
@@ -716,6 +723,36 @@ def finance_settings_api():
         conn.close()
         return jsonify({'crypto_label': row[0] if row else 'Crypto'})
 
+@app.route('/api/finance-holdings', methods=['GET', 'PUT'])
+def finance_holdings_api():
+    """What each category is currently composed of, as freeform bullet lines."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'PUT':
+        data = request.json
+        key = (data.get('account_key') or '').strip()
+        if not key:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category is required'}), 400
+        items = [str(i).strip() for i in (data.get('items') or []) if str(i).strip()]
+        # The editor sends the whole list, so replace rather than merge
+        c.execute('DELETE FROM finance_holdings WHERE account_key = ?', (key,))
+        for pos, item in enumerate(items):
+            c.execute('INSERT INTO finance_holdings (account_key, item, position) VALUES (?, ?, ?)',
+                      (key, item, pos))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT account_key, item FROM finance_holdings ORDER BY account_key, position')
+        holdings = {}
+        for key, item in c.fetchall():
+            holdings.setdefault(key, []).append(item)
+        conn.close()
+        return jsonify(holdings)
+
 @app.route('/api/finance-accounts', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def finance_accounts_api():
     conn = sqlite3.connect(DB_PATH)
@@ -760,6 +797,7 @@ def finance_accounts_api():
     elif request.method == 'DELETE':
         account_id = request.args.get('id')
         c.execute('DELETE FROM finance WHERE account_id = ?', (account_id,))
+        c.execute('DELETE FROM finance_holdings WHERE account_key = ?', (f'account:{account_id}',))
         c.execute('DELETE FROM finance_accounts WHERE id = ?', (account_id,))
         conn.commit()
         conn.close()
