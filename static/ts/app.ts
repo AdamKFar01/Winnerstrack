@@ -1949,6 +1949,43 @@ async function deleteFinanceAccount(id, name) {
     loadFinance();
 }
 
+function renameFinanceAccount(card, account) {
+    if (card.querySelector('.finance-new-category-input')) return;
+    const nameEl = card.querySelector('.finance-card-name');
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'finance-new-category-input';
+    input.value = account.name;
+    nameEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    let done = false;
+    const finish = async (save) => {
+        if (done) return;
+        done = true;
+        const name = input.value.trim();
+        if (save && name && name !== account.name) {
+            const res = await fetch('/api/finance-accounts', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: account.id, name })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                alert(err.error || 'Could not rename category');
+            }
+        }
+        loadFinance();
+    };
+
+    input.addEventListener('keydown', (e: any) => {
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', () => finish(true));
+}
+
 async function loadFinance() {
     try {
         await loadFinanceAccounts();
@@ -1993,10 +2030,11 @@ async function loadFinance() {
             card.style.borderColor = color + '59';
             card.innerHTML = `
                 <button class="finance-card-delete" title="Delete category">×</button>
-                <h3 style="color:${color}">${a.name}</h3>
+                <h3 class="finance-card-name" style="color:${color}" title="Click to rename">${a.name}</h3>
                 <div class="amount" style="color:${color}">£${(accountBalances[a.id] || 0).toFixed(2)}</div>
             `;
             (card.querySelector('.finance-card-delete') as any).onclick = () => deleteFinanceAccount(a.id, a.name);
+            (card.querySelector('.finance-card-name') as any).onclick = () => renameFinanceAccount(card, a);
             cardsWrap.insertBefore(card, addBtn);
         });
 
@@ -2274,7 +2312,8 @@ function createDayElement(day, otherMonth, date) {
         dayEvents.slice(0, 3).forEach(event => {
             const miniEvent = document.createElement('div');
             miniEvent.className = `mini-event importance-${event.importance}`
-                + (event.completed ? ' completed' : '');
+                + (event.completed ? ' completed' : '')
+                + (event.isReminder ? ' reminder-event' : '');
             miniEvent.textContent = event.title;
             eventsContainer.appendChild(miniEvent);
         });
@@ -2340,7 +2379,9 @@ function renderDayViewGrid(dateStr) {
     // Untimed events go in an "all day" strip above the grid
     events.filter(e => !e.start_time).forEach(e => {
         const chip = document.createElement('div');
-        chip.className = `day-view-allday-chip importance-${e.importance}` + (e.completed ? ' completed' : '');
+        chip.className = `day-view-allday-chip importance-${e.importance}`
+            + (e.completed ? ' completed' : '')
+            + (e.isReminder ? ' reminder-event' : '');
         chip.textContent = e.title;
         allDayWrap.appendChild(chip);
     });
@@ -2390,7 +2431,9 @@ function renderDayViewGrid(dateStr) {
     layer.className = 'day-view-events';
     timed.forEach(ev => {
         const block = document.createElement('div');
-        block.className = `day-view-event importance-${ev.importance}` + (ev.completed ? ' completed' : '');
+        block.className = `day-view-event importance-${ev.importance}`
+            + (ev.completed ? ' completed' : '')
+            + (ev.isReminder ? ' reminder-event' : '');
         block.style.top = `${ev.start * DAY_VIEW_PX_PER_MIN}px`;
         block.style.height = `${(ev.end - ev.start) * DAY_VIEW_PX_PER_MIN - 2}px`;
         block.style.left = `calc(${(ev.col / ev.cols) * 100}% + 2px)`;
@@ -2553,6 +2596,30 @@ async function loadCalendarEvents() {
     } catch (error) {
         console.error('Error loading calendar events:', error);
     }
+
+    // Fold active one-time reminders into the same array so they show up
+    // on the calendar grid, day panel and day view alongside real events.
+    try {
+        const response = await fetch('/api/reminders?type=onetime');
+        const reminders = await response.json();
+        reminders.filter(r => r.date).forEach(r => {
+            calendarEvents.push({
+                id: `reminder-${r.id}`,
+                reminderId: r.id,
+                isReminder: true,
+                title: r.reminder,
+                date: r.date,
+                start_time: r.time || null,
+                end_time: null,
+                category: 'reminder',
+                importance: r.urgency === 'high' ? 'top' : 'normal',
+                description: '',
+                completed: false
+            });
+        });
+    } catch (error) {
+        console.error('Error loading reminders for calendar:', error);
+    }
 }
 
 function loadEventsForSelectedDate() {
@@ -2577,7 +2644,8 @@ function loadEventsForSelectedDate() {
     dayEvents.forEach(event => {
         const eventDiv = document.createElement('div');
         eventDiv.className = `calendar-event-item importance-${event.importance}`
-            + (event.completed ? ' completed' : '');
+            + (event.completed ? ' completed' : '')
+            + (event.isReminder ? ' reminder-event' : '');
 
         const timeStr = event.start_time
             ? `${event.start_time}${event.end_time ? ' - ' + event.end_time : ''}`
@@ -2585,7 +2653,7 @@ function loadEventsForSelectedDate() {
 
         eventDiv.innerHTML = `
             <div class="event-header">
-                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : 'Mark as done'}"></div>
+                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : (event.isReminder ? 'Mark reminder as done' : 'Mark as done')}"></div>
                 <div>
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">${timeStr}</div>
@@ -2597,11 +2665,12 @@ function loadEventsForSelectedDate() {
             </div>
             ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
             <div class="event-actions">
-                <button class="btn-delete-event" onclick="deleteCalendarEvent(${event.id})">Delete</button>
+                <button class="btn-delete-event" onclick="${event.isReminder ? `deleteReminder(${event.reminderId})` : `deleteCalendarEvent(${event.id})`}">Delete</button>
             </div>
         `;
-        (eventDiv.querySelector('.goal-tick') as any).onclick =
-            () => toggleCalendarEventComplete(event.id, !event.completed);
+        (eventDiv.querySelector('.goal-tick') as any).onclick = event.isReminder
+            ? () => toggleReminder(event.reminderId, true)
+            : () => toggleCalendarEventComplete(event.id, !event.completed);
 
         eventsList.appendChild(eventDiv);
     });
@@ -2775,6 +2844,9 @@ async function addReminder(reminder, reminderType, time, date = null, recurring 
         if (response.ok) {
             loadAllReminders();
             checkReminderAlerts();
+            await loadCalendarEvents();
+            await renderCalendar();
+            loadEventsForSelectedDate();
         }
     } catch (error) {
         console.error('Error adding reminder:', error);
@@ -2854,6 +2926,9 @@ async function toggleReminder(id, checked) {
             body: JSON.stringify({ id, active: checked ? 0 : 1 })
         });
         loadAllReminders();
+        await loadCalendarEvents();
+        await renderCalendar();
+        loadEventsForSelectedDate();
     } catch (error) {
         console.error('Error updating reminder:', error);
     }
@@ -2861,10 +2936,13 @@ async function toggleReminder(id, checked) {
 
 async function deleteReminder(id) {
     if (!confirm('Are you sure you want to delete this reminder?')) return;
-    
+
     try {
         await fetch(`/api/reminders?id=${id}`, { method: 'DELETE' });
         loadAllReminders();
+        await loadCalendarEvents();
+        await renderCalendar();
+        loadEventsForSelectedDate();
     } catch (error) {
         console.error('Error deleting reminder:', error);
     }

@@ -686,7 +686,7 @@ def finance():
         
         return jsonify(finance_list)
 
-@app.route('/api/finance-accounts', methods=['GET', 'POST', 'DELETE'])
+@app.route('/api/finance-accounts', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def finance_accounts_api():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
@@ -702,6 +702,24 @@ def finance_accounts_api():
         try:
             c.execute('INSERT INTO finance_accounts (name, created_at) VALUES (?, ?)',
                       (name, datetime.now().isoformat()))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'PUT':
+        data = request.json
+        name = (data.get('name') or '').strip()
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category name is required'}), 400
+        if name.lower() in ('savings', 'crypto', 'total balance'):
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        try:
+            c.execute('UPDATE finance_accounts SET name = ? WHERE id = ?', (name, data['id']))
             conn.commit()
         except sqlite3.IntegrityError:
             conn.close()

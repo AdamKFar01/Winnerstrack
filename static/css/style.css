@@ -765,6 +765,15 @@ html.light-mode .date-arrow-btn {
     color: #9ca3af;
 }
 
+/* One-time reminders pulled onto the calendar get a dashed border so they
+   read as reminders rather than events (must follow the completed rule above) */
+.mini-event.reminder-event,
+.day-view-allday-chip.reminder-event,
+.day-view-event.reminder-event,
+.calendar-event-item.reminder-event {
+    border-left-style: dashed;
+}
+
 /* ── Day schedule view ──────────────────────────────────────── */
 .day-view {
     background: rgba(255, 255, 255, 0.02);
@@ -1375,6 +1384,9 @@ html.light-mode .finance-new-category-input { color: #1f2937; }
 
 .finance-mini-card.crypto h3     { color: var(--color-accent); }
 .finance-mini-card.crypto .amount { color: var(--color-accent); }
+
+.finance-card-name { cursor: pointer; }
+.finance-card-name:hover { text-decoration: underline; }
 
 .finance-mini-card .amount {
     font-size: 1.5em;
