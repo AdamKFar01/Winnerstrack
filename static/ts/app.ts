@@ -2139,7 +2139,7 @@ async function loadFinance() {
                 labels: chartLabels,
                 datasets: [
                     {
-                        label: 'Savings Balance',
+                        label: 'Savings',
                         data: savingsData,
                         borderColor: pColor,
                         backgroundColor: `rgba(${pRgb}, 0.08)`,
@@ -2150,7 +2150,7 @@ async function loadFinance() {
                         tension: 0.3
                     },
                     {
-                        label: `${cryptoLabel} Balance`,
+                        label: cryptoLabel,
                         data: cryptoData,
                         borderColor: aColor,
                         backgroundColor: `rgba(${aRgb}, 0.06)`,
@@ -2163,7 +2163,7 @@ async function loadFinance() {
                     ...financeAccounts.map((a, i) => {
                         const color = FINANCE_ACCOUNT_COLORS[i % FINANCE_ACCOUNT_COLORS.length];
                         return {
-                            label: `${a.name} Balance`,
+                            label: a.name,
                             data: accountData[a.id],
                             borderColor: color,
                             backgroundColor: 'transparent',
