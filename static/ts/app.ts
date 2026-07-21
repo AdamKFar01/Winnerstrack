@@ -2654,30 +2654,53 @@ function createDayElement(day, otherMonth, date) {
     }
 
     dayDiv.onclick = () => {
+        if (calendarDayPeeked) return; // the press just ended in a peek, not a real click
         selectDate(date);
-        openDayView(date);
     };
+    attachCalendarDayPeek(dayDiv, date);
 
     return dayDiv;
 }
 
-// ── Day schedule view (hour-by-hour zoom into one day) ────────
+// ── Day schedule peek (hold-click, like a WhatsApp chat or Instagram post) ──
 const DAY_VIEW_PX_PER_MIN = 1;
+const CALENDAR_PEEK_DELAY = 300;
+let calendarPeekTimer: any = null;
+let calendarDayPeeked = false;
 
-function openDayView(date) {
-    (document.querySelector('.calendar-grid') as any).style.display = 'none';
-    (document.querySelector('.calendar-nav') as any).style.display = 'none';
-    document.getElementById('dayView')!.style.display = '';
+function showCalendarDayPeek(date) {
     document.getElementById('dayViewTitle')!.textContent = date.toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
     renderDayViewGrid(dateToLocalString(date));
+    document.getElementById('calendarPeekBackdrop')!.style.display = 'flex';
 }
 
-function closeDayView() {
-    document.getElementById('dayView')!.style.display = 'none';
-    (document.querySelector('.calendar-grid') as any).style.display = '';
-    (document.querySelector('.calendar-nav') as any).style.display = '';
+function hideCalendarDayPeek() {
+    document.getElementById('calendarPeekBackdrop')!.style.display = 'none';
+}
+
+function attachCalendarDayPeek(el, date) {
+    const start = (e) => {
+        if (e.button !== undefined && e.button !== 0) return;
+        calendarDayPeeked = false;
+        calendarPeekTimer = setTimeout(() => {
+            calendarDayPeeked = true;
+            showCalendarDayPeek(date);
+        }, CALENDAR_PEEK_DELAY);
+    };
+    const end = () => {
+        clearTimeout(calendarPeekTimer);
+        if (calendarDayPeeked) hideCalendarDayPeek();
+    };
+
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('mouseleave', end);
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchend', end);
+    el.addEventListener('touchcancel', end);
+    el.addEventListener('contextmenu', e => { if (calendarDayPeeked) e.preventDefault(); });
 }
 
 function renderDayViewGrid(dateStr) {
@@ -2988,11 +3011,6 @@ function loadEventsForSelectedDate() {
 
         eventsList.appendChild(eventDiv);
     });
-
-    // Keep the open day view in sync when events change or the date moves
-    if (document.getElementById('dayView')!.style.display !== 'none') {
-        openDayView(selectedDate);
-    }
 }
 
 async function toggleCalendarEventComplete(id, completed) {

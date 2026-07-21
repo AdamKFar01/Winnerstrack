@@ -268,15 +268,16 @@
                 <div id="calendarDays"></div>
             </div>
 
-            <!-- Day Schedule View (zoom into one day) -->
-            <div class="day-view" id="dayView" style="display:none">
-                <div class="day-view-header">
-                    <button class="btn-calendar-nav" onclick="closeDayView()">⟨ Back to month</button>
-                    <h3 id="dayViewTitle"></h3>
-                </div>
-                <div class="day-view-allday" id="dayViewAllDay"></div>
-                <div class="day-view-scroll">
-                    <div class="day-view-grid" id="dayViewGrid"></div>
+            <!-- Hold-click peek: same effect as holding a WhatsApp chat or Instagram post -->
+            <div class="calendar-peek-backdrop" id="calendarPeekBackdrop" style="display:none">
+                <div class="day-view calendar-peek-card" id="dayView">
+                    <div class="day-view-header">
+                        <h3 id="dayViewTitle"></h3>
+                    </div>
+                    <div class="day-view-allday" id="dayViewAllDay"></div>
+                    <div class="day-view-scroll">
+                        <div class="day-view-grid" id="dayViewGrid"></div>
+                    </div>
                 </div>
             </div>
 

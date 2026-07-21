@@ -700,6 +700,7 @@ html.light-mode .date-arrow-btn {
     padding: 10px;
     min-height: 80px;
     cursor: pointer;
+    user-select: none;
     transition: all 0.3s;
     position: relative;
     grid-column: span 1;
@@ -1539,6 +1540,34 @@ html.light-mode #financeHoldingsText { background: rgba(0, 0, 0, 0.03); border-c
 /* Cards that open a holdings editor on click */
 .finance-mini-card.has-holdings,
 .finance-total-card.has-holdings { cursor: pointer; user-select: none; }
+
+/* ── Calendar day hold-click peek ──────────────────────────────
+   Same effect as the finance one above: dim everything, blow up the
+   day's schedule, auto-close the instant the press is released. */
+.calendar-peek-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.calendar-peek-card.day-view {
+    width: min(480px, 88vw);
+    max-height: 80vh;
+    margin-bottom: 0;
+    background: #131a2b;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    animation: financePeekIn 0.16s ease-out;
+}
+
+.calendar-peek-card .day-view-scroll { max-height: 55vh; }
+
+html.light-mode .calendar-peek-card.day-view { background: #ffffff; border-color: rgba(0, 0, 0, 0.12); }
 
 /* ── Drag to rearrange ───────────────────────────────────────── */
 .finance-mini-card[data-card-key] {
