@@ -98,6 +98,12 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   name TEXT NOT NULL UNIQUE,
                   created_at TEXT NOT NULL)''')
+    # Per-category wording for the two transaction directions (e.g. "Win"/"Loss" for Betting)
+    for col in ('deposit_label', 'withdrawal_label'):
+        try:
+            c.execute(f"ALTER TABLE finance_accounts ADD COLUMN {col} TEXT")
+        except Exception:
+            pass
 
     # Display-name overrides for the fixed Crypto card (Savings/Total Balance stay fixed)
     c.execute('''CREATE TABLE IF NOT EXISTS finance_settings
@@ -801,8 +807,11 @@ def finance_accounts_api():
         if name.lower() in ('savings', 'crypto', 'total balance'):
             conn.close()
             return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        deposit_label = (data.get('deposit_label') or '').strip() or None
+        withdrawal_label = (data.get('withdrawal_label') or '').strip() or None
         try:
-            c.execute('UPDATE finance_accounts SET name = ? WHERE id = ?', (name, data['id']))
+            c.execute('UPDATE finance_accounts SET name = ?, deposit_label = ?, withdrawal_label = ? WHERE id = ?',
+                      (name, deposit_label, withdrawal_label, data['id']))
             conn.commit()
         except sqlite3.IntegrityError:
             conn.close()
@@ -820,10 +829,14 @@ def finance_accounts_api():
         return jsonify({'success': True})
 
     else:
-        c.execute('SELECT id, name FROM finance_accounts ORDER BY created_at')
+        c.execute('SELECT id, name, deposit_label, withdrawal_label FROM finance_accounts ORDER BY created_at')
         rows = c.fetchall()
         conn.close()
-        return jsonify([{'id': r[0], 'name': r[1]} for r in rows])
+        return jsonify([{
+            'id': r[0], 'name': r[1],
+            'deposit_label': r[2] or 'Deposit',
+            'withdrawal_label': r[3] or 'Withdrawal'
+        } for r in rows])
 
 
 @app.route('/api/finance/monthly')

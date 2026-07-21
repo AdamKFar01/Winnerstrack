@@ -1499,6 +1499,28 @@ html.light-mode .finance-peek-list { border-top-color: rgba(0, 0, 0, 0.1); }
     margin-bottom: 12px;
 }
 
+.finance-holdings-label-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.finance-holdings-label-row input {
+    flex: 1;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-family: inherit;
+    font-size: 0.9em;
+    padding: 8px 10px;
+    outline: none;
+}
+.finance-holdings-label-row input:focus { border-color: rgba(var(--color-primary-rgb), 0.5); }
+
+html.light-mode .finance-holdings-label-row input { background: rgba(0, 0, 0, 0.03); border-color: rgba(0, 0, 0, 0.15); color: #1f2937; }
+
 #financeHoldingsText {
     width: 100%;
     background: rgba(255, 255, 255, 0.04);

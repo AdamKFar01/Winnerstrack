@@ -591,6 +591,15 @@
             <div class="finance-holdings-backdrop" id="financeHoldingsBackdrop" style="display:none" onclick="closeHoldingsEditor(event)">
                 <div class="finance-holdings-modal" onclick="event.stopPropagation()">
                     <h3 id="financeHoldingsTitle"></h3>
+
+                    <div class="finance-holdings-labels" id="financeHoldingsLabels" style="display:none">
+                        <p class="finance-holdings-hint">What do a deposit and a withdrawal into this category actually mean? (e.g. "Win" / "Loss" for betting)</p>
+                        <div class="finance-holdings-label-row">
+                            <input type="text" id="financeDepositLabelInput" placeholder="Deposit">
+                            <input type="text" id="financeWithdrawalLabelInput" placeholder="Withdrawal">
+                        </div>
+                    </div>
+
                     <p class="finance-holdings-hint">One holding per line, e.g. "0.5 BTC" or "Vanguard S&amp;P 500 x40".</p>
                     <textarea id="financeHoldingsText" rows="8" spellcheck="false"></textarea>
                     <div class="finance-holdings-actions">

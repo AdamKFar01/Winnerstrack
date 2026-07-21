@@ -1983,11 +1983,23 @@ function attachFinancePeek(el, getPeek, onClick?) {
 }
 
 // ── Holdings editor ──────────────────────────────────────────
+// `account` is only passed for custom categories — it's what lets the modal
+// also offer renaming the deposit/withdrawal wording (e.g. "Win"/"Loss").
 let holdingsEditorKey: string | null = null;
+let holdingsEditorAccount: any = null;
 
-function openHoldingsEditor(key, title) {
+function openHoldingsEditor(key, title, account: any = null) {
     holdingsEditorKey = key;
+    holdingsEditorAccount = account;
     document.getElementById('financeHoldingsTitle')!.textContent = `What's inside ${title}`;
+
+    const labelsWrap = document.getElementById('financeHoldingsLabels')!;
+    labelsWrap.style.display = account ? '' : 'none';
+    if (account) {
+        (document.getElementById('financeDepositLabelInput') as HTMLInputElement).value = account.deposit_label || '';
+        (document.getElementById('financeWithdrawalLabelInput') as HTMLInputElement).value = account.withdrawal_label || '';
+    }
+
     const text = document.getElementById('financeHoldingsText') as HTMLTextAreaElement;
     text.value = (financeHoldings[key] || []).join('\n');
     document.getElementById('financeHoldingsBackdrop')!.style.display = 'flex';
@@ -1997,6 +2009,7 @@ function openHoldingsEditor(key, title) {
 function closeHoldingsEditor(e?) {
     if (e && e.target !== e.currentTarget) return;
     holdingsEditorKey = null;
+    holdingsEditorAccount = null;
     document.getElementById('financeHoldingsBackdrop')!.style.display = 'none';
 }
 
@@ -2013,6 +2026,22 @@ async function saveHoldings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_key: holdingsEditorKey, items })
     });
+
+    if (holdingsEditorAccount) {
+        const depositLabel = (document.getElementById('financeDepositLabelInput') as HTMLInputElement).value.trim();
+        const withdrawalLabel = (document.getElementById('financeWithdrawalLabelInput') as HTMLInputElement).value.trim();
+        await fetch('/api/finance-accounts', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: holdingsEditorAccount.id,
+                name: holdingsEditorAccount.name,
+                deposit_label: depositLabel,
+                withdrawal_label: withdrawalLabel
+            })
+        });
+    }
+
     closeHoldingsEditor();
     loadFinance();
 }
@@ -2177,7 +2206,7 @@ async function loadFinanceAccounts() {
         const sel = document.getElementById('financeType')!;
         sel.querySelectorAll('option[data-custom]').forEach(o => o.remove());
         financeAccounts.forEach(a => {
-            [['account_deposit', 'Deposit'], ['account_withdrawal', 'Withdrawal']].forEach(([type, label]) => {
+            [['account_deposit', a.deposit_label || 'Deposit'], ['account_withdrawal', a.withdrawal_label || 'Withdrawal']].forEach(([type, label]) => {
                 const opt = document.createElement('option');
                 opt.value = `${type}:${a.id}`;
                 opt.textContent = `${a.name} ${label}`;
@@ -2345,7 +2374,7 @@ async function loadFinance() {
                 color,
                 lines: financeHoldings[key] || [],
                 emptyNote: 'Nothing recorded yet. Click the card to add holdings.'
-            }), () => openHoldingsEditor(key, a.name));
+            }), () => openHoldingsEditor(key, a.name, a));
 
             cardsWrap.insertBefore(card, addBtn);
         });
@@ -2467,8 +2496,8 @@ async function loadFinance() {
         }
 
         const isPositiveType = t => t === 'income' || t === 'crypto_investment' || t === 'account_deposit';
-        const accountNames = {};
-        financeAccounts.forEach(a => { accountNames[a.id] = a.name; });
+        const accountsById = {};
+        financeAccounts.forEach(a => { accountsById[a.id] = a; });
 
         function makeFinanceItem(record) {
             const financeItem = document.createElement('div');
@@ -2477,8 +2506,12 @@ async function loadFinance() {
                             : record.type === 'account_withdrawal' ? 'expense'
                             : record.type;
             let label = record.category || record.type;
-            if (record.account_id && accountNames[record.account_id]) {
-                label = `${accountNames[record.account_id]} ${record.type === 'account_deposit' ? 'deposit' : 'withdrawal'}`;
+            const account = record.account_id && accountsById[record.account_id];
+            if (account) {
+                const direction = record.type === 'account_deposit'
+                    ? (account.deposit_label || 'Deposit')
+                    : (account.withdrawal_label || 'Withdrawal');
+                label = `${account.name} ${direction.toLowerCase()}`;
             }
             financeItem.className = `finance-item ${styleType}`;
             financeItem.innerHTML = `
