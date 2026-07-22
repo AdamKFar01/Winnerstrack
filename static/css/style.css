@@ -694,7 +694,8 @@ html.light-mode .date-arrow-btn {
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-#calendarDays {
+#calendarDays,
+#planCalendarDays {
     display: contents;
 }
 
