@@ -664,6 +664,12 @@ html.light-mode .date-arrow-btn {
     box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.2);
 }
 
+.include-plans-btn.active {
+    background: rgba(var(--color-primary-rgb), 0.22);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -773,6 +779,15 @@ html.light-mode .date-arrow-btn {
 .day-view-event.reminder-event,
 .calendar-event-item.reminder-event {
     border-left-style: dashed;
+}
+
+/* Plan-calendar events folded into the main calendar get a dotted border,
+   so they read as plans rather than events or reminders */
+.mini-event.plan-event,
+.day-view-allday-chip.plan-event,
+.day-view-event.plan-event,
+.calendar-event-item.plan-event {
+    border-left-style: dotted;
 }
 
 /* ── Day schedule view ──────────────────────────────────────── */
@@ -1563,9 +1578,9 @@ html.light-mode #financeHoldingsText { background: rgba(0, 0, 0, 0.03); border-c
 .finance-mini-card.has-holdings,
 .finance-total-card.has-holdings { cursor: pointer; user-select: none; }
 
-/* ── Calendar day hold-click peek ──────────────────────────────
-   Same effect as the finance one above: dim everything, blow up the
-   day's schedule, auto-close the instant the press is released. */
+/* ── Calendar day view ──────────────────────────────────────────
+   Click a day to open it, click the dimmed backdrop to close it —
+   stays open while open so the hour grid can be scrolled. */
 .calendar-peek-backdrop {
     position: fixed;
     inset: 0;
@@ -1575,7 +1590,6 @@ html.light-mode #financeHoldingsText { background: rgba(0, 0, 0, 0.03); border-c
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
 }
 
 .calendar-peek-card.day-view {

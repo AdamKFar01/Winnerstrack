@@ -41,6 +41,7 @@
         <nav class="tabs">
             <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
             <button class="tab-btn" data-tab="calendar">Calendar</button>
+            <button class="tab-btn" data-tab="plans">Plans</button>
             <button class="tab-btn" data-tab="goals">Goals</button>
             <button class="tab-btn" data-tab="reminders" style="position:relative;">Reminders<img id="reminderBellBadge" src="" alt="" style="display:none;position:absolute;top:-8px;right:-8px;width:22px;height:22px;"></button>
             <button class="tab-btn" data-tab="finance">Finance</button>
@@ -254,6 +255,7 @@
                 <h3 id="currentMonth"></h3>
                 <button class="btn-calendar-nav" onclick="nextMonth()">Next ⟩</button>
                 <button class="btn-primary" onclick="goToToday()">Today</button>
+                <button class="btn-calendar-nav include-plans-btn" id="includePlansBtn" onclick="toggleIncludePlans()">☐ Include Plans</button>
             </div>
 
             <!-- Calendar Grid -->
@@ -268,9 +270,9 @@
                 <div id="calendarDays"></div>
             </div>
 
-            <!-- Hold-click peek: same effect as holding a WhatsApp chat or Instagram post -->
-            <div class="calendar-peek-backdrop" id="calendarPeekBackdrop" style="display:none">
-                <div class="day-view calendar-peek-card" id="dayView">
+            <!-- Click-to-open day view: stays open so you can scroll, closes on an outside click -->
+            <div class="calendar-peek-backdrop" id="calendarPeekBackdrop" style="display:none" onclick="closeCalendarDayPeek(event)">
+                <div class="day-view calendar-peek-card" id="dayView" onclick="event.stopPropagation()">
                     <div class="day-view-header">
                         <h3 id="dayViewTitle"></h3>
                     </div>
@@ -357,6 +359,111 @@
             <div class="events-list-section">
                 <h3>Events on <span id="selectedDate">Today</span></h3>
                 <div id="dayEventsList"></div>
+            </div>
+        </div>
+
+        <!-- Plans Tab: an independent calendar, separate from the main one -->
+        <div class="tab-content" id="plans">
+            <h2>Plans</h2>
+
+            <!-- Plan Calendar Navigation -->
+            <div class="calendar-nav">
+                <button class="btn-calendar-nav" onclick="previousPlanMonth()">⟨ Previous</button>
+                <h3 id="currentPlanMonth"></h3>
+                <button class="btn-calendar-nav" onclick="nextPlanMonth()">Next ⟩</button>
+                <button class="btn-primary" onclick="goToPlanToday()">Today</button>
+            </div>
+
+            <!-- Plan Calendar Grid -->
+            <div class="calendar-grid">
+                <div class="calendar-header">Mon</div>
+                <div class="calendar-header">Tue</div>
+                <div class="calendar-header">Wed</div>
+                <div class="calendar-header">Thu</div>
+                <div class="calendar-header">Fri</div>
+                <div class="calendar-header">Sat</div>
+                <div class="calendar-header">Sun</div>
+                <div id="planCalendarDays"></div>
+            </div>
+
+            <!-- Click-to-open day view: stays open so you can scroll, closes on an outside click -->
+            <div class="calendar-peek-backdrop" id="planCalendarPeekBackdrop" style="display:none" onclick="closePlanDayPeek(event)">
+                <div class="day-view calendar-peek-card" onclick="event.stopPropagation()">
+                    <div class="day-view-header">
+                        <h3 id="planDayViewTitle"></h3>
+                    </div>
+                    <div class="day-view-allday" id="planDayViewAllDay"></div>
+                    <div class="day-view-scroll">
+                        <div class="day-view-grid" id="planDayViewGrid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Plan Form -->
+            <div class="add-event-section">
+                <h3>Add Plan</h3>
+
+                <form id="planEventForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Plan Title *</label>
+                            <input type="text" id="planEventTitle" required>
+                        </div>
+
+                        <div class="form-group" style="flex: 1;">
+                            <label>Date *</label>
+                            <input type="date" id="planEventDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Start Time</label>
+                            <input type="time" id="planEventStartTime">
+                        </div>
+
+                        <div class="form-group">
+                            <label>End Time</label>
+                            <input type="time" id="planEventEndTime">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Category *</label>
+                            <select id="planEventCategory" required>
+                                <option value="uni">University</option>
+                                <option value="work">Work</option>
+                                <option value="hobbies">Hobbies</option>
+                                <option value="personal">Personal</option>
+                                <option value="health">Health</option>
+                                <option value="social">Social</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Importance *</label>
+                            <select id="planEventImportance" required>
+                                <option value="normal">Normal</option>
+                                <option value="quite">Quite Important</option>
+                                <option value="very">Very Important</option>
+                                <option value="top">Top Priority</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="planEventDescription" rows="3" placeholder="Additional details..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Add Plan</button>
+                </form>
+            </div>
+
+            <!-- Plans List for Selected Date -->
+            <div class="events-list-section">
+                <h3>Plans on <span id="selectedPlanDate">Today</span></h3>
+                <div id="planDayEventsList"></div>
             </div>
         </div>
 

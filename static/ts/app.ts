@@ -2565,6 +2565,25 @@ let selectedDate = new Date();
 let calendarEvents: any[] = [];
 let monthPointsData = {};
 
+// Whether Plans-calendar events are folded into the main calendar
+let includePlansOnCalendar = localStorage.getItem('includePlansOnCalendar') === 'true';
+
+function updateIncludePlansButton() {
+    const btn = document.getElementById('includePlansBtn')!;
+    btn.textContent = (includePlansOnCalendar ? '☑' : '☐') + ' Include Plans';
+    btn.classList.toggle('active', includePlansOnCalendar);
+}
+updateIncludePlansButton();
+
+async function toggleIncludePlans() {
+    includePlansOnCalendar = !includePlansOnCalendar;
+    localStorage.setItem('includePlansOnCalendar', String(includePlansOnCalendar));
+    updateIncludePlansButton();
+    await loadCalendarEvents();
+    await renderCalendar();
+    loadEventsForSelectedDate();
+}
+
 async function loadMonthData(year, month) {
     try {
         const response = await fetch(`/api/month-data?year=${year}&month=${month + 1}`);
@@ -2660,7 +2679,8 @@ function createDayElement(day, otherMonth, date) {
             const miniEvent = document.createElement('div');
             miniEvent.className = `mini-event importance-${event.importance}`
                 + (event.completed ? ' completed' : '')
-                + (event.isReminder ? ' reminder-event' : '');
+                + (event.isReminder ? ' reminder-event' : '')
+                + (event.isPlan ? ' plan-event' : '');
             miniEvent.textContent = event.title;
             eventsContainer.appendChild(miniEvent);
         });
@@ -2687,19 +2707,15 @@ function createDayElement(day, otherMonth, date) {
     }
 
     dayDiv.onclick = () => {
-        if (calendarDayPeeked) return; // the press just ended in a peek, not a real click
         selectDate(date);
+        showCalendarDayPeek(date);
     };
-    attachCalendarDayPeek(dayDiv, date);
 
     return dayDiv;
 }
 
-// ── Day schedule peek (hold-click, like a WhatsApp chat or Instagram post) ──
+// ── Day schedule view: click a day to open it, click outside to close ──
 const DAY_VIEW_PX_PER_MIN = 1;
-const CALENDAR_PEEK_DELAY = 300;
-let calendarPeekTimer: any = null;
-let calendarDayPeeked = false;
 
 function showCalendarDayPeek(date) {
     document.getElementById('dayViewTitle')!.textContent = date.toLocaleDateString('en-US', {
@@ -2709,31 +2725,9 @@ function showCalendarDayPeek(date) {
     document.getElementById('calendarPeekBackdrop')!.style.display = 'flex';
 }
 
-function hideCalendarDayPeek() {
+function closeCalendarDayPeek(e?) {
+    if (e && e.target !== e.currentTarget) return;
     document.getElementById('calendarPeekBackdrop')!.style.display = 'none';
-}
-
-function attachCalendarDayPeek(el, date) {
-    const start = (e) => {
-        if (e.button !== undefined && e.button !== 0) return;
-        calendarDayPeeked = false;
-        calendarPeekTimer = setTimeout(() => {
-            calendarDayPeeked = true;
-            showCalendarDayPeek(date);
-        }, CALENDAR_PEEK_DELAY);
-    };
-    const end = () => {
-        clearTimeout(calendarPeekTimer);
-        if (calendarDayPeeked) hideCalendarDayPeek();
-    };
-
-    el.addEventListener('mousedown', start);
-    el.addEventListener('mouseup', end);
-    el.addEventListener('mouseleave', end);
-    el.addEventListener('touchstart', start, { passive: true });
-    el.addEventListener('touchend', end);
-    el.addEventListener('touchcancel', end);
-    el.addEventListener('contextmenu', e => { if (calendarDayPeeked) e.preventDefault(); });
 }
 
 function renderDayViewGrid(dateStr) {
@@ -2751,7 +2745,8 @@ function renderDayViewGrid(dateStr) {
         const chip = document.createElement('div');
         chip.className = `day-view-allday-chip importance-${e.importance}`
             + (e.completed ? ' completed' : '')
-            + (e.isReminder ? ' reminder-event' : '');
+            + (e.isReminder ? ' reminder-event' : '')
+            + (e.isPlan ? ' plan-event' : '');
         chip.textContent = e.title;
         allDayWrap.appendChild(chip);
     });
@@ -2803,7 +2798,8 @@ function renderDayViewGrid(dateStr) {
         const block = document.createElement('div');
         block.className = `day-view-event importance-${ev.importance}`
             + (ev.completed ? ' completed' : '')
-            + (ev.isReminder ? ' reminder-event' : '');
+            + (ev.isReminder ? ' reminder-event' : '')
+            + (ev.isPlan ? ' plan-event' : '');
         block.style.top = `${ev.start * DAY_VIEW_PX_PER_MIN}px`;
         block.style.height = `${(ev.end - ev.start) * DAY_VIEW_PX_PER_MIN - 2}px`;
         block.style.left = `calc(${(ev.col / ev.cols) * 100}% + 2px)`;
@@ -2825,7 +2821,7 @@ function renderDayViewGrid(dateStr) {
     }
 
     // Scroll to just before the first event (or 08:00 on an empty day)
-    const scrollWrap = document.querySelector('.day-view-scroll')!;
+    const scrollWrap = document.querySelector('#calendarPeekBackdrop .day-view-scroll')!;
     const target = timed.length ? Math.max(0, timed[0].start - 60) : 8 * 60;
     scrollWrap.scrollTop = target * DAY_VIEW_PX_PER_MIN;
 }
@@ -2990,6 +2986,23 @@ async function loadCalendarEvents() {
     } catch (error) {
         console.error('Error loading reminders for calendar:', error);
     }
+
+    // Fold in Plans-calendar events too, but only while "Include Plans" is on
+    if (includePlansOnCalendar) {
+        try {
+            const response = await fetch('/api/plan-events');
+            const plans = await response.json();
+            plans.forEach(p => {
+                calendarEvents.push({
+                    ...p,
+                    isPlan: true,
+                    planId: p.id
+                });
+            });
+        } catch (error) {
+            console.error('Error loading plans for calendar:', error);
+        }
+    }
 }
 
 function loadEventsForSelectedDate() {
@@ -3015,15 +3028,24 @@ function loadEventsForSelectedDate() {
         const eventDiv = document.createElement('div');
         eventDiv.className = `calendar-event-item importance-${event.importance}`
             + (event.completed ? ' completed' : '')
-            + (event.isReminder ? ' reminder-event' : '');
+            + (event.isReminder ? ' reminder-event' : '')
+            + (event.isPlan ? ' plan-event' : '');
 
         const timeStr = event.start_time
             ? `${event.start_time}${event.end_time ? ' - ' + event.end_time : ''}`
             : 'All day';
 
+        const tickTitle = event.completed ? 'Mark as not done'
+            : event.isReminder ? 'Mark reminder as done'
+            : event.isPlan ? 'Mark plan as done'
+            : 'Mark as done';
+        const deleteCall = event.isReminder ? `deleteReminder(${event.reminderId})`
+            : event.isPlan ? `deletePlanEvent(${event.planId})`
+            : `deleteCalendarEvent(${event.id})`;
+
         eventDiv.innerHTML = `
             <div class="event-header">
-                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : (event.isReminder ? 'Mark reminder as done' : 'Mark as done')}"></div>
+                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${tickTitle}"></div>
                 <div>
                     <div class="event-title">${event.title}</div>
                     <div class="event-time">${timeStr}</div>
@@ -3035,11 +3057,13 @@ function loadEventsForSelectedDate() {
             </div>
             ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
             <div class="event-actions">
-                <button class="btn-delete-event" onclick="${event.isReminder ? `deleteReminder(${event.reminderId})` : `deleteCalendarEvent(${event.id})`}">Delete</button>
+                <button class="btn-delete-event" onclick="${deleteCall}">Delete</button>
             </div>
         `;
         (eventDiv.querySelector('.goal-tick') as any).onclick = event.isReminder
             ? () => toggleReminder(event.reminderId, true)
+            : event.isPlan
+            ? () => togglePlanEventComplete(event.planId, !event.completed)
             : () => toggleCalendarEventComplete(event.id, !event.completed);
 
         eventsList.appendChild(eventDiv);
@@ -3071,6 +3095,351 @@ async function deleteCalendarEvent(id) {
         loadEventsForSelectedDate();
     } catch (error) {
         console.error('Error deleting event:', error);
+    }
+}
+
+// ── Plans: an independent calendar, separate from the main one ─────────
+// Mirrors the main calendar above, but reads/writes /api/plan-events and
+// its own set of "plan"-prefixed elements, so the two never interfere.
+let currentPlanCalendarDate = new Date();
+let selectedPlanDate = new Date();
+let planCalendarEvents: any[] = [];
+
+// If the main calendar is currently folding Plans in, keep it in sync
+// whenever a plan is added, moved, completed or deleted.
+async function refreshMainCalendarIfIncluded() {
+    if (!includePlansOnCalendar) return;
+    await loadCalendarEvents();
+    await renderCalendar();
+    loadEventsForSelectedDate();
+}
+
+async function renderPlanCalendar() {
+    const year = currentPlanCalendarDate.getFullYear();
+    const month = currentPlanCalendarDate.getMonth();
+
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+    document.getElementById('currentPlanMonth')!.textContent = `${monthNames[month]} ${year}`;
+
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDayOfWeek = firstDay.getDay();
+    const adjustedStart = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+
+    const calendarDays = document.getElementById('planCalendarDays')!;
+    calendarDays.innerHTML = '';
+
+    for (let i = adjustedStart - 1; i >= 0; i--) {
+        const day = prevMonthLastDay - i;
+        calendarDays.appendChild(createPlanDayElement(day, true, new Date(year, month - 1, day)));
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+        calendarDays.appendChild(createPlanDayElement(day, false, new Date(year, month, day)));
+    }
+    const totalCells = calendarDays.children.length;
+    const remainingCells = 42 - totalCells;
+    for (let day = 1; day <= remainingCells; day++) {
+        calendarDays.appendChild(createPlanDayElement(day, true, new Date(year, month + 1, day)));
+    }
+}
+
+function createPlanDayElement(day, otherMonth, date) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day';
+
+    if (otherMonth) dayDiv.classList.add('other-month');
+
+    const today = new Date();
+    if (date.toDateString() === today.toDateString()) dayDiv.classList.add('today');
+    if (date.toDateString() === selectedPlanDate.toDateString()) dayDiv.classList.add('selected');
+
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'day-number';
+    dayNumber.textContent = day;
+    dayDiv.appendChild(dayNumber);
+
+    const dateStr = dateToLocalString(date);
+    const dayEvents = planCalendarEvents.filter(e => e.date === dateStr);
+
+    if (dayEvents.length > 0) {
+        const eventsContainer = document.createElement('div');
+        eventsContainer.className = 'day-events';
+
+        dayEvents.slice(0, 3).forEach(event => {
+            const miniEvent = document.createElement('div');
+            miniEvent.className = `mini-event importance-${event.importance}` + (event.completed ? ' completed' : '');
+            miniEvent.textContent = event.title;
+            eventsContainer.appendChild(miniEvent);
+        });
+
+        if (dayEvents.length > 3) {
+            const moreIndicator = document.createElement('div');
+            moreIndicator.className = 'mini-event';
+            moreIndicator.textContent = `+${dayEvents.length - 3} more`;
+            eventsContainer.appendChild(moreIndicator);
+        }
+
+        dayDiv.appendChild(eventsContainer);
+    }
+
+    dayDiv.onclick = () => {
+        selectPlanDate(date);
+        showPlanDayPeek(date);
+    };
+
+    return dayDiv;
+}
+
+function showPlanDayPeek(date) {
+    document.getElementById('planDayViewTitle')!.textContent = date.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+    renderPlanDayViewGrid(dateToLocalString(date));
+    document.getElementById('planCalendarPeekBackdrop')!.style.display = 'flex';
+}
+
+function closePlanDayPeek(e?) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('planCalendarPeekBackdrop')!.style.display = 'none';
+}
+
+function renderPlanDayViewGrid(dateStr) {
+    const grid = document.getElementById('planDayViewGrid')!;
+    const allDayWrap = document.getElementById('planDayViewAllDay')!;
+    grid.innerHTML = '';
+    allDayWrap.innerHTML = '';
+    grid.style.height = `${24 * 60 * DAY_VIEW_PX_PER_MIN}px`;
+
+    const mins = t => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0); };
+    const events = planCalendarEvents.filter(e => e.date === dateStr);
+
+    events.filter(e => !e.start_time).forEach(e => {
+        const chip = document.createElement('div');
+        chip.className = `day-view-allday-chip importance-${e.importance}` + (e.completed ? ' completed' : '');
+        chip.textContent = e.title;
+        allDayWrap.appendChild(chip);
+    });
+
+    for (let h = 0; h < 24; h++) {
+        const line = document.createElement('div');
+        line.className = 'day-view-hour-line';
+        line.style.top = `${h * 60 * DAY_VIEW_PX_PER_MIN}px`;
+        line.innerHTML = `<span class="day-view-hour-label">${String(h).padStart(2, '0')}:00</span>`;
+        grid.appendChild(line);
+    }
+
+    const timed = events.filter(e => e.start_time).map(e => {
+        const start = mins(e.start_time);
+        const end = e.end_time ? Math.max(mins(e.end_time), start + 30) : start + 60;
+        return { ...e, start, end, col: 0, cols: 1 };
+    }).sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const clusters: any[] = [];
+    let cluster: any[] = [];
+    let clusterEnd = -1;
+    timed.forEach(ev => {
+        if (cluster.length && ev.start >= clusterEnd) {
+            clusters.push(cluster);
+            cluster = [];
+            clusterEnd = -1;
+        }
+        cluster.push(ev);
+        clusterEnd = Math.max(clusterEnd, ev.end);
+    });
+    if (cluster.length) clusters.push(cluster);
+
+    clusters.forEach(cl => {
+        const colEnds: number[] = [];
+        cl.forEach(ev => {
+            let col = colEnds.findIndex(end => end <= ev.start);
+            if (col === -1) { col = colEnds.length; colEnds.push(0); }
+            colEnds[col] = ev.end;
+            ev.col = col;
+        });
+        cl.forEach(ev => { ev.cols = colEnds.length; });
+    });
+
+    const layer = document.createElement('div');
+    layer.className = 'day-view-events';
+    timed.forEach(ev => {
+        const block = document.createElement('div');
+        block.className = `day-view-event importance-${ev.importance}` + (ev.completed ? ' completed' : '');
+        block.style.top = `${ev.start * DAY_VIEW_PX_PER_MIN}px`;
+        block.style.height = `${(ev.end - ev.start) * DAY_VIEW_PX_PER_MIN - 2}px`;
+        block.style.left = `calc(${(ev.col / ev.cols) * 100}% + 2px)`;
+        block.style.width = `calc(${100 / ev.cols}% - 6px)`;
+        const timeStr = `${ev.start_time}${ev.end_time ? ' – ' + ev.end_time : ''}`;
+        block.innerHTML = `<div class="day-view-event-title">${ev.title}</div><div class="day-view-event-time">${timeStr}</div>`;
+        block.title = `${ev.title} (${timeStr})`;
+        layer.appendChild(block);
+    });
+    grid.appendChild(layer);
+
+    if (dateStr === getLocalDateString()) {
+        const now = new Date();
+        const nowLine = document.createElement('div');
+        nowLine.className = 'day-view-now-line';
+        nowLine.style.top = `${(now.getHours() * 60 + now.getMinutes()) * DAY_VIEW_PX_PER_MIN}px`;
+        grid.appendChild(nowLine);
+    }
+
+    const scrollWrap = document.querySelector('#planCalendarPeekBackdrop .day-view-scroll')!;
+    const target = timed.length ? Math.max(0, timed[0].start - 60) : 8 * 60;
+    scrollWrap.scrollTop = target * DAY_VIEW_PX_PER_MIN;
+}
+
+async function selectPlanDate(date) {
+    selectedPlanDate = new Date(date);
+    await renderPlanCalendar();
+    loadEventsForSelectedPlanDate();
+
+    document.getElementById('selectedPlanDate')!.textContent = selectedPlanDate.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+}
+
+async function previousPlanMonth() {
+    currentPlanCalendarDate.setMonth(currentPlanCalendarDate.getMonth() - 1);
+    await renderPlanCalendar();
+}
+
+async function nextPlanMonth() {
+    currentPlanCalendarDate.setMonth(currentPlanCalendarDate.getMonth() + 1);
+    await renderPlanCalendar();
+}
+
+async function goToPlanToday() {
+    currentPlanCalendarDate = new Date();
+    selectedPlanDate = new Date();
+    await renderPlanCalendar();
+    loadEventsForSelectedPlanDate();
+}
+
+document.getElementById('planEventForm')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const title = document.getElementById('planEventTitle')!.value;
+    const date = document.getElementById('planEventDate')!.value;
+    const startTime = document.getElementById('planEventStartTime')!.value;
+    const endTime = document.getElementById('planEventEndTime')!.value;
+    const category = document.getElementById('planEventCategory')!.value;
+    const importance = document.getElementById('planEventImportance')!.value;
+    const description = document.getElementById('planEventDescription')!.value;
+
+    try {
+        const response = await fetch('/api/plan-events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title, date, start_time: startTime, end_time: endTime,
+                category, importance, description
+            })
+        });
+
+        if (response.ok) {
+            e.target!.reset();
+            document.getElementById('planEventDate')!.value = getLocalDateString();
+            await loadPlanEvents();
+            await renderPlanCalendar();
+            loadEventsForSelectedPlanDate();
+            await refreshMainCalendarIfIncluded();
+        }
+    } catch (error) {
+        console.error('Error adding plan event:', error);
+    }
+});
+
+document.getElementById('planEventDate')!.value = getLocalDateString();
+
+async function loadPlanEvents() {
+    try {
+        const response = await fetch('/api/plan-events');
+        planCalendarEvents = await response.json();
+    } catch (error) {
+        console.error('Error loading plan events:', error);
+    }
+}
+
+function loadEventsForSelectedPlanDate() {
+    const dateStr = dateToLocalString(selectedPlanDate);
+    const dayEvents = planCalendarEvents.filter(e => e.date === dateStr);
+
+    const eventsList = document.getElementById('planDayEventsList')!;
+    eventsList.innerHTML = '';
+
+    if (dayEvents.length === 0) {
+        eventsList.innerHTML = '<p style="color: #8b92b0; text-align: center; padding: 20px;">No plans for this day.</p>';
+        return;
+    }
+
+    dayEvents.sort((a, b) => {
+        if (!a.start_time) return 1;
+        if (!b.start_time) return -1;
+        return a.start_time.localeCompare(b.start_time);
+    });
+
+    dayEvents.forEach(event => {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = `calendar-event-item importance-${event.importance}` + (event.completed ? ' completed' : '');
+
+        const timeStr = event.start_time
+            ? `${event.start_time}${event.end_time ? ' - ' + event.end_time : ''}`
+            : 'All day';
+
+        eventDiv.innerHTML = `
+            <div class="event-header">
+                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : 'Mark as done'}"></div>
+                <div>
+                    <div class="event-title">${event.title}</div>
+                    <div class="event-time">${timeStr}</div>
+                </div>
+            </div>
+            <div class="event-details">
+                <span class="event-badge category">${event.category.toUpperCase()}</span>
+                <span class="event-badge importance">${event.importance.toUpperCase()}</span>
+            </div>
+            ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
+            <div class="event-actions">
+                <button class="btn-delete-event" onclick="deletePlanEvent(${event.id})">Delete</button>
+            </div>
+        `;
+        (eventDiv.querySelector('.goal-tick') as any).onclick =
+            () => togglePlanEventComplete(event.id, !event.completed);
+
+        eventsList.appendChild(eventDiv);
+    });
+}
+
+async function togglePlanEventComplete(id, completed) {
+    try {
+        await fetch('/api/plan-events', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, completed: completed ? 1 : 0 })
+        });
+        await loadPlanEvents();
+        await renderPlanCalendar();
+        loadEventsForSelectedPlanDate();
+        await refreshMainCalendarIfIncluded();
+    } catch (error) {
+        console.error('Error toggling plan completion:', error);
+    }
+}
+
+async function deletePlanEvent(id) {
+    if (!confirm('Are you sure you want to delete this plan?')) return;
+
+    try {
+        await fetch(`/api/plan-events?id=${id}`, { method: 'DELETE' });
+        await loadPlanEvents();
+        await renderPlanCalendar();
+        loadEventsForSelectedPlanDate();
+        await refreshMainCalendarIfIncluded();
+    } catch (error) {
+        console.error('Error deleting plan event:', error);
     }
 }
 
@@ -4658,6 +5027,9 @@ async function initializeApp() {
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
     await syncCalendarToGlobalDate(dateInput.value);
+    await loadPlanEvents();
+    await renderPlanCalendar();
+    loadEventsForSelectedPlanDate();
     loadDailySummary();
     loadPillarScores();
     loadWins();

@@ -155,7 +155,22 @@ def init_db():
         c.execute("ALTER TABLE calendar_events ADD COLUMN completed INTEGER DEFAULT 0")
     except Exception:
         pass
-    
+
+    # Plan events: an independent calendar's events, same shape as calendar_events.
+    # Kept as its own table (rather than a flag on calendar_events) so the two
+    # calendars stay fully separate — deleting one never touches the other.
+    c.execute('''CREATE TABLE IF NOT EXISTS plan_events
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  title TEXT NOT NULL,
+                  date TEXT NOT NULL,
+                  start_time TEXT,
+                  end_time TEXT,
+                  category TEXT NOT NULL,
+                  importance TEXT DEFAULT 'normal',
+                  description TEXT,
+                  completed INTEGER DEFAULT 0,
+                  created_at TEXT NOT NULL)''')
+
     # Pillar scores table (one persistent row per user)
     c.execute('''CREATE TABLE IF NOT EXISTS pillar_scores
                  (id INTEGER PRIMARY KEY,
@@ -1070,7 +1085,78 @@ def calendar_events_api():
                 'description': event[7],
                 'completed': bool(event[8])
             })
-        
+
+        return jsonify(events_list)
+
+@app.route('/api/plan-events', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def plan_events_api():
+    """Events on the independent Plans calendar. Same shape as /api/calendar-events,
+    but its own table, so the two calendars never affect each other."""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        data = request.json
+        c.execute('''INSERT INTO plan_events (title, date, start_time, end_time, category, importance, description, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
+                   data['category'], data.get('importance', 'normal'), data.get('description', ''),
+                   datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'PUT':
+        data = request.json
+        if 'completed' in data and 'title' not in data:
+            c.execute('UPDATE plan_events SET completed = ? WHERE id = ?',
+                      (int(data['completed']), data['id']))
+        else:
+            c.execute('''UPDATE plan_events
+                         SET title = ?, date = ?, start_time = ?, end_time = ?, category = ?, importance = ?, description = ?
+                         WHERE id = ?''',
+                      (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
+                       data['category'], data.get('importance', 'normal'), data.get('description', ''), data['id']))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        event_id = request.args.get('id')
+        c.execute('DELETE FROM plan_events WHERE id = ?', (event_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        month = request.args.get('month')
+        year = request.args.get('year')
+
+        sel = '''SELECT id, title, date, start_time, end_time, category, importance, description, completed
+                 FROM plan_events'''
+        if month and year:
+            c.execute(f'{sel} WHERE strftime("%Y-%m", date) = ? ORDER BY date, start_time',
+                     (f"{year}-{month.zfill(2)}",))
+        else:
+            c.execute(f'{sel} ORDER BY date, start_time')
+
+        events = c.fetchall()
+        conn.close()
+
+        events_list = []
+        for event in events:
+            events_list.append({
+                'id': event[0],
+                'title': event[1],
+                'date': event[2],
+                'start_time': event[3],
+                'end_time': event[4],
+                'category': event[5],
+                'importance': event[6],
+                'description': event[7],
+                'completed': bool(event[8])
+            })
+
         return jsonify(events_list)
 
 @app.route('/api/calendar-parse', methods=['POST'])
