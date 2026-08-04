@@ -16,10 +16,8 @@ function startFlask() {
 
     const cwd = app.isPackaged ? process.resourcesPath : __dirname;
 
-    // When packaged, write the DB to the user's app data folder (writable)
-    const dbPath = app.isPackaged
-        ? path.join(app.getPath('userData'), 'wintracker.db')
-        : path.join(__dirname, 'wintracker.db');
+    // Always use the app data folder, so dev and packaged builds share one database
+    const dbPath = path.join(app.getPath('userData'), 'wintracker.db');
 
     // Electron strips PATH — prepend common Python locations so Flask is found
     const expandedPath = [
