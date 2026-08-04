@@ -1800,12 +1800,47 @@ document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e
 });
 
 // Finance functionality
+let customFinanceCategories: string[] = [];
+
+async function loadFinanceCategories() {
+    try {
+        const res = await fetch('/api/finance-categories');
+        customFinanceCategories = await res.json();
+    } catch (error) {
+        console.error('Error loading finance categories:', error);
+        customFinanceCategories = [];
+    }
+
+    const select = document.getElementById('financeCategory')! as HTMLSelectElement;
+    select.querySelectorAll('option.custom-finance-cat-option').forEach(o => o.remove());
+    const newOpt = select.querySelector('option[value="__new__"]');
+    customFinanceCategories.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        opt.className = 'custom-finance-cat-option';
+        select.insertBefore(opt, newOpt);
+    });
+}
+
+document.getElementById('financeCategory')!.addEventListener('change', (e) => {
+    const financeCategoryOther = document.getElementById('financeCategoryOther')!;
+    if ((e.target! as HTMLSelectElement).value === '__new__') {
+        financeCategoryOther.classList.add('visible');
+        financeCategoryOther.required = true;
+    } else {
+        financeCategoryOther.classList.remove('visible');
+        financeCategoryOther.required = false;
+        financeCategoryOther.value = '';
+    }
+});
+
 document.getElementById('financeForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     let type = document.getElementById('financeType')!.value;
     const amount = parseFloat(document.getElementById('financeAmount')!.value);
-    const category = document.getElementById('financeCategory')!.value;
+    let category = document.getElementById('financeCategory')!.value;
     const description = document.getElementById('financeDescription')!.value;
     const date = document.getElementById('financeDate')!.value;
 
@@ -1817,16 +1852,34 @@ document.getElementById('financeForm')!.addEventListener('submit', async (e) => 
         account_id = parseInt(parts[1]);
     }
 
+    if (category === '__new__') {
+        const newName = document.getElementById('financeCategoryOther')!.value.trim();
+        if (!newName) return;
+        const catRes = await fetch('/api/finance-categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        });
+        const catData = await catRes.json();
+        if (!catRes.ok || !catData.success) {
+            alert(catData.error || 'Could not create category');
+            return;
+        }
+        category = newName;
+        await loadFinanceCategories();
+    }
+
     try {
         const response = await fetch('/api/finance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type, amount, category, description, date, account_id })
         });
-        
+
         if (response.ok) {
             document.getElementById('financeForm')!.reset();
             document.getElementById('financeDate')!.value = getLocalDateString();
+            document.getElementById('financeCategoryOther')!.classList.remove('visible');
             loadFinance();
             loadXP();
             loadXPLog();
@@ -5042,6 +5095,7 @@ async function initializeApp() {
     document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());
     loadFinance();
+    loadFinanceCategories();
     setupReminderForms();
     loadAllReminders();
     checkReminderAlerts();

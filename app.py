@@ -139,6 +139,12 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
                   name TEXT NOT NULL UNIQUE,
                   created_at TEXT NOT NULL)''')
+
+    # Custom finance transaction categories (built-ins live in the frontend)
+    c.execute('''CREATE TABLE IF NOT EXISTS finance_categories
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL UNIQUE,
+                  created_at TEXT NOT NULL)''')
     
     # Calendar events table (separate from activities)
     c.execute('''CREATE TABLE IF NOT EXISTS calendar_events
@@ -953,6 +959,47 @@ def categories_api():
 
     else:
         c.execute('SELECT name FROM custom_categories ORDER BY name')
+        names = [row[0] for row in c.fetchall()]
+        conn.close()
+        return jsonify(names)
+
+BUILTIN_FINANCE_CATEGORIES = {
+    'salary', 'freelance', 'investment', 'food', 'rent', 'transport',
+    'subscriptions', 'health', 'entertainment', 'shopping', 'other'
+}
+
+@app.route('/api/finance-categories', methods=['GET', 'POST', 'DELETE'])
+def finance_categories_api():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        name = (request.json.get('name') or '').strip()
+        if not name:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category name is required'}), 400
+        if name.lower() in BUILTIN_FINANCE_CATEGORIES:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        try:
+            c.execute('INSERT INTO finance_categories (name, created_at) VALUES (?, ?)',
+                      (name, datetime.now().isoformat()))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return jsonify({'success': False, 'error': 'That category already exists'}), 400
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        name = request.args.get('name', '')
+        c.execute('DELETE FROM finance_categories WHERE name = ?', (name,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    else:
+        c.execute('SELECT name FROM finance_categories ORDER BY name')
         names = [row[0] for row in c.fetchall()]
         conn.close()
         return jsonify(names)
