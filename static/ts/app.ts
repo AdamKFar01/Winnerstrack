@@ -4023,12 +4023,6 @@ function computeMaintenance(activityBurnedToday = 0) {
         const mult = ACTIVITY_MULTIPLIERS[m.exercise_intensity || 'sedentary'] || 1.2;
         result = Math.round(bmr * mult);
     }
-    console.log('[computeMaintenance]', {
-        calorie_mode: m.calorie_mode,
-        activityBurnedToday,
-        bmr: Math.round(bmr),
-        result
-    });
     return result;
 }
 
@@ -4040,12 +4034,6 @@ function applyEffectiveTarget(activityBurnedToday = 0) {
     // Body Metrics shows full maintenance calories; the deficit is applied only in Daily Summary.
     const tEl = document.getElementById('targetCalories')!;
     if (tEl) tEl.textContent = maintenance || '—';
-    console.log('[applyEffectiveTarget]', {
-        maintenance,
-        deficit: healthMetricsCache.calorie_deficit || 0,
-        target,
-        domSetTo: tEl ? tEl.textContent : '(no element)'
-    });
     return target;
 }
 
@@ -4102,8 +4090,6 @@ async function loadHealthMetrics() {
         document.getElementById('hmDeficit')!.value      = data.calorie_deficit || '';
 
         const mode = data.calorie_mode || 'average';
-        console.log('[loadHealthMetrics] raw data:', data);
-        console.log('[loadHealthMetrics] resolved mode:', mode);
         document.querySelectorAll('#calorieModeToggle .calc-mode-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.mode === mode);
         });
@@ -4118,13 +4104,11 @@ async function loadHealthMetrics() {
                 const actRes = await fetch(`/api/activity-log?date=${dateStr}`);
                 const acts = await actRes.json();
                 burned = acts.reduce((s, a) => s + (a.calories_burned || 0), 0);
-                console.log('[loadHealthMetrics] activities fetched:', acts, 'burned sum:', burned);
             } catch (e) { console.warn('[loadHealthMetrics] activity fetch failed:', e); }
         }
         // Compute maintenance (shown in Body Metrics) and the deficit-adjusted
         // target (used by Daily Summary) live from the current metrics.
         const effectiveTarget = applyEffectiveTarget(burned);
-        console.log('[loadHealthMetrics] effectiveTarget after apply:', effectiveTarget);
 
         if (effectiveTarget > 0) {
             document.getElementById('targetProtein')!.textContent  = data.protein_target;
