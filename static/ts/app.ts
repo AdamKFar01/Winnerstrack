@@ -4151,7 +4151,7 @@ document.getElementById('healthMetricsForm')!.addEventListener('submit', async (
         ? Math.round(bmr * 1.2)
         : Math.round(bmr * ACTIVITY_MULTIPLIERS[intensity]);
     const calorie_target = Math.max(0, baseMaint - deficit);
-    const protein_target = Math.round(weight * 2);
+    const protein_target = Math.round(weight * 1.6);
     try {
         await fetch('/api/health-metrics', {
             method: 'POST',
