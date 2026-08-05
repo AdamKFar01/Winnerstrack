@@ -4646,6 +4646,7 @@ function renderWaterChart() {
     }
 
     if (waterChartInstance) { waterChartInstance.destroy(); waterChartInstance = null; }
+    if (withData.length === 0) return;
 
     const isLight = document.documentElement.classList.contains('light-mode');
     const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)';
@@ -4656,10 +4657,10 @@ function renderWaterChart() {
     waterChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: daily.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}`; }),
+            labels: withData.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}`; }),
             datasets: [{
                 label: 'Water (L)',
-                data: daily.map(d => d.total),
+                data: withData.map(d => d.total),
                 borderColor: waterColor,
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 tension: 0.3,
