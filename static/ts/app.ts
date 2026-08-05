@@ -56,12 +56,14 @@ function rebuildAllCharts() {
     if (balanceChartInstance)          { balanceChartInstance.destroy();          balanceChartInstance          = null; }
     if (weightChartInstance)           { weightChartInstance.destroy();           weightChartInstance           = null; }
     if (nutritionWeekChartInstance)    { nutritionWeekChartInstance.destroy();    nutritionWeekChartInstance    = null; }
+    if (waterChartInstance)            { waterChartInstance.destroy();            waterChartInstance            = null; }
     if (financeMonthlyChartInstance)   { financeMonthlyChartInstance.destroy();   financeMonthlyChartInstance   = null; }
     loadPillarScores();
     loadWeekChart();
     loadFinance();
     loadWeightLog();
     loadNutritionWeekChart();
+    renderWaterChart();
 }
 
 // ── Light / dark toggle ──────────────────────────────────────
@@ -4611,6 +4613,83 @@ function getWaterEntries(dateStr) {
     catch { return []; }
 }
 
+// ── Water Intake Chart (daily totals trend) ───────────────────
+let waterChartInstance: any = null;
+const WATER_CHART_RANGE_DAYS = 30;
+
+function getWaterDailyTotals(endDateStr, days) {
+    const end = new Date(endDateStr + 'T00:00:00');
+    const out: any[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(end);
+        d.setDate(d.getDate() - i);
+        const dateStr = dateToLocalString(d);
+        const total = getWaterEntries(dateStr).reduce((s, e) => s + e.amount, 0);
+        out.push({ date: dateStr, total: Math.round(total * 100) / 100 });
+    }
+    return out;
+}
+
+function renderWaterChart() {
+    const canvas = document.getElementById('waterChart')!;
+    if (!canvas) return;
+
+    const endDateStr = document.getElementById('currentDate')!.value || getLocalDateString();
+    const daily = getWaterDailyTotals(endDateStr, WATER_CHART_RANGE_DAYS);
+
+    const withData = daily.filter(d => d.total > 0);
+    const avgEl = document.getElementById('waterAvgDisplay');
+    if (avgEl) {
+        avgEl.textContent = withData.length
+            ? `${(withData.reduce((s, d) => s + d.total, 0) / withData.length).toFixed(2)} L`
+            : '—';
+    }
+
+    if (waterChartInstance) { waterChartInstance.destroy(); waterChartInstance = null; }
+
+    const isLight = document.documentElement.classList.contains('light-mode');
+    const gridColor = isLight ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.08)';
+    const tickColor = isLight ? '#6b7280' : '#8b92b0';
+    const waterColor = '#3b82f6';
+
+    const ctx = canvas.getContext('2d');
+    waterChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: daily.map(d => { const [y, m, dd] = d.date.split('-'); return `${dd}/${m}`; }),
+            datasets: [{
+                label: 'Water (L)',
+                data: daily.map(d => d.total),
+                borderColor: waterColor,
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: waterColor,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { bottom: 22 } },
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: tickColor },
+                    title: { display: true, text: 'Water (L)', color: tickColor }
+                },
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: tickColor, maxTicksLimit: 8 },
+                    title: { display: true, text: 'Date', color: tickColor }
+                }
+            }
+        }
+    });
+}
+
 function saveWaterEntries(dateStr, entries) {
     localStorage.setItem(`water_entries_${dateStr}`, JSON.stringify(entries));
 }
@@ -4678,6 +4757,8 @@ function renderWater(dateStr, entries) {
         `;
         list.appendChild(row);
     });
+
+    renderWaterChart();
 }
 
 // Activity log

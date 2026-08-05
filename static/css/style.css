@@ -490,6 +490,7 @@ html.light-mode .date-arrow-btn {
 .chart-resize[data-chart="financeMonthlyChart"]{ height: 220px; }
 .chart-resize[data-chart="weightChart"]        { height: 200px; }
 .chart-resize[data-chart="nutritionWeekChart"] { height: 200px; }
+.chart-resize[data-chart="waterChart"]         { height: 200px; }
 
 /* ── Activity management ───────────────────────────────────── */
 .activity-management {
@@ -3803,12 +3804,14 @@ html.light-mode .xp-entry-reason { color: #374151; }
     line-height: 1;
 }
 
-.avg-label-cal  { color: #fb923c; }
-.avg-label-prot { color: #34d399; }
+.avg-label-cal   { color: #fb923c; }
+.avg-label-prot  { color: #34d399; }
+.avg-label-water { color: #3b82f6; }
 
 html.light-mode .avg-label { color: #6b7280; }
-html.light-mode .avg-label-cal  { color: #fb923c; }
-html.light-mode .avg-label-prot { color: #34d399; }
+html.light-mode .avg-label-cal   { color: #fb923c; }
+html.light-mode .avg-label-prot  { color: #34d399; }
+html.light-mode .avg-label-water { color: #3b82f6; }
 
 .nutrition-avg-cal {
     font-size: 1.4rem;
@@ -3822,6 +3825,14 @@ html.light-mode .avg-label-prot { color: #34d399; }
     font-size: 1.4rem;
     font-weight: 700;
     color: #34d399;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.water-avg-display {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3b82f6;
     line-height: 1.1;
     white-space: nowrap;
 }
