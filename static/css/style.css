@@ -3263,6 +3263,7 @@ html.light-mode .net-calories-box.net-under { border-color: rgba(var(--color-acc
 
 html.light-mode .calories-box { border-color: rgba(var(--color-primary-dark-rgb), 0.3); }
 html.light-mode .calories-box .health-target-value { color: var(--color-primary-dark); }
+html.light-mode .protein-box  .health-target-value { color: var(--color-accent); }
 html.light-mode .health-target-value { color: #1f2937; }
 
 /* ── Health responsive ──────────────────────────────────────── */
