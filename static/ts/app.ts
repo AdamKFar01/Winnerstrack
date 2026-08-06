@@ -58,12 +58,14 @@ function rebuildAllCharts() {
     if (nutritionWeekChartInstance)    { nutritionWeekChartInstance.destroy();    nutritionWeekChartInstance    = null; }
     if (waterChartInstance)            { waterChartInstance.destroy();            waterChartInstance            = null; }
     if (financeMonthlyChartInstance)   { financeMonthlyChartInstance.destroy();   financeMonthlyChartInstance   = null; }
+    if (macroChartInstance)            { macroChartInstance.destroy();            macroChartInstance            = null; }
     loadPillarScores();
     loadWeekChart();
     loadFinance();
     loadWeightLog();
     loadNutritionWeekChart();
     renderWaterChart();
+    updateFoodSummary();
 }
 
 // ── Light / dark toggle ──────────────────────────────────────
@@ -4441,7 +4443,7 @@ async function updateFoodSummary(entries?) {
             datasets: [{
                 data: hasData ? [protCal, otherCal] : [1, 1],
                 backgroundColor: hasData
-                    ? ['#00c9a7', '#c084fc']
+                    ? [cssVar('--color-accent'), cssVar('--color-primary')]
                     : ['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.08)'],
                 borderWidth: 0
             }]
