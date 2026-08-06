@@ -806,7 +806,7 @@ html.light-mode .date-arrow-btn {
     gap: 16px;
     margin-bottom: 12px;
 }
-.day-view-header h3 { margin: 0; color: #e5e7eb; }
+.day-view-header h3 { margin: 0; color: var(--color-primary); }
 .day-view-allday {
     display: flex;
     flex-wrap: wrap;
@@ -905,7 +905,7 @@ html.light-mode .date-arrow-btn {
 }
 
 html.light-mode .day-view { background: rgba(0, 0, 0, 0.02); border-color: rgba(var(--color-primary-dark-rgb), 0.2); }
-html.light-mode .day-view-header h3 { color: #1f2937; }
+html.light-mode .day-view-header h3 { color: var(--color-primary-dark); }
 html.light-mode .day-view-hour-line { border-top-color: rgba(0, 0, 0, 0.07); }
 html.light-mode .day-view-scroll { border-color: rgba(0, 0, 0, 0.08); }
 html.light-mode .day-view-event { color: #1f2937; }
