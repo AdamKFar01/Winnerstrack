@@ -366,7 +366,7 @@ html.light-mode .date-arrow-btn {
     text-decoration: underline;
 }
 
-.summary-title-total { font-weight: 600; text-decoration: none; }
+.summary-title-total { font-size: 1.3em; font-weight: 700; text-decoration: none; }
 
 .summary-points-cell { text-align: center; }
 
@@ -377,10 +377,14 @@ html.light-mode .date-arrow-btn {
     color: var(--color-primary);
 }
 
+.summary-points-total .points { font-size: 3em; }
+
 .summary-points-cell .goal {
     font-size: 0.9em;
     color: rgba(var(--color-primary-rgb), 0.65);
 }
+
+.summary-points-total .goal { font-size: 1.1em; }
 
 /* Shining gradient text once Total reaches 1000/1000, same treatment as the app title */
 .total-shiny {
