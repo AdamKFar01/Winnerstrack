@@ -3961,7 +3961,39 @@ async function loadPlanEvents() {
     }
 }
 
+// Shared card builder for plan-event lists (day list, undated list, period list).
+// timeStr is precomputed by the caller since it differs per list (time-of-day vs. a date range).
+function renderPlanEventCard(event, timeStr) {
+    const eventDiv = document.createElement('div');
+    eventDiv.className = `calendar-event-item importance-${event.importance}` + (event.completed ? ' completed' : '');
+
+    eventDiv.innerHTML = `
+        <div class="event-header">
+            <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : 'Mark as done'}"></div>
+            <div>
+                <div class="event-title">${event.title}</div>
+                <div class="event-time">${timeStr}</div>
+            </div>
+        </div>
+        <div class="event-details">
+            <span class="event-badge category">${event.category.toUpperCase()}</span>
+            <span class="event-badge importance">${event.importance.toUpperCase()}</span>
+        </div>
+        ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
+        <div class="event-actions">
+            <button class="btn-delete-event" onclick="deletePlanEvent(${event.id})">Delete</button>
+        </div>
+    `;
+    (eventDiv.querySelector('.goal-tick') as any).onclick =
+        () => togglePlanEventComplete(event.id, !event.completed);
+
+    return eventDiv;
+}
+
 function loadEventsForSelectedPlanDate() {
+    loadUndatedPlans();
+    loadPeriodPlans();
+
     const dateStr = dateToLocalString(selectedPlanDate);
     const dayEvents = planCalendarEvents.filter(e => e.date === dateStr);
 
@@ -3980,35 +4012,54 @@ function loadEventsForSelectedPlanDate() {
     });
 
     dayEvents.forEach(event => {
-        const eventDiv = document.createElement('div');
-        eventDiv.className = `calendar-event-item importance-${event.importance}` + (event.completed ? ' completed' : '');
-
         const timeStr = event.start_time
             ? `${event.start_time}${event.end_time ? ' - ' + event.end_time : ''}`
             : 'All day';
-
-        eventDiv.innerHTML = `
-            <div class="event-header">
-                <div class="goal-tick${event.completed ? ' goal-tick-done' : ''}" title="${event.completed ? 'Mark as not done' : 'Mark as done'}"></div>
-                <div>
-                    <div class="event-title">${event.title}</div>
-                    <div class="event-time">${timeStr}</div>
-                </div>
-            </div>
-            <div class="event-details">
-                <span class="event-badge category">${event.category.toUpperCase()}</span>
-                <span class="event-badge importance">${event.importance.toUpperCase()}</span>
-            </div>
-            ${event.description ? `<div class="event-description">${event.description}</div>` : ''}
-            <div class="event-actions">
-                <button class="btn-delete-event" onclick="deletePlanEvent(${event.id})">Delete</button>
-            </div>
-        `;
-        (eventDiv.querySelector('.goal-tick') as any).onclick =
-            () => togglePlanEventComplete(event.id, !event.completed);
-
-        eventsList.appendChild(eventDiv);
+        eventsList.appendChild(renderPlanEventCard(event, timeStr));
     });
+}
+
+// Plans with no date set — not tied to any day, so they never appear on the
+// calendar grid. They stay listed here (just marked done) until deleted.
+function loadUndatedPlans() {
+    const eventsList = document.getElementById('planUndatedEventsList');
+    if (!eventsList) return;
+    const undated = planCalendarEvents.filter(e => e.plan_type !== 'period' && !e.date);
+
+    eventsList.innerHTML = '';
+    if (undated.length === 0) {
+        eventsList.innerHTML = '<p style="color: #8b92b0; text-align: center; padding: 20px;">No undated plans.</p>';
+        return;
+    }
+    undated.forEach(event => {
+        eventsList.appendChild(renderPlanEventCard(event, 'No date'));
+    });
+}
+
+// Period plans (a start/end date range) — shown here instead of the day grid.
+function loadPeriodPlans() {
+    const eventsList = document.getElementById('planPeriodEventsList');
+    if (!eventsList) return;
+    const periodPlans = planCalendarEvents.filter(e => e.plan_type === 'period');
+
+    eventsList.innerHTML = '';
+    if (periodPlans.length === 0) {
+        eventsList.innerHTML = '<p style="color: #8b92b0; text-align: center; padding: 20px;">No period plans.</p>';
+        return;
+    }
+    periodPlans.sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''));
+    periodPlans.forEach(event => {
+        const timeStr = (event.start_date && event.end_date)
+            ? `${formatPeriodPlanDate(event.start_date)} – ${formatPeriodPlanDate(event.end_date)}`
+            : 'No date range set';
+        eventsList.appendChild(renderPlanEventCard(event, timeStr));
+    });
+}
+
+function formatPeriodPlanDate(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    return new Date(Number(y), Number(m) - 1, Number(d))
+        .toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 async function togglePlanEventComplete(id, completed) {
