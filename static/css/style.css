@@ -247,11 +247,9 @@ html.light-mode .date-arrow-btn {
 
 /* ── Summary cards ─────────────────────────────────────────── */
 .summary-cards {
-    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     margin-bottom: 30px;
 }
 
@@ -260,6 +258,11 @@ html.light-mode .date-arrow-btn {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 20px;
+    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    padding: 20px;
 }
 
 .summary-title {
@@ -272,13 +275,14 @@ html.light-mode .date-arrow-btn {
 
 .summary-title-total { font-weight: 600; }
 
-/* Empty for now — reserved for a future addition. Shows the current level for now. */
+/* Its own separate box, distinct from the points row below it. Reserved for a future addition — shows the current level for now. */
 .summary-level-bar {
-    margin: 16px 0;
     min-height: 36px;
-    border-radius: 10px;
-    border: 1px dashed rgba(var(--color-primary-rgb), 0.4);
-    background: rgba(var(--color-primary-rgb), 0.06);
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2035,14 +2039,14 @@ html.light-mode .ai-event-status.success {
 }
 
 /* Summary cards */
-html.light-mode .summary-cards {
+html.light-mode .summary-titles-row,
+html.light-mode .summary-points-row,
+html.light-mode .summary-level-bar {
     background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.1) 0%, transparent 70%);
     border-color: rgba(var(--color-primary-dark-rgb), 0.2);
     box-shadow: 0 0 12px rgba(var(--color-primary-dark-rgb), 0.08);
 }
 html.light-mode .summary-level-bar {
-    border-color: rgba(var(--color-primary-dark-rgb), 0.35);
-    background: rgba(var(--color-primary-dark-rgb), 0.06);
     color: var(--color-primary-dark);
 }
 
