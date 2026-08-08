@@ -5542,6 +5542,11 @@ async function loadXP() {
         document.getElementById('xp-progress-fill')!.style.width = pct + '%';
         document.getElementById('xp-progress-label')!.textContent =
             `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
+        const dashboardProgressFill = document.getElementById('dashboardLevelProgressFill');
+        const dashboardProgressLabel = document.getElementById('dashboardLevelProgressLabel');
+        if (dashboardProgressFill) dashboardProgressFill.style.width = pct + '%';
+        if (dashboardProgressLabel) dashboardProgressLabel.textContent =
+            `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
     } catch (e) {
         console.error('Error loading XP:', e);
     }

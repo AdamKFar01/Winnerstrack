@@ -262,6 +262,13 @@ html.light-mode .date-arrow-btn {
     gap: 16px;
 }
 
+.summary-level-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
 /* Shining gradient text, same treatment as the WinnersTrack title */
 .summary-level-text {
     font-size: 1.425em;
@@ -273,6 +280,29 @@ html.light-mode .date-arrow-btn {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: xp-sweep 3s ease infinite;
+}
+
+/* XP-to-next-level scale, same treatment as the header's progress bar */
+.summary-level-progress-track {
+    width: 220px;
+    max-width: 60vw;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+}
+.summary-level-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.4s ease;
+}
+.summary-level-progress-label {
+    font-size: 0.75rem;
+    color: #8b92b0;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
 }
 
 /* Earned rank badges — one per category currently holding a rank */
@@ -3680,6 +3710,8 @@ html.light-mode .period-goal-row.completed .period-goal-text { color: #9ca3af; }
 
 html.light-mode .xp-progress-track { background: rgba(0,0,0,0.08); }
 html.light-mode #xp-progress-label { color: #6b7280; }
+html.light-mode .summary-level-progress-track { background: rgba(0,0,0,0.08); }
+html.light-mode .summary-level-progress-label { color: #6b7280; }
 
 #xp-display {
     font-family: 'Inter', sans-serif;
