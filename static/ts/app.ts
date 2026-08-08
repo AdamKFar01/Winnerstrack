@@ -723,7 +723,9 @@ async function loadDailySummary() {
         document.getElementById('health-points')!.textContent = summary.health;
         document.getElementById('relationships-points')!.textContent = summary.relationships;
         document.getElementById('mindset-points')!.textContent = summary.mindset;
-        document.getElementById('total-points')!.textContent = summary.total;
+        const totalEl = document.getElementById('total-points')!;
+        totalEl.textContent = summary.total;
+        totalEl.classList.toggle('total-shiny', summary.total >= 1000);
 
     } catch (error) {
         console.error('Error loading summary:', error);

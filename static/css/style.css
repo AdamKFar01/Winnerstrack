@@ -382,6 +382,16 @@ html.light-mode .date-arrow-btn {
     color: rgba(var(--color-primary-rgb), 0.65);
 }
 
+/* Shining gradient text once Total reaches 1000/1000, same treatment as the app title */
+.total-shiny {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-primary));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: xp-sweep 3s ease infinite;
+}
+
 /* ── Form sections / cards ─────────────────────────────────── */
 .add-win-section,
 .add-finance-section {
