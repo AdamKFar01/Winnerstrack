@@ -448,8 +448,30 @@
                         </div>
 
                         <div class="form-group" style="flex: 1;">
+                            <label>Plan Type</label>
+                            <select id="planEventType">
+                                <option value="single">Single day</option>
+                                <option value="period">Period (date range)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="planSingleDateRow">
+                        <div class="form-group" style="flex: 1;">
                             <label>Date</label>
                             <input type="date" id="planEventDate">
+                        </div>
+                    </div>
+
+                    <div class="form-row" id="planPeriodDateRow" style="display:none">
+                        <div class="form-group">
+                            <label>Start Date *</label>
+                            <input type="date" id="planEventStartDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>End Date *</label>
+                            <input type="date" id="planEventEndDate" required>
                         </div>
                     </div>
 

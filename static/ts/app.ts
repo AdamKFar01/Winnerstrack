@@ -3896,29 +3896,52 @@ async function goToPlanToday() {
     loadEventsForSelectedPlanDate();
 }
 
+function setPlanFormType(planType) {
+    document.getElementById('planSingleDateRow')!.style.display = planType === 'period' ? 'none' : '';
+    document.getElementById('planPeriodDateRow')!.style.display = planType === 'period' ? '' : 'none';
+}
+
+document.getElementById('planEventType')!.addEventListener('change', (e: any) => {
+    setPlanFormType(e.target.value);
+});
+
 document.getElementById('planEventForm')!.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const title = document.getElementById('planEventTitle')!.value;
-    const date = document.getElementById('planEventDate')!.value;
+    const planType = (document.getElementById('planEventType') as any).value;
     const startTime = document.getElementById('planEventStartTime')!.value;
     const endTime = document.getElementById('planEventEndTime')!.value;
     const category = document.getElementById('planEventCategory')!.value;
     const importance = document.getElementById('planEventImportance')!.value;
     const description = document.getElementById('planEventDescription')!.value;
 
+    const payload: any = {
+        title, start_time: startTime, end_time: endTime,
+        category, importance, description, plan_type: planType
+    };
+
+    if (planType === 'period') {
+        const startDate = document.getElementById('planEventStartDate')!.value;
+        const endDate = document.getElementById('planEventEndDate')!.value;
+        if (!startDate || !endDate) return;
+        payload.date = '';
+        payload.start_date = startDate;
+        payload.end_date = endDate;
+    } else {
+        payload.date = document.getElementById('planEventDate')!.value;
+    }
+
     try {
         const response = await fetch('/api/plan-events', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title, date, start_time: startTime, end_time: endTime,
-                category, importance, description
-            })
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {
             e.target!.reset();
+            setPlanFormType('single');
             await loadPlanEvents();
             await renderPlanCalendar();
             loadEventsForSelectedPlanDate();
