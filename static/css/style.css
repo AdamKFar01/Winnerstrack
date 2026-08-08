@@ -246,10 +246,30 @@ html.light-mode .date-arrow-btn {
 }
 
 /* ── Summary cards ─────────────────────────────────────────── */
-.summary-cards {
+/* Its own separate box, sitting above the titles/points card below it. Reserved for a future addition — shows the current level for now. */
+.summary-level-bar {
+    min-height: 36px;
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    padding: 20px;
+    margin-bottom: 16px;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--color-primary);
+}
+
+.summary-cards {
+    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+    padding: 20px;
     margin-bottom: 30px;
 }
 
@@ -258,11 +278,6 @@ html.light-mode .date-arrow-btn {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 20px;
-    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
-    border-radius: 15px;
-    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-    padding: 20px;
 }
 
 .summary-title {
@@ -274,23 +289,6 @@ html.light-mode .date-arrow-btn {
 }
 
 .summary-title-total { font-weight: 600; }
-
-/* Its own separate box, distinct from the points row below it. Reserved for a future addition — shows the current level for now. */
-.summary-level-bar {
-    min-height: 36px;
-    border-radius: 15px;
-    background: linear-gradient(135deg, rgba(59, 7, 100, 0.3) 0%, transparent 70%);
-    box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.15);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.95em;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: var(--color-primary);
-}
 
 .summary-points-cell { text-align: center; }
 
@@ -2039,8 +2037,7 @@ html.light-mode .ai-event-status.success {
 }
 
 /* Summary cards */
-html.light-mode .summary-titles-row,
-html.light-mode .summary-points-row,
+html.light-mode .summary-cards,
 html.light-mode .summary-level-bar {
     background: linear-gradient(135deg, rgba(var(--color-primary-rgb), 0.1) 0%, transparent 70%);
     border-color: rgba(var(--color-primary-dark-rgb), 0.2);
