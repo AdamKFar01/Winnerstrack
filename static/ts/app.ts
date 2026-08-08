@@ -1813,9 +1813,106 @@ function readFileAsDataURL(file): Promise<string> {
     });
 }
 
+// Reads whatever loadFinance() last computed — read-only, never mutated here.
+function getFinanceMetricValue(metric) {
+    if (!metric || !financeSnapshot) return null;
+    if (metric === 'savings') return financeSnapshot.savings;
+    if (metric === 'crypto') return financeSnapshot.crypto;
+    if (metric === 'total') return financeSnapshot.total;
+    if (metric.startsWith('account:')) {
+        const id = metric.split(':')[1];
+        return (financeSnapshot.accounts && financeSnapshot.accounts[id]) || 0;
+    }
+    return null;
+}
+
+// For each rank category, finds the highest-tier rank whose own required_level and
+// conditions are currently met — purely a read: never writes to finance/tasks/etc.
+async function evaluateAchievedRanks(level) {
+    const achieved: any[] = [];
+    try {
+        const catRes = await fetch('/api/rank-categories');
+        const categories = await catRes.json();
+        if (categories.length === 0) return achieved;
+
+        const taskRes = await fetch('/api/tasks?type=goal&period=all');
+        const tasks = await taskRes.json();
+        const taskById = {};
+        tasks.forEach(t => { taskById[t.id] = t; });
+
+        for (const cat of categories) {
+            const ranksRes = await fetch(`/api/ranks?category_id=${cat.id}`);
+            const catRanks = await ranksRes.json();
+            let best: any = null;
+
+            for (const rank of catRanks) {
+                if (level < rank.required_level) continue;
+
+                const condRes = await fetch(`/api/rank-conditions?rank_id=${rank.id}`);
+                const conditions = await condRes.json();
+
+                const allMet = conditions.every(cond => {
+                    if (cond.condition_type === 'manual') return !!cond.completed;
+                    if (cond.condition_type === 'finance') {
+                        const value = getFinanceMetricValue(cond.finance_metric);
+                        return value !== null && value >= cond.finance_target;
+                    }
+                    if (cond.condition_type === 'goal') {
+                        const task = taskById[cond.linked_task_id];
+                        return !!(task && task.completed);
+                    }
+                    return false;
+                });
+
+                if (allMet && (!best || rank.tier > best.tier)) best = rank;
+            }
+
+            if (best) achieved.push({ category: cat, rank: best });
+        }
+    } catch (e) {
+        console.error('Error evaluating ranks:', e);
+    }
+    return achieved;
+}
+
+function renderDashboardRankBadges(achieved) {
+    const container = document.getElementById('dashboardRankBadges');
+    if (!container) return;
+    container.innerHTML = '';
+    if (achieved.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'flex';
+    achieved.forEach(({ category, rank }) => {
+        const badge = document.createElement('div');
+        badge.className = 'summary-rank-badge';
+        badge.title = `${category.name}: ${rank.name} (Tier ${rank.tier})`;
+        badge.innerHTML = rank.badge_image
+            ? `<img src="${rank.badge_image}" alt="">`
+            : `<div class="summary-rank-badge-placeholder">${(category.name || '?').charAt(0).toUpperCase()}</div>`;
+        container.appendChild(badge);
+    });
+}
+
+async function refreshDashboardRanks(level?) {
+    try {
+        if (level === undefined) {
+            const res = await fetch('/api/xp');
+            const data = await res.json();
+            level = data.level;
+        }
+        const achieved = await evaluateAchievedRanks(level);
+        renderDashboardRankBadges(achieved);
+    } catch (e) {
+        console.error('Error refreshing dashboard ranks:', e);
+    }
+}
+
 async function loadLevels() {
     const res = await fetch('/api/rank-categories');
     const cats = await res.json();
+    refreshDashboardRanks();
     const container = document.getElementById('levelsCategoriesList')!;
     container.innerHTML = '';
     if (cats.length === 0) {
@@ -1880,6 +1977,7 @@ async function loadRanksForCategory(catId) {
     const res = await fetch(`/api/ranks?category_id=${catId}`);
     const ranksData = await res.json();
     container.innerHTML = '';
+    refreshDashboardRanks();
     if (ranksData.length === 0) {
         container.innerHTML = '<p class="levels-rank-empty">No ranks yet — add one below.</p>';
         return;
@@ -1925,6 +2023,7 @@ async function loadConditionsForRank(rank, listEl) {
     const res = await fetch(`/api/rank-conditions?rank_id=${rank.id}`);
     const conditions = await res.json();
     listEl.innerHTML = '';
+    refreshDashboardRanks();
     if (conditions.length === 0) {
         listEl.innerHTML = '<p class="levels-condition-empty">No conditions yet — this rank only needs the required level.</p>';
         return;
@@ -2754,6 +2853,7 @@ async function loadFinance() {
             accounts: accountBalances,
             total: currentBalance + currentCrypto + customTotal
         };
+        refreshDashboardRanks();
 
         document.getElementById('balance')!.textContent      = `£${currentBalance.toFixed(2)}`;
         document.getElementById('cryptoBalance')!.textContent = `£${currentCrypto.toFixed(2)}`;
@@ -5437,6 +5537,7 @@ async function loadXP() {
         el.textContent = text;
         const levelBar = document.getElementById('dashboardLevelBar');
         if (levelBar) levelBar.textContent = `Level ${data.level}`;
+        refreshDashboardRanks(data.level);
         const pct = Math.min(100, data.xp_for_next > 0 ? (data.xp_in_level / data.xp_for_next) * 100 : 100);
         document.getElementById('xp-progress-fill')!.style.width = pct + '%';
         document.getElementById('xp-progress-label')!.textContent =

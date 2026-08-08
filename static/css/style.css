@@ -258,6 +258,8 @@ html.light-mode .date-arrow-btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 /* Shining gradient text, same treatment as the WinnersTrack title */
@@ -271,6 +273,31 @@ html.light-mode .date-arrow-btn {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: xp-sweep 3s ease infinite;
+}
+
+/* Earned rank badges — one per category currently holding a rank */
+.summary-rank-badges {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.summary-rank-badge img,
+.summary-rank-badge-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.4);
+}
+.summary-rank-badge img { object-fit: cover; }
+.summary-rank-badge-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: var(--color-primary);
+    font-weight: 700;
+    font-size: 0.9em;
 }
 
 .summary-cards {
