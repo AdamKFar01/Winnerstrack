@@ -1803,6 +1803,24 @@ document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e
     loadYume();
 });
 
+// ── Dashboard: quote of the day ─────────────────────────────────
+async function loadDashboardQuote() {
+    const el = document.getElementById('dashboardQuote');
+    if (!el) return;
+    try {
+        const res = await fetch('/api/quotes');
+        const quotesData = await res.json();
+        if (quotesData.length === 0) { el.textContent = ''; return; }
+        // Deterministic pick from the absolute day count, so everyone sees the same
+        // quote all day and it changes the next day.
+        const dayNum = Math.floor(new Date(getLocalDateString() + 'T00:00:00').getTime() / 86400000);
+        const idx = ((dayNum % quotesData.length) + quotesData.length) % quotesData.length;
+        el.textContent = quotesData[idx].text;
+    } catch (e) {
+        console.error('Error loading daily quote:', e);
+    }
+}
+
 // ── Levels tab: rank categories ────────────────────────────────
 function readFileAsDataURL(file): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -5621,6 +5639,7 @@ async function initializeApp() {
     loadPeriods();
     loadYume();
     loadLevels();
+    loadDashboardQuote();
     document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());
     loadFinance();
