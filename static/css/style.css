@@ -4309,15 +4309,18 @@ html.light-mode .yume-item { border-color: rgba(0,0,0,0.07); }
     gap: 6px;
     flex-shrink: 0;
 }
-.levels-rank-edit-btn {
+.levels-rank-edit-btn,
+.levels-rank-conditions-btn {
     background: rgba(var(--color-primary-rgb), 0.1);
     border: 1px solid rgba(var(--color-primary-rgb), 0.25);
     color: var(--color-primary);
     border-radius: 6px;
     padding: 4px 9px;
+    font-size: 0.85em;
     cursor: pointer;
 }
-.levels-rank-edit-btn:hover { background: rgba(var(--color-primary-rgb), 0.2); }
+.levels-rank-edit-btn:hover,
+.levels-rank-conditions-btn:hover { background: rgba(var(--color-primary-rgb), 0.2); }
 
 .levels-add-rank-form,
 .levels-rank-edit-form {
@@ -4349,18 +4352,91 @@ html.light-mode .yume-item { border-color: rgba(0,0,0,0.07); }
 .levels-rank-edit-image { color: #8b92b0; font-size: 0.82em; max-width: 160px; }
 .levels-rank-edit-actions { display: flex; gap: 8px; }
 
+.levels-rank-conditions-panel {
+    padding: 12px;
+    margin: -4px 0 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+    border-radius: 10px;
+}
+.levels-condition-empty { color: #8b92b0; font-size: 0.85em; padding: 4px 0 12px; }
+.levels-condition-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.9em;
+}
+.levels-condition-row:last-of-type { border-bottom: none; }
+.levels-condition-text { flex: 1; color: #e5e7eb; }
+.levels-condition-done .levels-condition-text { text-decoration: line-through; color: #8b92b0; }
+.levels-condition-done .condition-check { color: var(--color-accent); }
+.levels-condition-type-badge {
+    flex-shrink: 0;
+    font-size: 0.72em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-accent);
+    border: 1px solid rgba(var(--color-accent-rgb), 0.4);
+    border-radius: 5px;
+    padding: 2px 6px;
+}
+.levels-add-condition-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(var(--color-primary-rgb), 0.12);
+}
+.levels-condition-type-select,
+.levels-condition-finance-metric,
+.levels-condition-goal-select {
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85em;
+}
+.levels-condition-fields { display: flex; flex: 1 1 200px; gap: 8px; }
+.levels-condition-fields .task-input { flex: 1; }
+.levels-condition-finance-target {
+    width: 110px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85em;
+}
+.levels-condition-goal-select { flex: 1; }
+
 html.light-mode .levels-category-section { background: rgba(var(--color-primary-rgb),0.04); border-color: rgba(var(--color-primary-dark-rgb),0.15); }
 html.light-mode .levels-rank-row,
 html.light-mode .levels-add-rank-form,
-html.light-mode .levels-rank-edit-form {
+html.light-mode .levels-rank-edit-form,
+html.light-mode .levels-rank-conditions-panel {
     background: rgba(0,0,0,0.02);
     border-color: rgba(var(--color-primary-dark-rgb), 0.18);
 }
 html.light-mode .levels-rank-name { color: #1f2937; }
+html.light-mode .levels-condition-text { color: #1f2937; }
+html.light-mode .levels-condition-row { border-color: rgba(0,0,0,0.07); }
+html.light-mode .levels-add-condition-row { border-color: rgba(var(--color-primary-dark-rgb), 0.18); }
 html.light-mode .levels-rank-tier-input,
 html.light-mode .levels-rank-level-input,
 html.light-mode .levels-rank-edit-tier,
-html.light-mode .levels-rank-edit-level {
+html.light-mode .levels-rank-edit-level,
+html.light-mode .levels-condition-type-select,
+html.light-mode .levels-condition-finance-metric,
+html.light-mode .levels-condition-goal-select,
+html.light-mode .levels-condition-finance-target {
     background: #fff;
     color: #1f2937;
     border-color: rgba(0,0,0,0.12);

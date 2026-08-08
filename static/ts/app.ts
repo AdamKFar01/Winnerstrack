@@ -1887,6 +1887,167 @@ async function loadRanksForCategory(catId) {
     ranksData.forEach(r => renderRankRow(container, r));
 }
 
+async function populateFinanceMetricSelect(select) {
+    select.innerHTML = '<option value="savings">Savings</option><option value="crypto">Crypto</option><option value="total">Total Balance</option>';
+    try {
+        const res = await fetch('/api/finance-accounts');
+        const accounts = await res.json();
+        accounts.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = `account:${a.id}`;
+            opt.textContent = a.name;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('Error loading finance accounts for condition builder:', e);
+    }
+}
+
+async function populateGoalSelectForCondition(select) {
+    select.innerHTML = '<option value="">Select goal…</option>';
+    try {
+        const res = await fetch('/api/tasks?type=goal&period=all');
+        const tasks = await res.json();
+        const periodLabel = { weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly', lifelong: 'Lifelong', today: 'Today' };
+        tasks.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            const label = periodLabel[t.period] || t.period;
+            opt.textContent = `[${label}] ${t.task}`;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('Error loading goals for condition builder:', e);
+    }
+}
+
+async function loadConditionsForRank(rank, listEl) {
+    const res = await fetch(`/api/rank-conditions?rank_id=${rank.id}`);
+    const conditions = await res.json();
+    listEl.innerHTML = '';
+    if (conditions.length === 0) {
+        listEl.innerHTML = '<p class="levels-condition-empty">No conditions yet — this rank only needs the required level.</p>';
+        return;
+    }
+    conditions.forEach(cond => {
+        const row = document.createElement('div');
+        row.className = 'levels-condition-row' + (cond.completed ? ' levels-condition-done' : '');
+        if (cond.condition_type === 'manual') {
+            row.innerHTML = `
+                <span class="condition-check">${cond.completed ? '✔' : '○'}</span>
+                <span class="levels-condition-text"></span>
+                <button type="button" class="task-item-delete levels-condition-del">✕</button>
+            `;
+            (row.querySelector('.levels-condition-text') as HTMLElement).textContent = cond.condition_text;
+            row.querySelector('.condition-check')!.addEventListener('click', async () => {
+                await fetch('/api/rank-conditions', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: cond.id, completed: cond.completed ? 0 : 1 })
+                });
+                loadConditionsForRank(rank, listEl);
+            });
+        } else {
+            const badge = cond.condition_type === 'finance' ? 'Finance' : 'Goal';
+            row.innerHTML = `
+                <span class="levels-condition-type-badge">${badge}</span>
+                <span class="levels-condition-text"></span>
+                <button type="button" class="task-item-delete levels-condition-del">✕</button>
+            `;
+            (row.querySelector('.levels-condition-text') as HTMLElement).textContent = cond.condition_text;
+        }
+        row.querySelector('.levels-condition-del')!.addEventListener('click', async () => {
+            await fetch(`/api/rank-conditions?id=${cond.id}`, { method: 'DELETE' });
+            loadConditionsForRank(rank, listEl);
+        });
+        listEl.appendChild(row);
+    });
+}
+
+function buildRankConditionsPanel(rank) {
+    const panel = document.createElement('div');
+    panel.className = 'levels-rank-conditions-panel';
+    panel.style.display = 'none';
+    panel.innerHTML = `
+        <div class="levels-conditions-list"></div>
+        <div class="levels-add-condition-row">
+            <select class="levels-condition-type-select">
+                <option value="manual">Manual</option>
+                <option value="finance">Finance balance</option>
+                <option value="goal">Linked goal</option>
+            </select>
+            <div class="levels-condition-fields levels-condition-manual-fields">
+                <input type="text" class="task-input levels-condition-text-input" placeholder="Condition text...">
+            </div>
+            <div class="levels-condition-fields levels-condition-finance-fields" style="display:none">
+                <select class="levels-condition-finance-metric"></select>
+                <input type="number" class="levels-condition-finance-target" placeholder="Target £" min="0" step="0.01">
+            </div>
+            <div class="levels-condition-fields levels-condition-goal-fields" style="display:none">
+                <select class="levels-condition-goal-select"><option value="">Select goal…</option></select>
+            </div>
+            <button type="button" class="btn-primary btn-sm levels-add-condition-btn">Add</button>
+        </div>
+    `;
+
+    const listEl           = panel.querySelector('.levels-conditions-list') as HTMLElement;
+    const typeSelect        = panel.querySelector('.levels-condition-type-select') as any;
+    const manualFields       = panel.querySelector('.levels-condition-manual-fields') as HTMLElement;
+    const financeFields      = panel.querySelector('.levels-condition-finance-fields') as HTMLElement;
+    const goalFields         = panel.querySelector('.levels-condition-goal-fields') as HTMLElement;
+    const financeMetricSelect = panel.querySelector('.levels-condition-finance-metric') as any;
+    const goalSelect          = panel.querySelector('.levels-condition-goal-select') as any;
+
+    typeSelect.addEventListener('change', () => {
+        manualFields.style.display  = typeSelect.value === 'manual'  ? '' : 'none';
+        financeFields.style.display = typeSelect.value === 'finance' ? '' : 'none';
+        goalFields.style.display    = typeSelect.value === 'goal'    ? '' : 'none';
+    });
+
+    panel.querySelector('.levels-add-condition-btn')!.addEventListener('click', async () => {
+        const type = typeSelect.value;
+        let condition_text = '';
+        let finance_metric: any = null, finance_target: any = null, linked_task_id: any = null;
+
+        if (type === 'manual') {
+            const textInput = panel.querySelector('.levels-condition-text-input') as any;
+            condition_text = textInput.value.trim();
+            if (!condition_text) return;
+            textInput.value = '';
+        } else if (type === 'finance') {
+            const metric = financeMetricSelect.value;
+            const targetInput = panel.querySelector('.levels-condition-finance-target') as any;
+            const target = parseFloat(targetInput.value);
+            if (!metric || !target) return;
+            finance_metric = metric;
+            finance_target = target;
+            condition_text = `${financeMetricSelect.options[financeMetricSelect.selectedIndex].text} ≥ £${target.toFixed(2)}`;
+            targetInput.value = '';
+        } else if (type === 'goal') {
+            const taskId = goalSelect.value;
+            if (!taskId) return;
+            linked_task_id = taskId;
+            condition_text = `Complete goal: ${goalSelect.options[goalSelect.selectedIndex].text}`;
+        }
+
+        await fetch('/api/rank-conditions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                rank_id: rank.id,
+                condition_type: type,
+                condition_text,
+                finance_metric,
+                finance_target,
+                linked_task_id
+            })
+        });
+        loadConditionsForRank(rank, listEl);
+    });
+
+    return { panel, listEl, financeMetricSelect, goalSelect };
+}
+
 function renderRankRow(container, rank) {
     const row = document.createElement('div');
     row.className = 'levels-rank-row';
@@ -1901,6 +2062,7 @@ function renderRankRow(container, rank) {
             <div class="levels-rank-meta">Tier ${rank.tier} · Lv. ${rank.required_level}+</div>
         </div>
         <div class="levels-rank-actions">
+            <button type="button" class="levels-rank-conditions-btn">Conditions</button>
             <button type="button" class="levels-rank-edit-btn">✎</button>
             <button type="button" class="task-item-delete levels-rank-del-btn">✕</button>
         </div>
@@ -1963,8 +2125,20 @@ function renderRankRow(container, rank) {
         loadRanksForCategory(rank.category_id);
     });
 
+    const { panel, listEl, financeMetricSelect, goalSelect } = buildRankConditionsPanel(rank);
+    row.querySelector('.levels-rank-conditions-btn')!.addEventListener('click', async () => {
+        const show = panel.style.display === 'none';
+        panel.style.display = show ? 'block' : 'none';
+        if (show) {
+            await populateFinanceMetricSelect(financeMetricSelect);
+            await populateGoalSelectForCondition(goalSelect);
+            await loadConditionsForRank(rank, listEl);
+        }
+    });
+
     container.appendChild(row);
     container.appendChild(editForm);
+    container.appendChild(panel);
 }
 
 async function deleteLevelsCategory(id) {

@@ -380,6 +380,21 @@ def init_db():
                   badge_image TEXT,
                   created_at TEXT NOT NULL)''')
 
+    # Rank conditions table (requirements a rank needs met, beyond its required_level).
+    # condition_type: 'manual' (freeform, user checks it off), 'finance' (auto — balance
+    # threshold), 'goal' (auto — linked Goals task must be completed). condition_text is
+    # always a frozen display label, generated client-side at creation time.
+    c.execute('''CREATE TABLE IF NOT EXISTS rank_conditions
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  rank_id INTEGER NOT NULL,
+                  condition_type TEXT NOT NULL DEFAULT 'manual',
+                  condition_text TEXT NOT NULL,
+                  completed INTEGER DEFAULT 0,
+                  finance_metric TEXT,
+                  finance_target REAL,
+                  linked_task_id INTEGER,
+                  created_at TEXT NOT NULL)''')
+
     conn.commit()
     conn.close()
 
@@ -2051,6 +2066,7 @@ def rank_categories():
 
     elif request.method == 'DELETE':
         cat_id = request.args.get('id')
+        c.execute('DELETE FROM rank_conditions WHERE rank_id IN (SELECT id FROM ranks WHERE category_id = ?)', (cat_id,))
         c.execute('DELETE FROM ranks WHERE category_id = ?', (cat_id,))
         c.execute('DELETE FROM rank_categories WHERE id = ?', (cat_id,))
         conn.commit()
@@ -2098,7 +2114,55 @@ def ranks():
 
     elif request.method == 'DELETE':
         rank_id = request.args.get('id')
+        c.execute('DELETE FROM rank_conditions WHERE rank_id = ?', (rank_id,))
         c.execute('DELETE FROM ranks WHERE id = ?', (rank_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+
+@app.route('/api/rank-conditions', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def rank_conditions():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'GET':
+        rank_id = request.args.get('rank_id')
+        c.execute('''SELECT id, rank_id, condition_type, condition_text, completed,
+                            finance_metric, finance_target, linked_task_id
+                     FROM rank_conditions WHERE rank_id = ? ORDER BY created_at''', (rank_id,))
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([{
+            'id': r[0], 'rank_id': r[1], 'condition_type': r[2], 'condition_text': r[3],
+            'completed': r[4], 'finance_metric': r[5], 'finance_target': r[6],
+            'linked_task_id': r[7]
+        } for r in rows])
+
+    elif request.method == 'POST':
+        data = request.json
+        c.execute('''INSERT INTO rank_conditions
+                     (rank_id, condition_type, condition_text, completed,
+                      finance_metric, finance_target, linked_task_id, created_at)
+                     VALUES (?, ?, ?, 0, ?, ?, ?, ?)''',
+                  (data['rank_id'], data.get('condition_type', 'manual'), data['condition_text'],
+                   data.get('finance_metric'), data.get('finance_target'), data.get('linked_task_id'),
+                   datetime.now().isoformat()))
+        conn.commit()
+        cond_id = c.lastrowid
+        conn.close()
+        return jsonify({'success': True, 'id': cond_id})
+
+    elif request.method == 'PUT':
+        data = request.json
+        c.execute('UPDATE rank_conditions SET completed = ? WHERE id = ?', (data['completed'], data['id']))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        cond_id = request.args.get('id')
+        c.execute('DELETE FROM rank_conditions WHERE id = ?', (cond_id,))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
