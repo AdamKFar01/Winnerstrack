@@ -258,10 +258,19 @@ html.light-mode .date-arrow-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95em;
-    font-weight: 600;
+}
+
+/* Shining gradient text, same treatment as the WinnersTrack title */
+.summary-level-text {
+    font-size: 1.425em;
+    font-weight: 700;
     letter-spacing: 0.04em;
-    color: var(--color-primary);
+    background: linear-gradient(90deg, var(--color-primary), var(--color-accent), var(--color-primary));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: xp-sweep 3s ease infinite;
 }
 
 .summary-cards {
@@ -2043,10 +2052,6 @@ html.light-mode .summary-level-bar {
     border-color: rgba(var(--color-primary-dark-rgb), 0.2);
     box-shadow: 0 0 12px rgba(var(--color-primary-dark-rgb), 0.08);
 }
-html.light-mode .summary-level-bar {
-    color: var(--color-primary-dark);
-}
-
 /* Finance cards */
 html.light-mode .finance-card.balance {
     background: transparent;
