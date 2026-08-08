@@ -395,6 +395,12 @@ def init_db():
                   linked_task_id INTEGER,
                   created_at TEXT NOT NULL)''')
 
+    # Quotes table — one is shown per day, plain text, above the dashboard level box
+    c.execute('''CREATE TABLE IF NOT EXISTS quotes
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  text TEXT NOT NULL,
+                  created_at TEXT NOT NULL)''')
+
     conn.commit()
     conn.close()
 
@@ -2163,6 +2169,38 @@ def rank_conditions():
     elif request.method == 'DELETE':
         cond_id = request.args.get('id')
         c.execute('DELETE FROM rank_conditions WHERE id = ?', (cond_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+
+@app.route('/api/quotes', methods=['GET', 'POST', 'DELETE'])
+def quotes():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'GET':
+        c.execute('SELECT id, text FROM quotes ORDER BY created_at')
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([{'id': r[0], 'text': r[1]} for r in rows])
+
+    elif request.method == 'POST':
+        data = request.json
+        text = (data.get('text') or '').strip()
+        if not text:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Quote text required'}), 400
+        c.execute('INSERT INTO quotes (text, created_at) VALUES (?, ?)',
+                  (text, datetime.now().isoformat()))
+        conn.commit()
+        quote_id = c.lastrowid
+        conn.close()
+        return jsonify({'success': True, 'id': quote_id})
+
+    elif request.method == 'DELETE':
+        quote_id = request.args.get('id')
+        c.execute('DELETE FROM quotes WHERE id = ?', (quote_id,))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
