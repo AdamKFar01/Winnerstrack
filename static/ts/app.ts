@@ -5668,15 +5668,21 @@ async function loadXP() {
         const data = await res.json();
         let text = `Lv.${data.level} · ${data.total_xp.toLocaleString()} XP`;
         if (data.multiplier > 1) text += ` ×${data.multiplier.toFixed(2)}`;
+        const el = document.getElementById('xp-display');
+        if (el) el.textContent = text;
         const levelBar = document.getElementById('dashboardLevelBar');
         if (levelBar) levelBar.textContent = text;
         refreshDashboardRanks(data.level);
         const pct = Math.min(100, data.xp_for_next > 0 ? (data.xp_in_level / data.xp_for_next) * 100 : 100);
+        const xpLabel = `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
+        const progressFill = document.getElementById('xp-progress-fill');
+        const progressLabel = document.getElementById('xp-progress-label');
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (progressLabel) progressLabel.textContent = xpLabel;
         const dashboardProgressFill = document.getElementById('dashboardLevelProgressFill');
         const dashboardProgressLabel = document.getElementById('dashboardLevelProgressLabel');
         if (dashboardProgressFill) dashboardProgressFill.style.width = pct + '%';
-        if (dashboardProgressLabel) dashboardProgressLabel.textContent =
-            `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
+        if (dashboardProgressLabel) dashboardProgressLabel.textContent = xpLabel;
     } catch (e) {
         console.error('Error loading XP:', e);
     }
