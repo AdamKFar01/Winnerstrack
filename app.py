@@ -364,6 +364,12 @@ def init_db():
     except Exception:
         pass
 
+    # Rank categories table (Levels feature — badges grouped by category, e.g. "Finance")
+    c.execute('''CREATE TABLE IF NOT EXISTS rank_categories
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL UNIQUE,
+                  created_at TEXT NOT NULL)''')
+
     conn.commit()
     conn.close()
 
@@ -2004,6 +2010,38 @@ def yume_items():
     elif request.method == 'DELETE':
         item_id = request.args.get('id')
         c.execute('DELETE FROM yume_items WHERE id = ?', (item_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+
+@app.route('/api/rank-categories', methods=['GET', 'POST', 'DELETE'])
+def rank_categories():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'GET':
+        c.execute('SELECT id, name FROM rank_categories ORDER BY name')
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([{'id': r[0], 'name': r[1]} for r in rows])
+
+    elif request.method == 'POST':
+        data = request.json
+        try:
+            c.execute('INSERT INTO rank_categories (name, created_at) VALUES (?, ?)',
+                      (data['name'], datetime.now().isoformat()))
+            conn.commit()
+            cat_id = c.lastrowid
+            conn.close()
+            return jsonify({'success': True, 'id': cat_id})
+        except Exception:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Category already exists'}), 400
+
+    elif request.method == 'DELETE':
+        cat_id = request.args.get('id')
+        c.execute('DELETE FROM rank_categories WHERE id = ?', (cat_id,))
         conn.commit()
         conn.close()
         return jsonify({'success': True})

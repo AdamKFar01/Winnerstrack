@@ -1803,6 +1803,49 @@ document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e
     loadYume();
 });
 
+// ── Levels tab: rank categories ────────────────────────────────
+async function loadLevels() {
+    const res = await fetch('/api/rank-categories');
+    const cats = await res.json();
+    const container = document.getElementById('levelsCategoriesList')!;
+    container.innerHTML = '';
+    if (cats.length === 0) {
+        container.innerHTML = '<p style="color:#8b92b0;text-align:center;padding:40px 0;">No categories yet. Add one above to start creating ranks.</p>';
+        return;
+    }
+    cats.forEach(cat => {
+        const section = document.createElement('div');
+        section.className = 'levels-category-section';
+        section.id = `levelscat-${cat.id}`;
+        section.innerHTML = `
+            <div class="levels-category-header">
+                <h3 class="levels-category-name">${cat.name}</h3>
+                <button class="task-item-delete levels-cat-del" onclick="deleteLevelsCategory(${cat.id})">✕</button>
+            </div>
+        `;
+        container.appendChild(section);
+    });
+}
+
+async function deleteLevelsCategory(id) {
+    if (!confirm('Delete this category and all its ranks?')) return;
+    await fetch(`/api/rank-categories?id=${id}`, { method: 'DELETE' });
+    loadLevels();
+}
+
+document.getElementById('levelsCategoryForm')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('levelsCategoryName')!.value.trim();
+    if (!name) return;
+    await fetch('/api/rank-categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    });
+    document.getElementById('levelsCategoryName')!.value = '';
+    loadLevels();
+});
+
 // Finance functionality
 let customFinanceCategories: string[] = [];
 
@@ -5162,6 +5205,7 @@ async function initializeApp() {
     loadRecipes();
     loadPeriods();
     loadYume();
+    loadLevels();
     document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());
     loadFinance();

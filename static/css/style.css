@@ -4214,3 +4214,39 @@ html.light-mode .yume-rank-select { color: #1f2937; background: rgba(0,0,0,0.02)
 html.light-mode .yume-category-section { background: rgba(var(--color-primary-rgb),0.04); border-color: rgba(var(--color-primary-dark-rgb),0.15); }
 html.light-mode .yume-item-text { color: #1f2937; }
 html.light-mode .yume-item { border-color: rgba(0,0,0,0.07); }
+
+/* ── Levels tab ──────────────────────────────────────────────── */
+.levels-add-category-row { margin-bottom: 28px; }
+.levels-category-form {
+    display: flex;
+    gap: 10px;
+}
+.levels-category-form .task-input { flex: 1; }
+
+.levels-category-section {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+}
+.levels-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.levels-category-name {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.levels-cat-del {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.levels-cat-del:hover { opacity: 1; }
+
+html.light-mode .levels-category-section { background: rgba(var(--color-primary-rgb),0.04); border-color: rgba(var(--color-primary-dark-rgb),0.15); }

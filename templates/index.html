@@ -40,6 +40,7 @@
 
         <nav class="tabs">
             <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="levels">Levels</button>
             <button class="tab-btn" data-tab="calendar">Calendar</button>
             <button class="tab-btn" data-tab="plans">Plans</button>
             <button class="tab-btn" data-tab="goals">Goals</button>
@@ -248,6 +249,20 @@
                 </div>
                 <div class="section-content collapsed" id="xp-log-list"></div>
             </div>
+        </div>
+
+        <!-- Levels Tab -->
+        <div class="tab-content" id="levels">
+            <h2>Levels</h2>
+
+            <div class="levels-add-category-row">
+                <form id="levelsCategoryForm" class="levels-category-form">
+                    <input type="text" id="levelsCategoryName" class="task-input" placeholder="New rank category (e.g. Finance, Spiritual)..." required>
+                    <button type="submit" class="btn-primary">Add Category</button>
+                </form>
+            </div>
+
+            <div id="levelsCategoriesList"></div>
         </div>
 
         <!-- Calendar Tab -->
