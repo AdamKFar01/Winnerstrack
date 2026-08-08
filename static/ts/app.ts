@@ -3919,7 +3919,6 @@ document.getElementById('planEventForm')!.addEventListener('submit', async (e) =
 
         if (response.ok) {
             e.target!.reset();
-            document.getElementById('planEventDate')!.value = getLocalDateString();
             await loadPlanEvents();
             await renderPlanCalendar();
             loadEventsForSelectedPlanDate();
@@ -3929,8 +3928,6 @@ document.getElementById('planEventForm')!.addEventListener('submit', async (e) =
         console.error('Error adding plan event:', error);
     }
 });
-
-document.getElementById('planEventDate')!.value = getLocalDateString();
 
 async function loadPlanEvents() {
     try {

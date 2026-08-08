@@ -176,6 +176,18 @@ def init_db():
                   description TEXT,
                   completed INTEGER DEFAULT 0,
                   created_at TEXT NOT NULL)''')
+    # date stays NOT NULL for compatibility — an empty string means "no date set" (a
+    # plan not tied to any day). plan_type distinguishes a normal single-date plan
+    # from a 'period' plan, which uses start_date/end_date instead of date.
+    for col, definition in [
+        ('plan_type', "TEXT DEFAULT 'single'"),
+        ('start_date', 'TEXT'),
+        ('end_date', 'TEXT'),
+    ]:
+        try:
+            c.execute(f"ALTER TABLE plan_events ADD COLUMN {col} {definition}")
+        except Exception:
+            pass
 
     # Pillar scores table (one persistent row per user)
     c.execute('''CREATE TABLE IF NOT EXISTS pillar_scores
@@ -1181,10 +1193,13 @@ def plan_events_api():
 
     if request.method == 'POST':
         data = request.json
-        c.execute('''INSERT INTO plan_events (title, date, start_time, end_time, category, importance, description, created_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                  (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
+        c.execute('''INSERT INTO plan_events
+                     (title, date, start_time, end_time, category, importance, description,
+                      plan_type, start_date, end_date, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (data['title'], data.get('date') or '', data.get('start_time'), data.get('end_time'),
                    data['category'], data.get('importance', 'normal'), data.get('description', ''),
+                   data.get('plan_type', 'single'), data.get('start_date'), data.get('end_date'),
                    datetime.now().isoformat()))
         conn.commit()
         conn.close()
@@ -1197,10 +1212,12 @@ def plan_events_api():
                       (int(data['completed']), data['id']))
         else:
             c.execute('''UPDATE plan_events
-                         SET title = ?, date = ?, start_time = ?, end_time = ?, category = ?, importance = ?, description = ?
+                         SET title = ?, date = ?, start_time = ?, end_time = ?, category = ?, importance = ?, description = ?,
+                             plan_type = ?, start_date = ?, end_date = ?
                          WHERE id = ?''',
-                      (data['title'], data['date'], data.get('start_time'), data.get('end_time'),
-                       data['category'], data.get('importance', 'normal'), data.get('description', ''), data['id']))
+                      (data['title'], data.get('date') or '', data.get('start_time'), data.get('end_time'),
+                       data['category'], data.get('importance', 'normal'), data.get('description', ''),
+                       data.get('plan_type', 'single'), data.get('start_date'), data.get('end_date'), data['id']))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
@@ -1216,7 +1233,8 @@ def plan_events_api():
         month = request.args.get('month')
         year = request.args.get('year')
 
-        sel = '''SELECT id, title, date, start_time, end_time, category, importance, description, completed
+        sel = '''SELECT id, title, date, start_time, end_time, category, importance, description, completed,
+                        plan_type, start_date, end_date
                  FROM plan_events'''
         if month and year:
             c.execute(f'{sel} WHERE strftime("%Y-%m", date) = ? ORDER BY date, start_time',
@@ -1238,7 +1256,10 @@ def plan_events_api():
                 'category': event[5],
                 'importance': event[6],
                 'description': event[7],
-                'completed': bool(event[8])
+                'completed': bool(event[8]),
+                'plan_type': event[9] or 'single',
+                'start_date': event[10],
+                'end_date': event[11]
             })
 
         return jsonify(events_list)
