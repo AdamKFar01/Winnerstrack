@@ -4249,4 +4249,113 @@ html.light-mode .yume-item { border-color: rgba(0,0,0,0.07); }
 }
 .levels-cat-del:hover { opacity: 1; }
 
+.levels-rank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 14px 0;
+}
+.levels-rank-empty {
+    color: #8b92b0;
+    font-size: 0.85em;
+    margin: 10px 0;
+}
+.levels-rank-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+    border-radius: 10px;
+}
+.levels-rank-badge-wrap { flex-shrink: 0; }
+.levels-rank-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+}
+.levels-rank-badge-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px dashed rgba(var(--color-primary-rgb), 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(var(--color-primary-rgb), 0.5);
+    font-weight: 600;
+}
+.levels-rank-info { flex: 1; min-width: 0; }
+.levels-rank-name {
+    font-weight: 600;
+    color: #e5e7eb;
+}
+.levels-rank-meta {
+    font-size: 0.78em;
+    color: #8b92b0;
+    margin-top: 2px;
+}
+.levels-rank-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.levels-rank-edit-btn {
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+    color: var(--color-primary);
+    border-radius: 6px;
+    padding: 4px 9px;
+    cursor: pointer;
+}
+.levels-rank-edit-btn:hover { background: rgba(var(--color-primary-rgb), 0.2); }
+
+.levels-add-rank-form,
+.levels-rank-edit-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+    border-radius: 10px;
+}
+.levels-rank-edit-form { margin: -4px 0 10px; }
+.levels-add-rank-form .task-input { flex: 1 1 160px; }
+.levels-rank-tier-input,
+.levels-rank-level-input,
+.levels-rank-edit-tier,
+.levels-rank-edit-level {
+    width: 90px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88em;
+}
+.levels-rank-image-input,
+.levels-rank-edit-image { color: #8b92b0; font-size: 0.82em; max-width: 160px; }
+.levels-rank-edit-actions { display: flex; gap: 8px; }
+
 html.light-mode .levels-category-section { background: rgba(var(--color-primary-rgb),0.04); border-color: rgba(var(--color-primary-dark-rgb),0.15); }
+html.light-mode .levels-rank-row,
+html.light-mode .levels-add-rank-form,
+html.light-mode .levels-rank-edit-form {
+    background: rgba(0,0,0,0.02);
+    border-color: rgba(var(--color-primary-dark-rgb), 0.18);
+}
+html.light-mode .levels-rank-name { color: #1f2937; }
+html.light-mode .levels-rank-tier-input,
+html.light-mode .levels-rank-level-input,
+html.light-mode .levels-rank-edit-tier,
+html.light-mode .levels-rank-edit-level {
+    background: #fff;
+    color: #1f2937;
+    border-color: rgba(0,0,0,0.12);
+}

@@ -1804,6 +1804,15 @@ document.getElementById('yumeCategoryForm')!.addEventListener('submit', async (e
 });
 
 // ── Levels tab: rank categories ────────────────────────────────
+function readFileAsDataURL(file): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 async function loadLevels() {
     const res = await fetch('/api/rank-categories');
     const cats = await res.json();
@@ -1819,12 +1828,143 @@ async function loadLevels() {
         section.id = `levelscat-${cat.id}`;
         section.innerHTML = `
             <div class="levels-category-header">
-                <h3 class="levels-category-name">${cat.name}</h3>
-                <button class="task-item-delete levels-cat-del" onclick="deleteLevelsCategory(${cat.id})">✕</button>
+                <h3 class="levels-category-name"></h3>
+                <button type="button" class="task-item-delete levels-cat-del">✕</button>
             </div>
+            <div class="levels-rank-list" id="levelranks-${cat.id}"></div>
+            <form class="levels-add-rank-form">
+                <input type="text" class="task-input levels-rank-name-input" placeholder="Rank name..." required>
+                <input type="number" class="levels-rank-tier-input" placeholder="Tier" min="1" value="1">
+                <input type="number" class="levels-rank-level-input" placeholder="Required level" min="0" value="0">
+                <input type="file" class="levels-rank-image-input" accept="image/*" title="Badge image (optional)">
+                <button type="submit" class="btn-primary btn-sm">Add Rank</button>
+            </form>
         `;
+        (section.querySelector('.levels-category-name') as HTMLElement).textContent = cat.name;
+        section.querySelector('.levels-cat-del')!.addEventListener('click', () => deleteLevelsCategory(cat.id));
+
+        const addForm = section.querySelector('.levels-add-rank-form') as HTMLFormElement;
+        addForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameInput  = addForm.querySelector('.levels-rank-name-input') as any;
+            const tierInput  = addForm.querySelector('.levels-rank-tier-input') as any;
+            const levelInput = addForm.querySelector('.levels-rank-level-input') as any;
+            const fileInput  = addForm.querySelector('.levels-rank-image-input') as any;
+            const name = nameInput.value.trim();
+            if (!name) return;
+            let badge_image: any = null;
+            if (fileInput.files && fileInput.files[0]) badge_image = await readFileAsDataURL(fileInput.files[0]);
+            await fetch('/api/ranks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category_id: cat.id,
+                    name,
+                    tier: parseInt(tierInput.value) || 1,
+                    required_level: parseInt(levelInput.value) || 0,
+                    badge_image
+                })
+            });
+            addForm.reset();
+            loadRanksForCategory(cat.id);
+        });
+
         container.appendChild(section);
+        loadRanksForCategory(cat.id);
     });
+}
+
+async function loadRanksForCategory(catId) {
+    const container = document.getElementById(`levelranks-${catId}`);
+    if (!container) return;
+    const res = await fetch(`/api/ranks?category_id=${catId}`);
+    const ranksData = await res.json();
+    container.innerHTML = '';
+    if (ranksData.length === 0) {
+        container.innerHTML = '<p class="levels-rank-empty">No ranks yet — add one below.</p>';
+        return;
+    }
+    ranksData.forEach(r => renderRankRow(container, r));
+}
+
+function renderRankRow(container, rank) {
+    const row = document.createElement('div');
+    row.className = 'levels-rank-row';
+    row.innerHTML = `
+        <div class="levels-rank-badge-wrap">
+            ${rank.badge_image
+                ? `<img class="levels-rank-badge" src="${rank.badge_image}" alt="">`
+                : `<div class="levels-rank-badge-placeholder">?</div>`}
+        </div>
+        <div class="levels-rank-info">
+            <div class="levels-rank-name"></div>
+            <div class="levels-rank-meta">Tier ${rank.tier} · Lv. ${rank.required_level}+</div>
+        </div>
+        <div class="levels-rank-actions">
+            <button type="button" class="levels-rank-edit-btn">✎</button>
+            <button type="button" class="task-item-delete levels-rank-del-btn">✕</button>
+        </div>
+    `;
+    (row.querySelector('.levels-rank-name') as HTMLElement).textContent = rank.name;
+
+    const editForm = document.createElement('div');
+    editForm.className = 'levels-rank-edit-form';
+    editForm.style.display = 'none';
+    editForm.innerHTML = `
+        <input type="text" class="task-input levels-rank-edit-name" placeholder="Rank name">
+        <input type="number" class="levels-rank-edit-tier" placeholder="Tier" min="1">
+        <input type="number" class="levels-rank-edit-level" placeholder="Required level" min="0">
+        <input type="file" class="levels-rank-edit-image" accept="image/*" title="Replace badge image (optional)">
+        <div class="levels-rank-edit-actions">
+            <button type="button" class="btn-teal btn-sm levels-rank-save-btn">Save</button>
+            <button type="button" class="btn-sm levels-rank-cancel-btn">Cancel</button>
+        </div>
+    `;
+    (editForm.querySelector('.levels-rank-edit-name') as any).value = rank.name;
+    (editForm.querySelector('.levels-rank-edit-tier') as any).value = rank.tier;
+    (editForm.querySelector('.levels-rank-edit-level') as any).value = rank.required_level;
+
+    let newImageData: string | null = null;
+    editForm.querySelector('.levels-rank-edit-image')!.addEventListener('change', async (e: any) => {
+        const file = e.target.files[0];
+        if (file) newImageData = await readFileAsDataURL(file);
+    });
+
+    row.querySelector('.levels-rank-edit-btn')!.addEventListener('click', () => {
+        editForm.style.display = editForm.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    editForm.querySelector('.levels-rank-cancel-btn')!.addEventListener('click', () => {
+        editForm.style.display = 'none';
+    });
+
+    editForm.querySelector('.levels-rank-save-btn')!.addEventListener('click', async () => {
+        const name = (editForm.querySelector('.levels-rank-edit-name') as any).value.trim();
+        if (!name) return;
+        const tier = parseInt((editForm.querySelector('.levels-rank-edit-tier') as any).value) || 1;
+        const required_level = parseInt((editForm.querySelector('.levels-rank-edit-level') as any).value) || 0;
+        await fetch('/api/ranks', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: rank.id,
+                name,
+                tier,
+                required_level,
+                badge_image: newImageData !== null ? newImageData : rank.badge_image
+            })
+        });
+        loadRanksForCategory(rank.category_id);
+    });
+
+    row.querySelector('.levels-rank-del-btn')!.addEventListener('click', async () => {
+        if (!confirm(`Delete rank "${rank.name}"?`)) return;
+        await fetch(`/api/ranks?id=${rank.id}`, { method: 'DELETE' });
+        loadRanksForCategory(rank.category_id);
+    });
+
+    container.appendChild(row);
+    container.appendChild(editForm);
 }
 
 async function deleteLevelsCategory(id) {

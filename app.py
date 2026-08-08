@@ -370,6 +370,16 @@ def init_db():
                   name TEXT NOT NULL UNIQUE,
                   created_at TEXT NOT NULL)''')
 
+    # Ranks table (badges within a category, ordered by tier)
+    c.execute('''CREATE TABLE IF NOT EXISTS ranks
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  category_id INTEGER NOT NULL,
+                  name TEXT NOT NULL,
+                  tier INTEGER DEFAULT 1,
+                  required_level INTEGER DEFAULT 0,
+                  badge_image TEXT,
+                  created_at TEXT NOT NULL)''')
+
     conn.commit()
     conn.close()
 
@@ -2041,7 +2051,54 @@ def rank_categories():
 
     elif request.method == 'DELETE':
         cat_id = request.args.get('id')
+        c.execute('DELETE FROM ranks WHERE category_id = ?', (cat_id,))
         c.execute('DELETE FROM rank_categories WHERE id = ?', (cat_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+
+@app.route('/api/ranks', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def ranks():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+
+    if request.method == 'GET':
+        cat_id = request.args.get('category_id')
+        c.execute('''SELECT id, category_id, name, tier, required_level, badge_image
+                     FROM ranks WHERE category_id = ? ORDER BY tier, id''', (cat_id,))
+        rows = c.fetchall()
+        conn.close()
+        return jsonify([{
+            'id': r[0], 'category_id': r[1], 'name': r[2],
+            'tier': r[3], 'required_level': r[4], 'badge_image': r[5]
+        } for r in rows])
+
+    elif request.method == 'POST':
+        data = request.json
+        c.execute('''INSERT INTO ranks (category_id, name, tier, required_level, badge_image, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?)''',
+                  (data['category_id'], data['name'], data.get('tier', 1),
+                   data.get('required_level', 0), data.get('badge_image'),
+                   datetime.now().isoformat()))
+        conn.commit()
+        rank_id = c.lastrowid
+        conn.close()
+        return jsonify({'success': True, 'id': rank_id})
+
+    elif request.method == 'PUT':
+        data = request.json
+        c.execute('''UPDATE ranks SET name = ?, tier = ?, required_level = ?, badge_image = ?
+                     WHERE id = ?''',
+                  (data['name'], data.get('tier', 1), data.get('required_level', 0),
+                   data.get('badge_image'), data['id']))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+
+    elif request.method == 'DELETE':
+        rank_id = request.args.get('id')
+        c.execute('DELETE FROM ranks WHERE id = ?', (rank_id,))
         conn.commit()
         conn.close()
         return jsonify({'success': True})
