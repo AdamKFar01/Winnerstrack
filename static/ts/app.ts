@@ -654,7 +654,7 @@ document.getElementById('winForm')!.addEventListener('submit', async (e) => {
                         category: cat,
                         activity: 'Full Day',
                         duration: 0,
-                        description: description || 'Full Day — max points',
+                        description: description || 'Full Day, max points',
                         points: MAX_POINTS_PER_CATEGORY,
                         date
                     })
