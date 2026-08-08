@@ -251,6 +251,21 @@
                 </div>
                 <div class="section-content collapsed" id="xp-log-list"></div>
             </div>
+
+            <!-- Quotes Section -->
+            <div class="collapsible-section">
+                <div class="section-header" onclick="toggleSection('quotes-manage')">
+                    <button class="collapse-btn collapsed" type="button">⟩</button>
+                    <h3>Quotes</h3>
+                </div>
+                <div class="section-content collapsed" id="quotes-manage">
+                    <form id="quoteAddForm" class="quote-add-form">
+                        <input type="text" id="quoteText" class="task-input" placeholder="Add a quote..." required>
+                        <button type="submit" class="btn-primary btn-sm">Add</button>
+                    </form>
+                    <div id="quotesList"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Levels Tab -->

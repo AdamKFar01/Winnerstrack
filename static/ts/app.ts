@@ -1821,6 +1821,52 @@ async function loadDashboardQuote() {
     }
 }
 
+async function loadQuotesList() {
+    const list = document.getElementById('quotesList');
+    if (!list) return;
+    try {
+        const res = await fetch('/api/quotes');
+        const quotesData = await res.json();
+        list.innerHTML = '';
+        if (quotesData.length === 0) {
+            list.innerHTML = '<p class="quotes-empty">No quotes yet — add one above.</p>';
+            return;
+        }
+        quotesData.forEach(q => {
+            const row = document.createElement('div');
+            row.className = 'quote-item';
+            row.innerHTML = `
+                <span class="quote-item-text"></span>
+                <button type="button" class="task-item-delete quote-item-delete">✕</button>
+            `;
+            (row.querySelector('.quote-item-text') as HTMLElement).textContent = q.text;
+            row.querySelector('.quote-item-delete')!.addEventListener('click', async () => {
+                await fetch(`/api/quotes?id=${q.id}`, { method: 'DELETE' });
+                loadQuotesList();
+                loadDashboardQuote();
+            });
+            list.appendChild(row);
+        });
+    } catch (e) {
+        console.error('Error loading quotes:', e);
+    }
+}
+
+document.getElementById('quoteAddForm')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('quoteText')! as any;
+    const text = input.value.trim();
+    if (!text) return;
+    await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+    });
+    input.value = '';
+    loadQuotesList();
+    loadDashboardQuote();
+});
+
 // ── Levels tab: rank categories ────────────────────────────────
 function readFileAsDataURL(file): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -5640,6 +5686,7 @@ async function initializeApp() {
     loadYume();
     loadLevels();
     loadDashboardQuote();
+    loadQuotesList();
     document.getElementById('currentDate')!.value = getLocalDateString();
     loadDailyGoals(getLocalDateString());
     loadFinance();
