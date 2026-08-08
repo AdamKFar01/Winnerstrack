@@ -5078,6 +5078,8 @@ async function loadXP() {
         let text = `Lv.${data.level} · ${data.total_xp.toLocaleString()} XP`;
         if (data.multiplier > 1) text += ` ×${data.multiplier.toFixed(2)}`;
         el.textContent = text;
+        const levelBar = document.getElementById('dashboardLevelBar');
+        if (levelBar) levelBar.textContent = `Level ${data.level}`;
         const pct = Math.min(100, data.xp_for_next > 0 ? (data.xp_in_level / data.xp_for_next) * 100 : 100);
         document.getElementById('xp-progress-fill')!.style.width = pct + '%';
         document.getElementById('xp-progress-label')!.textContent =
