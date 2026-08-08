@@ -5531,17 +5531,12 @@ async function loadXP() {
     try {
         const res = await fetch('/api/xp');
         const data = await res.json();
-        const el = document.getElementById('xp-display')!;
         let text = `Lv.${data.level} · ${data.total_xp.toLocaleString()} XP`;
         if (data.multiplier > 1) text += ` ×${data.multiplier.toFixed(2)}`;
-        el.textContent = text;
         const levelBar = document.getElementById('dashboardLevelBar');
-        if (levelBar) levelBar.textContent = `Level ${data.level}`;
+        if (levelBar) levelBar.textContent = text;
         refreshDashboardRanks(data.level);
         const pct = Math.min(100, data.xp_for_next > 0 ? (data.xp_in_level / data.xp_for_next) * 100 : 100);
-        document.getElementById('xp-progress-fill')!.style.width = pct + '%';
-        document.getElementById('xp-progress-label')!.textContent =
-            `${data.xp_in_level.toLocaleString()} / ${data.xp_for_next.toLocaleString()} XP to next level`;
         const dashboardProgressFill = document.getElementById('dashboardLevelProgressFill');
         const dashboardProgressLabel = document.getElementById('dashboardLevelProgressLabel');
         if (dashboardProgressFill) dashboardProgressFill.style.width = pct + '%';
