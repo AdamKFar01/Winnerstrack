@@ -5749,7 +5749,161 @@ function setupChartResizePersistence() {
 }
 setupChartResizePersistence();
 
+// ── Reusable custom select component ────────────────────────────
+// Progressively enhances a native <select> with a styled trigger + listbox.
+// The original <select> stays in the DOM (visually hidden, not display:none,
+// so `required` constraint validation still applies) — every existing
+// .value read, addEventListener('change', ...), .disabled check and
+// form.reset() keeps working unchanged everywhere this select is used.
+function initCustomSelect(select: HTMLSelectElement) {
+    if (select.dataset.csInit) return;
+    select.dataset.csInit = '1';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cs-wrapper';
+    select.parentNode!.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.classList.add('cs-visually-hidden');
+    select.tabIndex = -1;
+
+    const trigger = document.createElement('div');
+    trigger.className = 'cs-trigger';
+    trigger.tabIndex = 0;
+    trigger.setAttribute('role', 'button');
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.innerHTML = `<span class="cs-trigger-text"></span><span class="cs-chevron">▾</span>`;
+    wrapper.appendChild(trigger);
+    const triggerText = trigger.querySelector('.cs-trigger-text') as HTMLElement;
+
+    const listbox = document.createElement('ul');
+    listbox.className = 'cs-listbox';
+    listbox.setAttribute('role', 'listbox');
+    wrapper.appendChild(listbox);
+
+    let highlightedIndex = -1;
+
+    function renderOptions() {
+        listbox.innerHTML = '';
+        Array.from(select.options).forEach((opt, i) => {
+            const li = document.createElement('li');
+            li.className = 'cs-option' + (opt.disabled ? ' cs-option-disabled' : '');
+            li.textContent = opt.textContent || '';
+            li.setAttribute('role', 'option');
+            if (!opt.disabled) li.addEventListener('click', () => selectOption(i));
+            listbox.appendChild(li);
+        });
+        updateSelectedState();
+    }
+
+    function updateSelectedState() {
+        const idx = select.selectedIndex;
+        Array.from(listbox.children).forEach((li, i) => li.classList.toggle('selected', i === idx));
+        const opt = select.options[idx];
+        const label = opt ? (opt.textContent || '') : '';
+        triggerText.textContent = label;
+        triggerText.classList.toggle('placeholder', !opt || opt.value === '');
+        wrapper.classList.toggle('disabled', select.disabled);
+        trigger.tabIndex = select.disabled ? -1 : 0;
+    }
+
+    function selectOption(index) {
+        if (select.selectedIndex !== index) {
+            select.selectedIndex = index;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        close();
+        trigger.focus();
+    }
+
+    function highlight(index) {
+        const items = Array.from(listbox.children) as HTMLElement[];
+        items.forEach(li => li.classList.remove('highlighted'));
+        if (index >= 0 && index < items.length) {
+            items[index].classList.add('highlighted');
+            items[index].scrollIntoView({ block: 'nearest' });
+        }
+        highlightedIndex = index;
+    }
+
+    function moveHighlight(delta) {
+        const items = listbox.children;
+        if (items.length === 0) return;
+        let idx = highlightedIndex;
+        for (let step = 0; step < items.length; step++) {
+            idx = (idx + delta + items.length) % items.length;
+            if (!items[idx].classList.contains('cs-option-disabled')) break;
+        }
+        highlight(idx);
+    }
+
+    function open() {
+        if (select.disabled) return;
+        renderOptions();
+        wrapper.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+        highlight(select.selectedIndex);
+    }
+
+    function close() {
+        wrapper.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        highlightedIndex = -1;
+    }
+
+    trigger.addEventListener('click', () => {
+        if (wrapper.classList.contains('open')) close();
+        else open();
+    });
+
+    trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (select.disabled) return;
+        if (e.key === 'Escape') {
+            close();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!wrapper.classList.contains('open')) open();
+            else moveHighlight(1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!wrapper.classList.contains('open')) open();
+            else moveHighlight(-1);
+        } else if (e.key === 'Home' && wrapper.classList.contains('open')) {
+            e.preventDefault();
+            highlight(0);
+        } else if (e.key === 'End' && wrapper.classList.contains('open')) {
+            e.preventDefault();
+            highlight(listbox.children.length - 1);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!wrapper.classList.contains('open')) open();
+            else if (highlightedIndex >= 0) selectOption(highlightedIndex);
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target as Node)) close();
+    });
+
+    // Stay in sync with anything that changes the select programmatically
+    // elsewhere in the app (dispatchEvent('change'), form.reset(), etc.) —
+    // no call-site changes needed anywhere else in the codebase.
+    select.addEventListener('change', updateSelectedState);
+    const form = select.closest('form');
+    if (form) form.addEventListener('reset', () => setTimeout(updateSelectedState, 0));
+
+    // Auto-resync if other code repopulates this select's <option> list
+    // (e.g. innerHTML rebuilds) or toggles .disabled.
+    new MutationObserver(mutations => {
+        if (mutations.some(m => m.type === 'childList')) renderOptions();
+        else updateSelectedState();
+    }).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled'] });
+
+    renderOptions();
+}
+
 async function initializeApp() {
+    initCustomSelect(document.getElementById('category') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();

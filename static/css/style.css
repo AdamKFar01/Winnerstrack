@@ -4549,3 +4549,117 @@ html.light-mode .levels-condition-finance-target {
     color: #1f2937;
     border-color: rgba(0,0,0,0.12);
 }
+
+/* ── Reusable custom select component ───────────────────────────
+   Wraps a native <select> (kept in the DOM, visually hidden — see
+   .cs-visually-hidden) with a styled trigger + listbox, so .value,
+   required, disabled, addEventListener('change', ...) and form.reset()
+   all keep working unchanged everywhere the select is already used. */
+.cs-visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    pointer-events: none;
+}
+
+.cs-wrapper { position: relative; }
+
+.cs-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    font-size: 1em;
+    background: #080d14;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    user-select: none;
+}
+.cs-trigger:hover { border-color: rgba(var(--color-primary-rgb), 0.4); }
+.cs-wrapper.open .cs-trigger,
+.cs-trigger:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.cs-trigger-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+.cs-trigger-text.placeholder { color: #6b7280; }
+
+.cs-chevron {
+    flex-shrink: 0;
+    color: #8b92b0;
+    font-size: 0.75em;
+    transition: transform 0.2s ease;
+}
+.cs-wrapper.open .cs-chevron { transform: rotate(180deg); }
+
+.cs-wrapper.disabled .cs-trigger { opacity: 0.5; cursor: not-allowed; }
+
+.cs-listbox {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 30;
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    background: #151b2e;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.cs-wrapper.open .cs-listbox {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.cs-option {
+    padding: 8px 10px;
+    font-size: 0.9em;
+    color: #d4d8ec;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.cs-option:hover,
+.cs-option.highlighted { background: rgba(var(--color-primary-rgb), 0.12); }
+.cs-option.selected { color: var(--color-primary); font-weight: 600; }
+.cs-option.cs-option-disabled { opacity: 0.4; cursor: not-allowed; }
+
+html.light-mode .cs-trigger { background: #ffffff; color: #1f2937; border-color: rgba(0, 0, 0, 0.12); }
+html.light-mode .cs-trigger-text.placeholder { color: #9ca3af; }
+html.light-mode .cs-listbox {
+    background: #ffffff;
+    border-color: rgba(var(--color-primary-dark-rgb), 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+html.light-mode .cs-option { color: #374151; }
+html.light-mode .cs-option:hover,
+html.light-mode .cs-option.highlighted { background: rgba(var(--color-primary-rgb), 0.12); }
+html.light-mode .cs-option.selected { color: var(--color-primary-dark); }
