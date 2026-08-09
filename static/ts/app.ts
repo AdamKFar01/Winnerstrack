@@ -5905,6 +5905,7 @@ function initCustomSelect(select: HTMLSelectElement) {
 async function initializeApp() {
     initCustomSelect(document.getElementById('category') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activity') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('manageCategory') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
