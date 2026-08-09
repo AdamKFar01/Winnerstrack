@@ -1695,6 +1695,7 @@ async function loadYume() {
             </select>
             <button type="submit" class="btn-primary btn-sm">Add</button>
         `;
+        initCustomSelect(form.querySelector('select') as HTMLSelectElement);
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const input  = form.querySelector('input')!;
@@ -2165,6 +2166,10 @@ function buildRankConditionsPanel(rank) {
     const goalFields         = panel.querySelector('.levels-condition-goal-fields') as HTMLElement;
     const financeMetricSelect = panel.querySelector('.levels-condition-finance-metric') as any;
     const goalSelect          = panel.querySelector('.levels-condition-goal-select') as any;
+
+    initCustomSelect(typeSelect);
+    initCustomSelect(financeMetricSelect);
+    initCustomSelect(goalSelect);
 
     typeSelect.addEventListener('change', () => {
         manualFields.style.display  = typeSelect.value === 'manual'  ? '' : 'none';
