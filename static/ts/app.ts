@@ -5929,6 +5929,7 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('planEventType') as HTMLSelectElement);
     initCustomSelect(document.getElementById('planEventCategory') as HTMLSelectElement);
     initCustomSelect(document.getElementById('planEventImportance') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('conditionsGoalSelect') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
