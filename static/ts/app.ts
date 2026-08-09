@@ -5951,6 +5951,8 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('financeCategory') as HTMLSelectElement);
     initCustomSelect(document.getElementById('hmSex') as HTMLSelectElement);
     initCustomSelect(document.getElementById('hmIntensity') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('activityType') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('activityIntensity') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
