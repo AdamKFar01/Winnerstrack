@@ -5926,6 +5926,9 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('manageCategory') as HTMLSelectElement);
     initCustomSelect(document.getElementById('eventCategory') as HTMLSelectElement);
     initCustomSelect(document.getElementById('eventImportance') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('planEventType') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('planEventCategory') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('planEventImportance') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
