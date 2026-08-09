@@ -5892,6 +5892,24 @@ function initCustomSelect(select: HTMLSelectElement) {
     const form = select.closest('form');
     if (form) form.addEventListener('reset', () => setTimeout(updateSelectedState, 0));
 
+    // Some existing code sets `.value`/`.selectedIndex` directly with no
+    // change event and no attribute mutation (e.g. the AI calendar-parse
+    // autofill) — override both accessors on this instance so ANY silent
+    // programmatic set still resyncs the trigger, without touching that code.
+    const proto = Object.getPrototypeOf(select);
+    (['value', 'selectedIndex'] as const).forEach(prop => {
+        const descriptor = Object.getOwnPropertyDescriptor(proto, prop)!;
+        Object.defineProperty(select, prop, {
+            configurable: true,
+            enumerable: true,
+            get() { return descriptor.get!.call(select); },
+            set(v) {
+                descriptor.set!.call(select, v);
+                updateSelectedState();
+            }
+        });
+    });
+
     // Auto-resync if other code repopulates this select's <option> list
     // (e.g. innerHTML rebuilds) or toggles .disabled.
     new MutationObserver(mutations => {
@@ -5906,6 +5924,8 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('category') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activity') as HTMLSelectElement);
     initCustomSelect(document.getElementById('manageCategory') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('eventCategory') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('eventImportance') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
