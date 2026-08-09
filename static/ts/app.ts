@@ -5759,8 +5759,24 @@ function initCustomSelect(select: HTMLSelectElement) {
     if (select.dataset.csInit) return;
     select.dataset.csInit = '1';
 
+    // The select may be sized by its flex-row parent (e.g. class="task-input"
+    // gives it flex:1 to divide a row evenly with sibling inputs). Carry the
+    // *computed* flex sizing over to the wrapper — not the select's classes —
+    // so the wrapper fills the same layout slot without inheriting the
+    // select's own box styling too (which would double up with .cs-trigger's).
+    const computedFlex = getComputedStyle(select);
+    const flexGrow = computedFlex.flexGrow, flexShrink = computedFlex.flexShrink, flexBasis = computedFlex.flexBasis;
+    const inlineStyle = select.getAttribute('style');
+
     const wrapper = document.createElement('div');
     wrapper.className = 'cs-wrapper';
+    wrapper.style.flexGrow = flexGrow;
+    wrapper.style.flexShrink = flexShrink;
+    wrapper.style.flexBasis = flexBasis;
+    if (inlineStyle) wrapper.setAttribute('style', wrapper.getAttribute('style') + ';' + inlineStyle);
+
+    select.removeAttribute('style');
+    select.className = '';
     select.parentNode!.insertBefore(wrapper, select);
     wrapper.appendChild(select);
     select.classList.add('cs-visually-hidden');
@@ -5930,6 +5946,7 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('planEventCategory') as HTMLSelectElement);
     initCustomSelect(document.getElementById('planEventImportance') as HTMLSelectElement);
     initCustomSelect(document.getElementById('conditionsGoalSelect') as HTMLSelectElement);
+    initCustomSelect(document.getElementById('recurringType') as HTMLSelectElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
