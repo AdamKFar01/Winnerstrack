@@ -3089,6 +3089,7 @@ html.light-mode .protein-stat .weekly-summary-value { color: var(--color-accent)
     cursor: pointer;
 }
 .summary-menu-item:hover { background: rgba(var(--color-primary-rgb), 0.12); }
+.summary-menu-item.active { color: var(--color-primary); font-weight: 600; }
 .summary-menu-editor {
     display: flex;
     align-items: center;
@@ -4217,6 +4218,23 @@ html.light-mode .condition-item { border-color: rgba(0,0,0,0.07); }
     transition: opacity 0.2s;
 }
 .yume-cat-del:hover { opacity: 1; }
+.yume-sort-wrap { position: relative; flex-shrink: 0; }
+.yume-sort-btn {
+    background: transparent;
+    border: none;
+    color: #8b92b0;
+    font-size: 1.05em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s, background 0.2s;
+}
+.yume-sort-btn:hover { opacity: 1; color: #c7cce0; background: rgba(255,255,255,0.06); }
+.yume-sort-btn.active { opacity: 1; color: var(--color-primary); }
+.yume-sort-menu { top: 30px; }
+html.light-mode .yume-sort-btn:hover { color: #374151; background: rgba(0,0,0,0.06); }
 .yume-progress-wrap {
     display: flex;
     align-items: center;

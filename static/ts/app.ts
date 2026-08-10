@@ -1654,6 +1654,36 @@ document.getElementById('conditionAddForm')!.addEventListener('submit', async (e
 
 // ── Yume ──────────────────────────────────────────────────────
 
+const yumeSortMode: any = {};
+
+function toggleYumeSortMenu(e, catId) {
+    e.stopPropagation();
+    document.querySelectorAll('.yume-sort-menu').forEach(m => {
+        if (m.id !== `yume-sort-menu-${catId}`) (m as HTMLElement).style.display = 'none';
+    });
+    const menu = document.getElementById(`yume-sort-menu-${catId}`)!;
+    menu.style.display = menu.style.display === 'none' ? '' : 'none';
+}
+
+function setYumeSortMode(e, catId, mode) {
+    e.stopPropagation();
+    yumeSortMode[catId] = mode;
+    const wrap = document.getElementById(`yume-sort-wrap-${catId}`)!;
+    wrap.querySelector('.yume-sort-menu')!.querySelectorAll('.summary-menu-item').forEach(item => item.classList.remove('active'));
+    wrap.querySelector(`[data-sort="${mode}"]`)?.classList.add('active');
+    wrap.querySelector('.yume-sort-btn')!.classList.toggle('active', mode !== 'normal');
+    (document.getElementById(`yume-sort-menu-${catId}`) as HTMLElement).style.display = 'none';
+    loadYumeItems(catId);
+}
+
+document.addEventListener('click', (e: any) => {
+    document.querySelectorAll('.yume-sort-menu').forEach(menu => {
+        if ((menu as HTMLElement).style.display !== 'none' && !e.target.closest('.yume-sort-wrap')) {
+            (menu as HTMLElement).style.display = 'none';
+        }
+    });
+});
+
 async function loadYume() {
     const res = await fetch('/api/yume/categories');
     const cats = await res.json();
@@ -1672,6 +1702,14 @@ async function loadYume() {
         header.className = 'yume-category-header';
         header.innerHTML = `
             <h3 class="yume-category-name">${cat.name}</h3>
+            <div class="yume-sort-wrap" id="yume-sort-wrap-${cat.id}">
+                <button class="yume-sort-btn" onclick="toggleYumeSortMenu(event, ${cat.id})" title="Sort dreams">⇅</button>
+                <div class="summary-menu yume-sort-menu" id="yume-sort-menu-${cat.id}" style="display:none">
+                    <div class="summary-menu-item active" data-sort="normal" onclick="setYumeSortMode(event, ${cat.id}, 'normal')">Normal</div>
+                    <div class="summary-menu-item" data-sort="rank" onclick="setYumeSortMode(event, ${cat.id}, 'rank')">Rank (S → C)</div>
+                    <div class="summary-menu-item" data-sort="alpha" onclick="setYumeSortMode(event, ${cat.id}, 'alpha')">A → Z</div>
+                </div>
+            </div>
             <button class="task-item-delete yume-cat-del" onclick="deleteYumeCategory(${cat.id})">✕</button>
         `;
         section.appendChild(header);
@@ -1716,7 +1754,7 @@ async function loadYume() {
         const progressWrap = document.createElement('div');
         progressWrap.className = 'yume-progress-wrap';
         progressWrap.id = `yume-progress-${cat.id}`;
-        header.insertBefore(progressWrap, header.querySelector('.yume-cat-del'));
+        header.insertBefore(progressWrap, header.querySelector('.yume-sort-wrap'));
 
         container.appendChild(section);
         await loadYumeItems(cat.id);
@@ -1725,12 +1763,21 @@ async function loadYume() {
 
 const yumeExpandedCats = new Set();
 
+const yumeRankOrder = { S: 0, A: 1, B: 2, C: 3 };
+
 async function loadYumeItems(catId) {
     const res = await fetch(`/api/yume/items?category_id=${catId}`);
-    const items = await res.json();
+    let items = await res.json();
     const div = document.getElementById(`yume-items-${catId}`)!;
     if (!div) return;
     div.innerHTML = '';
+
+    const sortMode = yumeSortMode[catId] || 'normal';
+    if (sortMode === 'rank') {
+        items = [...items].sort((a, b) => (yumeRankOrder[a.rank || 'B'] ?? 4) - (yumeRankOrder[b.rank || 'B'] ?? 4));
+    } else if (sortMode === 'alpha') {
+        items = [...items].sort((a, b) => a.text.localeCompare(b.text, undefined, { sensitivity: 'base' }));
+    }
     // Update progress bar
     const progressWrap = document.getElementById(`yume-progress-${catId}`)!;
     if (progressWrap) {
