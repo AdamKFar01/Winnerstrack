@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="static/img/icon-g.png" width="140" alt="WinnersTrack logo">
+</p>
+
 # WinnersTrack
 
 A personal productivity tracker I built for daily use. It tracks wins across five life pillars, food and body metrics, goals, finances, calendar events, reminders, and a bucket-list board. Everything runs locally, no accounts, no syncing, no server to maintain. The data stays on your machine in a single SQLite file.
