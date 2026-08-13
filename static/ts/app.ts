@@ -5988,6 +5988,183 @@ function initCustomSelect(select: HTMLSelectElement) {
     renderOptions();
 }
 
+const cdpMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function initCustomDatePicker(input: HTMLInputElement) {
+    if (input.dataset.cdpInit) return;
+    input.dataset.cdpInit = '1';
+
+    const computedFlex = getComputedStyle(input);
+    const flexGrow = computedFlex.flexGrow, flexShrink = computedFlex.flexShrink, flexBasis = computedFlex.flexBasis;
+    const inlineStyle = input.getAttribute('style');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cdp-wrapper';
+    wrapper.style.flexGrow = flexGrow;
+    wrapper.style.flexShrink = flexShrink;
+    wrapper.style.flexBasis = flexBasis;
+    if (inlineStyle) wrapper.setAttribute('style', wrapper.getAttribute('style') + ';' + inlineStyle);
+
+    input.removeAttribute('style');
+    input.className = '';
+    input.parentNode!.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    input.classList.add('cs-visually-hidden');
+    input.tabIndex = -1;
+
+    const trigger = document.createElement('div');
+    trigger.className = 'cdp-trigger';
+    trigger.tabIndex = 0;
+    trigger.setAttribute('role', 'button');
+    trigger.setAttribute('aria-haspopup', 'dialog');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.innerHTML = `<span class="cdp-trigger-text placeholder">mm/dd/yyyy</span><span class="cdp-cal-icon">📅</span>`;
+    wrapper.appendChild(trigger);
+    const triggerText = trigger.querySelector('.cdp-trigger-text') as HTMLElement;
+
+    const panel = document.createElement('div');
+    panel.className = 'cdp-panel';
+    panel.innerHTML = `
+        <div class="cdp-panel-header">
+            <button type="button" class="cdp-nav-btn cdp-prev">‹</button>
+            <span class="cdp-panel-month"></span>
+            <button type="button" class="cdp-nav-btn cdp-next">›</button>
+        </div>
+        <div class="cdp-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+        <div class="cdp-days"></div>
+    `;
+    wrapper.appendChild(panel);
+    const monthLabel = panel.querySelector('.cdp-panel-month') as HTMLElement;
+    const daysGrid = panel.querySelector('.cdp-days') as HTMLElement;
+
+    let viewYear = 0, viewMonth = 0;
+
+    function parseValue() {
+        if (!input.value) return null;
+        const [y, m, d] = input.value.split('-').map(Number);
+        return { y, m: m - 1, d };
+    }
+
+    function updateTrigger() {
+        const v = parseValue();
+        if (v) {
+            triggerText.textContent = `${String(v.m + 1).padStart(2, '0')}/${String(v.d).padStart(2, '0')}/${v.y}`;
+            triggerText.classList.remove('placeholder');
+        } else {
+            triggerText.textContent = 'mm/dd/yyyy';
+            triggerText.classList.add('placeholder');
+        }
+        wrapper.classList.toggle('disabled', input.disabled);
+        trigger.tabIndex = input.disabled ? -1 : 0;
+    }
+
+    function renderCalendar() {
+        monthLabel.textContent = `${cdpMonthNames[viewMonth]} ${viewYear}`;
+        daysGrid.innerHTML = '';
+        const startOffset = new Date(viewYear, viewMonth, 1).getDay();
+        const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+        const selected = parseValue();
+        const now = new Date();
+
+        for (let i = 0; i < totalCells; i++) {
+            const cellDate = new Date(viewYear, viewMonth, 1 - startOffset + i);
+            const y = cellDate.getFullYear(), m = cellDate.getMonth(), d = cellDate.getDate();
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cdp-day';
+            if (m !== viewMonth) btn.classList.add('other-month');
+            if (y === now.getFullYear() && m === now.getMonth() && d === now.getDate()) btn.classList.add('today');
+            if (selected && y === selected.y && m === selected.m && d === selected.d) btn.classList.add('selected');
+            btn.textContent = String(d);
+            btn.addEventListener('click', () => selectDate(y, m, d));
+            daysGrid.appendChild(btn);
+        }
+    }
+
+    function selectDate(y, m, d) {
+        const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (input.value !== iso) {
+            input.value = iso;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        close();
+        trigger.focus();
+    }
+
+    function open() {
+        if (input.disabled) return;
+        const v = parseValue();
+        const now = new Date();
+        viewYear = v ? v.y : now.getFullYear();
+        viewMonth = v ? v.m : now.getMonth();
+        renderCalendar();
+        wrapper.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function close() {
+        wrapper.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', () => {
+        if (wrapper.classList.contains('open')) close();
+        else open();
+    });
+
+    trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (input.disabled) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (wrapper.classList.contains('open')) close();
+            else open();
+        }
+    });
+
+    panel.querySelector('.cdp-prev')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewMonth--;
+        if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+        renderCalendar();
+    });
+    panel.querySelector('.cdp-next')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewMonth++;
+        if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+        renderCalendar();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target as Node)) close();
+    });
+
+    input.addEventListener('change', updateTrigger);
+    const form = input.closest('form');
+    if (form) form.addEventListener('reset', () => setTimeout(updateTrigger, 0));
+
+    // Some existing code may set `.value` directly with no change event —
+    // override the accessor on this instance so any silent programmatic
+    // set still resyncs the trigger, same approach as initCustomSelect.
+    const proto = Object.getPrototypeOf(input);
+    const descriptor = Object.getOwnPropertyDescriptor(proto, 'value')!;
+    Object.defineProperty(input, 'value', {
+        configurable: true,
+        enumerable: true,
+        get() { return descriptor.get!.call(input); },
+        set(v) {
+            descriptor.set!.call(input, v);
+            updateTrigger();
+        }
+    });
+
+    new MutationObserver(() => updateTrigger())
+        .observe(input, { attributes: true, attributeFilter: ['disabled'] });
+
+    updateTrigger();
+}
+
 async function initializeApp() {
     initCustomSelect(document.getElementById('category') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activity') as HTMLSelectElement);
@@ -6005,6 +6182,8 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('hmIntensity') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activityType') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activityIntensity') as HTMLSelectElement);
+    initCustomDatePicker(document.getElementById('planEventStartDate') as HTMLInputElement);
+    initCustomDatePicker(document.getElementById('planEventEndDate') as HTMLInputElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();

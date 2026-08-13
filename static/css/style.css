@@ -4681,3 +4681,130 @@ html.light-mode .cs-option { color: #374151; }
 html.light-mode .cs-option:hover,
 html.light-mode .cs-option.highlighted { background: rgba(var(--color-primary-rgb), 0.12); }
 html.light-mode .cs-option.selected { color: var(--color-primary-dark); }
+
+/* ── Reusable custom date picker component ───────────────────────
+   Wraps a native <input type="date"> (kept in the DOM, visually
+   hidden — see .cs-visually-hidden) with a styled trigger + calendar
+   panel, so .value, required, disabled and form.reset() all keep
+   working unchanged everywhere the input is already used. */
+.cdp-wrapper { position: relative; }
+
+.cdp-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    font-size: 1em;
+    background: #080d14;
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    cursor: pointer;
+    user-select: none;
+}
+.cdp-trigger:hover { border-color: rgba(var(--color-primary-rgb), 0.4); }
+.cdp-wrapper.open .cdp-trigger,
+.cdp-trigger:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.3);
+}
+.cdp-wrapper.disabled .cdp-trigger { opacity: 0.5; cursor: not-allowed; }
+
+.cdp-trigger-text { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdp-trigger-text.placeholder { color: #6b7280; }
+.cdp-cal-icon { flex-shrink: 0; color: #8b92b0; font-size: 0.9em; }
+
+.cdp-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 30;
+    width: 260px;
+    background: #151b2e;
+    border: 1px solid rgba(var(--color-primary-rgb), 0.25);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    padding: 10px;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.cdp-wrapper.open .cdp-panel {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.cdp-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.cdp-panel-month {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--color-primary);
+}
+.cdp-nav-btn {
+    background: transparent;
+    border: none;
+    color: #8b92b0;
+    font-size: 1.1em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.cdp-nav-btn:hover { color: var(--color-primary); background: rgba(var(--color-primary-rgb), 0.12); }
+
+.cdp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.72em;
+    color: #8b92b0;
+    margin-bottom: 4px;
+}
+
+.cdp-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.cdp-day {
+    background: transparent;
+    border: none;
+    color: #d4d8ec;
+    font-size: 0.85em;
+    padding: 6px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+}
+.cdp-day:hover { background: rgba(var(--color-primary-rgb), 0.12); }
+.cdp-day.other-month { color: #4b5266; }
+.cdp-day.today { color: var(--color-accent); font-weight: 600; }
+.cdp-day.selected { background: var(--color-primary); color: #0a0e1a; font-weight: 700; }
+.cdp-day.selected:hover { background: var(--color-primary); }
+
+html.light-mode .cdp-trigger { background: #ffffff; color: #1f2937; border-color: rgba(0, 0, 0, 0.12); }
+html.light-mode .cdp-trigger-text.placeholder { color: #9ca3af; }
+html.light-mode .cdp-panel {
+    background: #ffffff;
+    border-color: rgba(var(--color-primary-dark-rgb), 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+html.light-mode .cdp-panel-month { color: var(--color-primary-dark); }
+html.light-mode .cdp-nav-btn:hover { color: var(--color-primary-dark); background: rgba(var(--color-primary-rgb), 0.12); }
+html.light-mode .cdp-day { color: #374151; }
+html.light-mode .cdp-day.other-month { color: #c3c8d6; }
+html.light-mode .cdp-day:hover { background: rgba(var(--color-primary-rgb), 0.12); }
+html.light-mode .cdp-day.selected { background: var(--color-primary-dark); color: #ffffff; }
+html.light-mode .cdp-day.today { color: var(--color-accent-dark); }
