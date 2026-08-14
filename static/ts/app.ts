@@ -6165,6 +6165,168 @@ function initCustomDatePicker(input: HTMLInputElement) {
     updateTrigger();
 }
 
+const cdpMonthAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function initCustomMonthPicker(input: HTMLInputElement) {
+    if (input.dataset.cdpInit) return;
+    input.dataset.cdpInit = '1';
+
+    const computedFlex = getComputedStyle(input);
+    const flexGrow = computedFlex.flexGrow, flexShrink = computedFlex.flexShrink, flexBasis = computedFlex.flexBasis;
+    const inlineStyle = input.getAttribute('style');
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'cdp-wrapper';
+    wrapper.style.flexGrow = flexGrow;
+    wrapper.style.flexShrink = flexShrink;
+    wrapper.style.flexBasis = flexBasis;
+    if (inlineStyle) wrapper.setAttribute('style', wrapper.getAttribute('style') + ';' + inlineStyle);
+
+    input.removeAttribute('style');
+    input.className = '';
+    input.parentNode!.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    input.classList.add('cs-visually-hidden');
+    input.tabIndex = -1;
+
+    const trigger = document.createElement('div');
+    trigger.className = 'cdp-trigger';
+    trigger.tabIndex = 0;
+    trigger.setAttribute('role', 'button');
+    trigger.setAttribute('aria-haspopup', 'dialog');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.innerHTML = `<span class="cdp-trigger-text placeholder">Month, year</span><span class="cdp-cal-icon">📅</span>`;
+    wrapper.appendChild(trigger);
+    const triggerText = trigger.querySelector('.cdp-trigger-text') as HTMLElement;
+
+    const panel = document.createElement('div');
+    panel.className = 'cdp-panel';
+    panel.innerHTML = `
+        <div class="cdp-panel-header">
+            <button type="button" class="cdp-nav-btn cdp-prev">‹</button>
+            <span class="cdp-panel-month"></span>
+            <button type="button" class="cdp-nav-btn cdp-next">›</button>
+        </div>
+        <div class="cdp-months"></div>
+    `;
+    wrapper.appendChild(panel);
+    const yearLabel = panel.querySelector('.cdp-panel-month') as HTMLElement;
+    const monthsGrid = panel.querySelector('.cdp-months') as HTMLElement;
+
+    let viewYear = 0;
+
+    function parseValue() {
+        if (!input.value) return null;
+        const [y, m] = input.value.split('-').map(Number);
+        return { y, m: m - 1 };
+    }
+
+    function updateTrigger() {
+        const v = parseValue();
+        if (v) {
+            triggerText.textContent = `${cdpMonthAbbr[v.m]} ${v.y}`;
+            triggerText.classList.remove('placeholder');
+        } else {
+            triggerText.textContent = 'Month, year';
+            triggerText.classList.add('placeholder');
+        }
+        wrapper.classList.toggle('disabled', input.disabled);
+        trigger.tabIndex = input.disabled ? -1 : 0;
+    }
+
+    function renderPanel() {
+        yearLabel.textContent = String(viewYear);
+        monthsGrid.innerHTML = '';
+        const selected = parseValue();
+        const now = new Date();
+        for (let m = 0; m < 12; m++) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cdp-month-cell';
+            if (viewYear === now.getFullYear() && m === now.getMonth()) btn.classList.add('today');
+            if (selected && viewYear === selected.y && m === selected.m) btn.classList.add('selected');
+            btn.textContent = cdpMonthAbbr[m];
+            btn.addEventListener('click', () => selectMonth(viewYear, m));
+            monthsGrid.appendChild(btn);
+        }
+    }
+
+    function selectMonth(y, m) {
+        const iso = `${y}-${String(m + 1).padStart(2, '0')}`;
+        if (input.value !== iso) {
+            input.value = iso;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        close();
+        trigger.focus();
+    }
+
+    function open() {
+        if (input.disabled) return;
+        const v = parseValue();
+        viewYear = v ? v.y : new Date().getFullYear();
+        renderPanel();
+        wrapper.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    function close() {
+        wrapper.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', () => {
+        if (wrapper.classList.contains('open')) close();
+        else open();
+    });
+
+    trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (input.disabled) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (wrapper.classList.contains('open')) close();
+            else open();
+        }
+    });
+
+    panel.querySelector('.cdp-prev')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewYear--;
+        renderPanel();
+    });
+    panel.querySelector('.cdp-next')!.addEventListener('click', (e) => {
+        e.stopPropagation();
+        viewYear++;
+        renderPanel();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target as Node)) close();
+    });
+
+    input.addEventListener('change', updateTrigger);
+    const form = input.closest('form');
+    if (form) form.addEventListener('reset', () => setTimeout(updateTrigger, 0));
+
+    const proto = Object.getPrototypeOf(input);
+    const descriptor = Object.getOwnPropertyDescriptor(proto, 'value')!;
+    Object.defineProperty(input, 'value', {
+        configurable: true,
+        enumerable: true,
+        get() { return descriptor.get!.call(input); },
+        set(v) {
+            descriptor.set!.call(input, v);
+            updateTrigger();
+        }
+    });
+
+    new MutationObserver(() => updateTrigger())
+        .observe(input, { attributes: true, attributeFilter: ['disabled'] });
+
+    updateTrigger();
+}
+
 async function initializeApp() {
     initCustomSelect(document.getElementById('category') as HTMLSelectElement);
     initCustomSelect(document.getElementById('activity') as HTMLSelectElement);
@@ -6184,6 +6346,8 @@ async function initializeApp() {
     initCustomSelect(document.getElementById('activityIntensity') as HTMLSelectElement);
     initCustomDatePicker(document.getElementById('planEventStartDate') as HTMLInputElement);
     initCustomDatePicker(document.getElementById('planEventEndDate') as HTMLInputElement);
+    initCustomMonthPicker(document.getElementById('periodStart') as HTMLInputElement);
+    initCustomMonthPicker(document.getElementById('periodEnd') as HTMLInputElement);
     await loadCategories();
     await loadActivitiesFromDatabase();
     await loadCalendarEvents();
