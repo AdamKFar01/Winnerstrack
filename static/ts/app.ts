@@ -6018,6 +6018,7 @@ function initCustomDatePicker(input: HTMLInputElement) {
     trigger.setAttribute('role', 'button');
     trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.setAttribute('aria-expanded', 'false');
+    if (input.title) trigger.title = input.title;
     trigger.innerHTML = `<span class="cdp-trigger-text placeholder">mm/dd/yyyy</span><span class="cdp-cal-icon">📅</span>`;
     wrapper.appendChild(trigger);
     const triggerText = trigger.querySelector('.cdp-trigger-text') as HTMLElement;
@@ -6195,6 +6196,7 @@ function initCustomMonthPicker(input: HTMLInputElement) {
     trigger.setAttribute('role', 'button');
     trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.setAttribute('aria-expanded', 'false');
+    if (input.title) trigger.title = input.title;
     trigger.innerHTML = `<span class="cdp-trigger-text placeholder">Month, year</span><span class="cdp-cal-icon">📅</span>`;
     wrapper.appendChild(trigger);
     const triggerText = trigger.querySelector('.cdp-trigger-text') as HTMLElement;
