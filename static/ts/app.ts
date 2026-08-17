@@ -532,6 +532,104 @@ function setupTabReordering() {
 }
 setupTabReordering();
 
+// ── Archive tabs (⋮ menu in the tab bar) ────────────────────────
+const TAB_ARCHIVE_EXCLUDE = ['dashboard'];
+
+function getArchivedTabs(): string[] {
+    return JSON.parse(localStorage.getItem('archivedTabs') || '[]');
+}
+
+function setArchivedTabs(list: string[]) {
+    localStorage.setItem('archivedTabs', JSON.stringify(list));
+}
+
+function tabLabel(tabId): string {
+    const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`) as HTMLElement;
+    return btn ? (btn.textContent || tabId).trim() : tabId;
+}
+
+function applyArchivedTabs() {
+    const archived = getArchivedTabs();
+    document.querySelectorAll('.tab-btn').forEach((btn: any) => {
+        btn.classList.toggle('tab-archived', archived.includes(btn.dataset.tab));
+    });
+    const activeBtn = document.querySelector('.tab-btn.active') as any;
+    if (activeBtn && archived.includes(activeBtn.dataset.tab)) {
+        activateTab('dashboard');
+        localStorage.setItem('activeTab', 'dashboard');
+    }
+}
+
+function renderTabArchiveMenu() {
+    const archived = getArchivedTabs();
+    const activeBtn = document.querySelector('.tab-btn.active') as any;
+    const activeTabId = activeBtn ? activeBtn.dataset.tab : '';
+    const archiveItem = document.getElementById('archiveCurrentTabItem')!;
+    if (!activeTabId || TAB_ARCHIVE_EXCLUDE.includes(activeTabId)) {
+        archiveItem.style.display = 'none';
+    } else {
+        archiveItem.style.display = '';
+        archiveItem.textContent = `Archive "${tabLabel(activeTabId)}"`;
+    }
+
+    const listWrap = document.getElementById('archivedTabsListWrap')!;
+    listWrap.innerHTML = '';
+    if (archived.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'tab-archive-divider';
+        listWrap.appendChild(divider);
+        archived.forEach(tabId => {
+            const row = document.createElement('div');
+            row.className = 'archived-tab-row';
+            const label = document.createElement('span');
+            label.textContent = tabLabel(tabId);
+            row.appendChild(label);
+            const restoreBtn = document.createElement('button');
+            restoreBtn.className = 'archived-tab-restore';
+            restoreBtn.textContent = 'Restore';
+            restoreBtn.addEventListener('click', (e) => { e.stopPropagation(); restoreTab(tabId); });
+            row.appendChild(restoreBtn);
+            listWrap.appendChild(row);
+        });
+    }
+}
+
+function archiveCurrentTab() {
+    const activeBtn = document.querySelector('.tab-btn.active') as any;
+    if (!activeBtn) return;
+    const tabId = activeBtn.dataset.tab;
+    if (TAB_ARCHIVE_EXCLUDE.includes(tabId)) return;
+    const archived = getArchivedTabs();
+    if (!archived.includes(tabId)) archived.push(tabId);
+    setArchivedTabs(archived);
+    applyArchivedTabs();
+    renderTabArchiveMenu();
+    document.getElementById('tabArchiveMenu')!.style.display = 'none';
+}
+
+function restoreTab(tabId) {
+    setArchivedTabs(getArchivedTabs().filter(t => t !== tabId));
+    applyArchivedTabs();
+    renderTabArchiveMenu();
+}
+
+function toggleTabMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('tabArchiveMenu')!;
+    const show = menu.style.display === 'none';
+    if (show) renderTabArchiveMenu();
+    menu.style.display = show ? '' : 'none';
+}
+
+document.addEventListener('click', (e: any) => {
+    const menu = document.getElementById('tabArchiveMenu');
+    if (menu && menu.style.display !== 'none' && !e.target.closest('.tab-menu-wrap')) {
+        menu.style.display = 'none';
+    }
+});
+
+applyArchivedTabs();
+
 // Set current date
 const dateInput = document.getElementById('currentDate')!;
 dateInput.value = getLocalDateString();
