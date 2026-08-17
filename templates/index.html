@@ -48,6 +48,14 @@
             <button class="tab-btn" data-tab="finance">Finance</button>
             <button class="tab-btn" data-tab="health">Health</button>
             <button class="tab-btn" data-tab="yume">夢</button>
+
+            <div class="tab-menu-wrap" id="tabMenuWrap">
+                <button class="tab-menu-btn" id="tabMenuBtn" onclick="toggleTabMenu(event)" title="Archive tabs">⋮</button>
+                <div class="summary-menu tab-archive-menu" id="tabArchiveMenu" style="display:none">
+                    <div class="summary-menu-item" id="archiveCurrentTabItem" onclick="archiveCurrentTab()">Archive this tab</div>
+                    <div id="archivedTabsListWrap"></div>
+                </div>
+            </div>
         </nav>
 
         <!-- Dashboard Tab -->
