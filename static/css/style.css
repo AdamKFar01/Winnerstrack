@@ -248,7 +248,7 @@ html.light-mode .date-arrow-btn {
 
 .tab-btn.tab-archived { display: none; }
 
-.tab-menu-wrap { position: relative; margin-left: auto; align-self: center; }
+.tab-menu-wrap { position: relative; flex-shrink: 0; }
 .tab-menu-btn {
     background: transparent;
     border: none;
