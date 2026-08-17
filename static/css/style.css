@@ -237,6 +237,52 @@ html.light-mode .date-arrow-btn {
     text-shadow: 0 0 10px rgba(var(--color-primary-rgb), 0.5);
 }
 
+.tab-btn.tab-archived { display: none; }
+
+.tab-menu-wrap { position: relative; margin-left: auto; align-self: center; }
+.tab-menu-btn {
+    background: transparent;
+    border: none;
+    color: #8b92b0;
+    font-size: 1.2em;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+.tab-menu-btn:hover { color: #c7cce0; background: rgba(255, 255, 255, 0.06); }
+html.light-mode .tab-menu-btn:hover { color: #374151; background: rgba(0, 0, 0, 0.06); }
+
+.tab-archive-menu { top: 34px; min-width: 210px; }
+
+.tab-archive-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 6px 4px;
+}
+html.light-mode .tab-archive-divider { background: rgba(0, 0, 0, 0.08); }
+
+.archived-tab-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    font-size: 0.85em;
+    color: #d4d8ec;
+    border-radius: 6px;
+}
+html.light-mode .archived-tab-row { color: #374151; }
+
+.archived-tab-restore {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-size: 0.85em;
+    cursor: pointer;
+    padding: 0;
+}
+.archived-tab-restore:hover { text-decoration: underline; }
+
 .tab-content {
     display: none;
 }
