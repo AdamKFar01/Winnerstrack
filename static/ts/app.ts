@@ -477,7 +477,7 @@ if (savedTab) activateTab(savedTab);
 document.addEventListener('keydown', (e: any) => {
     if (!e.ctrlKey || e.key !== 'Tab') return;
     e.preventDefault();
-    const btns = [...document.querySelectorAll('.tabs .tab-btn')] as any[];
+    const btns = [...document.querySelectorAll('.tabs .tab-btn')].filter((b: any) => !b.classList.contains('tab-archived')) as any[];
     if (!btns.length) return;
     const current = btns.findIndex(b => b.classList.contains('active'));
     const next = (current + (e.shiftKey ? -1 : 1) + btns.length) % btns.length;
