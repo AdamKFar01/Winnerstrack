@@ -450,6 +450,17 @@ function updateActivityDropdown(category) {
 }
 
 // Tab switching
+function positionTabMenu(content) {
+    const wrap = document.getElementById('tabMenuWrap');
+    if (!wrap) return;
+    const heading = content.querySelector(':scope > h2');
+    if (heading) {
+        heading.insertBefore(wrap, heading.firstChild);
+    } else {
+        document.querySelector('.tabs-bar')!.appendChild(wrap);
+    }
+}
+
 function activateTab(tabId) {
     const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
     const content = document.getElementById(tabId);
@@ -460,6 +471,7 @@ function activateTab(tabId) {
 
     btn.classList.add('active');
     content.classList.add('active');
+    positionTabMenu(content);
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {

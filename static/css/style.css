@@ -467,6 +467,9 @@ html.light-mode .archived-tab-row { color: #374151; }
 
 /* ── Section heading separators ────────────────────────────── */
 .tab-content > h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding-bottom: 18px;
     margin-bottom: 25px;
     border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.25);
