@@ -1610,6 +1610,8 @@ function buildPeriodGoalForm(placeholder, onAdd) {
     return form;
 }
 
+const periodCollapsedIds = new Set();
+
 async function loadPeriods() {
     try {
         const res = await fetch('/api/periods');
@@ -1621,8 +1623,10 @@ async function loadPeriods() {
             return;
         }
         periods.forEach(p => {
+            const isCollapsed = periodCollapsedIds.has(p.id);
+
             const card = document.createElement('div');
-            card.className = 'period-card';
+            card.className = 'period-card' + (isCollapsed ? ' period-collapsed' : '');
 
             const header = document.createElement('div');
             header.className = 'recipe-card-header';
@@ -1635,6 +1639,19 @@ async function loadPeriods() {
             interval.className = 'period-interval';
             interval.textContent = `${formatPeriodMonth(p.start_date)} – ${formatPeriodMonth(p.end_date)} · ${periodMonthSpan(p.start_date, p.end_date)}`;
 
+            const foldBtn = document.createElement('button');
+            foldBtn.className = 'period-fold-btn';
+            foldBtn.textContent = isCollapsed ? '▸' : '▾';
+            foldBtn.title = isCollapsed ? 'Expand goals' : 'Collapse goals';
+            foldBtn.onclick = () => {
+                if (periodCollapsedIds.has(p.id)) {
+                    periodCollapsedIds.delete(p.id);
+                } else {
+                    periodCollapsedIds.add(p.id);
+                }
+                loadPeriods();
+            };
+
             const delBtn = document.createElement('button');
             delBtn.className = 'recipe-card-delete';
             delBtn.textContent = 'Delete';
@@ -1646,6 +1663,7 @@ async function loadPeriods() {
 
             header.appendChild(titleEl);
             header.appendChild(interval);
+            header.appendChild(foldBtn);
             header.appendChild(delBtn);
             card.appendChild(header);
 
