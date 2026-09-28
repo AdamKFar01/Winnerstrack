@@ -5,6 +5,7 @@ import json
 import os
 import urllib.request
 import urllib.error
+from calendar_sync import get_mac_calendar_events
 
 app = Flask(__name__)
 
@@ -1183,6 +1184,11 @@ def calendar_events_api():
             })
 
         return jsonify(events_list)
+
+@app.route('/api/mac-calendar-events')
+def mac_calendar_events_api():
+    """Read-only events pulled live from the Mac's Calendar app."""
+    return jsonify(get_mac_calendar_events())
 
 @app.route('/api/plan-events', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def plan_events_api():
