@@ -33,6 +33,7 @@
         ],
         "extraResources": [
             "app.py",
+            "calendar_sync.py",
             "migrate_database.py",
             {
                 "from": "templates",
