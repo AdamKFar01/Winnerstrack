@@ -2228,4 +2228,5 @@ def quotes():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    debug_mode = os.environ.get('WINNERSTRACKBUILDER_DEBUG', '1') == '1'
+    app.run(debug=debug_mode, port=5001)
