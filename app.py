@@ -1188,7 +1188,9 @@ def calendar_events_api():
 @app.route('/api/mac-calendar-events')
 def mac_calendar_events_api():
     """Read-only events pulled live from the Mac's Calendar app."""
-    return jsonify(get_mac_calendar_events())
+    days_behind = request.args.get('days_behind', 7, type=int)
+    days_ahead = request.args.get('days_ahead', 30, type=int)
+    return jsonify(get_mac_calendar_events(days_behind=days_behind, days_ahead=days_ahead))
 
 @app.route('/api/plan-events', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def plan_events_api():
