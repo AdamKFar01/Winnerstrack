@@ -30,7 +30,12 @@ function startFlask() {
 
     flaskProcess = spawn('python3', [scriptPath], {
         cwd,
-        env: { ...process.env, PATH: expandedPath, WINNERSTRACKBUILDER_DB: dbPath }
+        env: {
+            ...process.env,
+            PATH: expandedPath,
+            WINNERSTRACKBUILDER_DB: dbPath,
+            WINNERSTRACKBUILDER_DEBUG: app.isPackaged ? '0' : '1'
+        }
     });
 
     flaskProcess.stdout.on('data', d => console.log('Flask:', d.toString().trim()));
