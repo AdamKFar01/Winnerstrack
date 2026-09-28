@@ -30,6 +30,8 @@ I chose SQLite because there's one user and no concurrency. I chose vanilla JS b
 
 **Database** : Single file `wintracker.db`, excluded from git. All state is local. Back it up manually if you care about the data.
 
+**Calendar sync** : `calendar_sync.py` reads events straight from the Mac's Calendar app via AppleScript (no cloud credentials needed), exposed read-only at `/api/mac-calendar-events`.
+
 ---
 
 ## Key systems
@@ -65,6 +67,7 @@ The main endpoint groups:
 - `/api/reminders`: reminders with recurrence & urgency
 - `/api/finance` and `/api/finance/monthly`: transactions and monthly rollup
 - `/api/calendar-events` and `/api/month-data`: calendar
+- `/api/mac-calendar-events`: read-only events pulled live from the Mac's Calendar app
 - `/api/health-metrics`, `/api/food-log`, `/api/weight-log`, `/api/nutrition-week`: health and nutrition
 - `/api/xp`, `/api/xp/log`, `/api/xp/daily-check`, `/api/xp/complete-day` are for the XP engine
 - `/api/pillar-scores`: radar chart scores
