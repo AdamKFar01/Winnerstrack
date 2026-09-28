@@ -2,6 +2,7 @@
     "name": "winnerstrackbuilder",
     "version": "1.0.0",
     "description": "Personal productivity tracker",
+    "author": "Adam Farhat",
     "main": "main.js",
     "scripts": {
         "start": "tsc && electron .",
